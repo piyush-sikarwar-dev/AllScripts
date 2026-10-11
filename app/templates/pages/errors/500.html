@@ -1,0 +1,12 @@
+{% extends "layout_app.html" %}
+{% block title %}Something went wrong{% endblock %}
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">Something went wrong</h1>
+  <p class="page-subtitle">The archive could not complete this request. No data was changed.</p>
+</header>
+<section class="card error-card">
+  <p>Try again in a moment. If the problem continues, contact your system administrator.</p>
+  <a class="btn btn--primary" href="/patients">Back to patients</a>
+</section>
+{% endblock %}

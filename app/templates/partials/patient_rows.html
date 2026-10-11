@@ -1,0 +1,55 @@
+{% from "components/badge.html" import source_badges %}
+{% from "components/table.html" import pager_nav %}
+{% from "components/empty_state.html" import empty_state %}
+{% from "components/input.html" import error_slot_oob %}
+{% set s = results.search %}
+{% set p = results.pager %}
+{% if partial %}
+{{ error_slot_oob("dob", s.errors.get("dob")) }}
+{{ error_slot_oob("chart", s.errors.get("chart")) }}
+{% endif %}
+<section class="card table-card" aria-labelledby="patients-title">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="patients-title">{{ "Search results" if s.is_filtered else "All patients" }}</h2>
+    <p class="table-card__count">
+      {%- if p.total -%}
+        Showing {{ p.shown }} of {{ "{:,}".format(p.total) }} · sorted by last name
+      {%- else -%}
+        No matches
+      {%- endif -%}
+    </p>
+  </div>
+  {% if s.errors %}
+    {{ empty_state("Correct the highlighted search field to see results.") }}
+  {% elif results.rows %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Patient</th>
+          <th scope="col">Date of birth</th>
+          <th scope="col">Sex</th>
+          <th scope="col">Chart ID</th>
+          <th scope="col">Last visit</th>
+          <th scope="col">Records in</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results.rows %}
+        <tr>
+          <td><a class="cell-link" href="/patients/{{ r.key }}">{{ r.name }}</a></td>
+          <td class="nowrap">{{ r.dob }}</td>
+          <td>{{ r.sex }}</td>
+          <td class="mono">{{ r.chart_id }}</td>
+          <td class="nowrap">{{ r.last_visit }}</td>
+          <td>{{ source_badges(r.sources) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager_nav(p, "/patients", "/patients/rows", "#patient-results", s.params(), swap="innerHTML") }}
+  {% else %}
+    {{ empty_state("No patients match your search.") }}
+  {% endif %}
+</section>

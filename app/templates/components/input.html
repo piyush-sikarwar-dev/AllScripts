@@ -1,0 +1,37 @@
+{# Labelled text input with an inline error message. #}
+{#
+  error_slot=True always renders the error element (possibly empty) so an HTMX response can
+  update it out-of-band with error_slot_oob().
+#}
+{% macro field(name, label, value="", type="text", id=None, error=None, placeholder="",
+               autocomplete="off", inputmode=None, required=False, cls="", error_slot=False) -%}
+{% set fid = id or "f-" ~ name %}
+<div class="field {{ cls }}">
+  <label class="field__label" for="{{ fid }}">{{ label }}</label>
+  <input class="input" type="{{ type }}" id="{{ fid }}" name="{{ name }}" value="{{ value }}"
+    autocomplete="{{ autocomplete }}"
+    {%- if placeholder %} placeholder="{{ placeholder }}"{% endif %}
+    {%- if inputmode %} inputmode="{{ inputmode }}"{% endif %}
+    {%- if required %} required{% endif %}
+    {%- if error %} aria-invalid="true"{% endif %}
+    {%- if error or error_slot %} aria-describedby="{{ fid }}-error"{% endif %}>
+  {% if error or error_slot %}<p class="field__error" id="{{ fid }}-error">{{ error or "" }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro error_slot_oob(name, error=None, id=None) -%}
+<p class="field__error" id="{{ id or 'f-' ~ name }}-error" hx-swap-oob="true">{{ error or "" }}</p>
+{%- endmacro %}
+
+{# Labelled select. options = list of (value, label). #}
+{% macro select(name, label, options, value="", id=None, cls="") -%}
+{% set fid = id or "f-" ~ name %}
+<div class="field {{ cls }}">
+  <label class="field__label" for="{{ fid }}">{{ label }}</label>
+  <select class="select" id="{{ fid }}" name="{{ name }}">
+    {% for opt_value, opt_label in options %}
+    <option value="{{ opt_value }}"{% if opt_value == value %} selected{% endif %}>{{ opt_label }}</option>
+    {% endfor %}
+  </select>
+</div>
+{%- endmacro %}

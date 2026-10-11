@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import icon %}
+{% block body %}
+<div class="auth">
+  <section class="auth__intro">
+    <div class="brand">
+      {{ icon("brand", "brand__icon") }}
+      <div>
+        <p class="brand__name">Legacy Records</p>
+        <p class="brand__clinic">{{ clinic_name() }}</p>
+      </div>
+    </div>
+    <h1 class="auth__headline">Patient records from the retired Allscripts system</h1>
+    <p class="auth__text">Search the archived EHR, practice management and pre-2010 charts, review a patient's
+      full record and export it for a records release. The archive is read-only.</p>
+    <p class="auth__foot">{{ clinic_name() }} · Authorized staff only</p>
+  </section>
+  <main class="auth__form-side">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

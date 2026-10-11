@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {#- htmx: no injected styles (CSP), no eval, no PHI cached in localStorage, swap 4xx/5xx error fragments. #}
+  <meta name="htmx-config" content='{"includeIndicatorStyles":false,"allowEval":false,"historyCacheSize":0,"refreshOnHistoryMiss":true,"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"[45]..","swap":true,"error":true}]}'>
+  <title>{% block title %}{% endblock %} · Legacy Records</title>
+  <link rel="preload" href="/static/fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="/static/vendor/htmx.min.js" defer></script>
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body>
+{% block body %}{% endblock %}
+</body>
+</html>

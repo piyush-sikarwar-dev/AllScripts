@@ -1,0 +1,7 @@
+{% from "components/tabs.html" import tab_bar %}
+<div id="chart-tabs" class="chart-tabs">
+  {{ tab_bar(key, tabs, tab, partial=partial) }}
+  <section id="tab-panel" class="tab-panel" role="tabpanel" aria-labelledby="tab-{{ tab }}">
+    {% include "partials/tab_" ~ tab ~ ".html" %}
+  </section>
+</div>

@@ -1,0 +1,14 @@
+{% macro card(title=None, cls="") -%}
+<section class="card {{ cls }}">
+  {% if title %}<h2 class="card__title">{{ title }}</h2>{% endif %}
+  {{ caller() }}
+</section>
+{%- endmacro %}
+
+{% macro stat_card(label, value, caption) -%}
+<div class="card stat">
+  <p class="stat__label">{{ label }}</p>
+  <p class="stat__value">{{ "{:,}".format(value) }}</p>
+  <p class="stat__caption">{{ caption }}</p>
+</div>
+{%- endmacro %}

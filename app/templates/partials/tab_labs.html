@@ -1,0 +1,78 @@
+{% from "components/badge.html" import source_badge, flag_badge %}
+{% from "components/table.html" import pager_nav, count_text %}
+{% from "components/input.html" import field %}
+{% from "components/empty_state.html" import empty_state %}
+{% set base = "/patients/" ~ key %}
+{% set f = filters %}
+{% set trend = f.view == "trend" %}
+<section class="card table-card" aria-labelledby="labs-title">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="labs-title">{% if trend %}Lab trend · {{ f.test or "—" }}{% else %}Lab results{% endif %}</h2>
+    <p class="table-card__count">{{ count_text(pager, "results") }}</p>
+  </div>
+  <div class="table-card__tools stack">
+    <nav class="segmented" aria-label="Lab results view">
+      {% for value, label in [("list", "List"), ("trend", "Trend")] %}
+      <a class="segmented__item{% if f.view == value %} segmented__item--active{% endif %}"
+         {%- if f.view == value %} aria-current="true"{% endif %}
+         href="{{ url_with(base, dict(state, tab='labs', view=value)) }}"
+         hx-get="{{ url_with(base ~ '/tab/labs', dict(state, view=value)) }}" hx-target="#chart-tabs" hx-swap="outerHTML">{{ label }}</a>
+      {% endfor %}
+    </nav>
+    <form class="toolbar" method="get" action="{{ base }}"
+          hx-get="{{ base }}/tab/labs" hx-target="#chart-tabs" hx-swap="outerHTML">
+      <input type="hidden" name="tab" value="labs">
+      <input type="hidden" name="view" value="{{ f.view }}">
+      {{ field("from", "From", value=f.date_from, id="lab-from", placeholder="MM/DD/YYYY", inputmode="numeric",
+               error=f.errors.get("date_from"), cls="field--narrow") }}
+      {{ field("to", "To", value=f.date_to, id="lab-to", placeholder="MM/DD/YYYY", inputmode="numeric",
+               error=f.errors.get("date_to"), cls="field--narrow") }}
+      <div class="field field--wide">
+        <label class="field__label" for="lab-test">Test</label>
+        <select class="select" id="lab-test" name="test">
+          {% if not trend %}<option value="">All tests</option>{% endif %}
+          {% for name in test_names %}
+          <option value="{{ name }}"{% if name == f.test %} selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="toolbar__actions">
+        <button type="submit" class="btn btn--secondary">Apply</button>
+        <a class="btn btn--secondary" href="{{ url_with(base, {'tab': 'labs', 'view': f.view}) }}"
+           hx-get="{{ url_with(base ~ '/tab/labs', {'view': f.view}) }}" hx-target="#chart-tabs" hx-swap="outerHTML">Clear</a>
+      </div>
+    </form>
+  </div>
+  {% if labs %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Date</th>
+          {% if not trend %}<th scope="col">Test</th>{% endif %}
+          <th scope="col">Result</th><th scope="col">Reference range</th><th scope="col">Flag</th><th scope="col">Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in labs %}
+        <tr>
+          <td class="nowrap">{{ r.date }}</td>
+          {% if not trend %}<td>{{ r.test }}</td>{% endif %}
+          <td class="result">{{ r.result }}</td>
+          <td class="mono nowrap">{{ r.reference_range }}</td>
+          <td>{% if r.flag %}{{ flag_badge(r.flag) }}{% endif %}</td>
+          <td>{{ source_badge(r.source) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager_nav(pager, base, base ~ "/tab/labs", "#chart-tabs", dict(state, tab="labs")) }}
+  {% elif f.errors %}
+    {{ empty_state("Correct the highlighted date to see results.") }}
+  {% elif test_names %}
+    {{ empty_state("No lab results match these filters.") }}
+  {% else %}
+    {{ empty_state("No lab results recorded.") }}
+  {% endif %}
+</section>

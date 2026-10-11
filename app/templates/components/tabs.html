@@ -1,0 +1,16 @@
+{#
+  Chart tab bar. Each tab is a real link to the full-page URL (works without JS) enhanced with
+  hx-get to the tab fragment; the server sends HX-Push-Url so history shows the full-page URL.
+#}
+{% macro tab_bar(key, tabs, active, partial=False) -%}
+<div class="tabs" role="tablist" aria-label="Patient chart sections">
+  {% for name, label in tabs %}
+  {% set is_active = name == active %}
+  <a role="tab" id="tab-{{ name }}" class="tab{% if is_active %} tab--active{% endif %}"
+     aria-selected="{{ 'true' if is_active else 'false' }}" aria-controls="tab-panel"
+     href="{{ url_with('/patients/' ~ key, {'tab': name}) }}"
+     hx-get="/patients/{{ key }}/tab/{{ name }}" hx-target="#chart-tabs" hx-swap="outerHTML"
+     {%- if is_active and partial %} data-focus-on-load{% endif %}>{{ label }}</a>
+  {% endfor %}
+</div>
+{%- endmacro %}

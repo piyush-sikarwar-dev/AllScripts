@@ -1,0 +1,50 @@
+{% from "components/table.html" import pager_nav, count_text %}
+{% from "components/empty_state.html" import empty_state %}
+{% set vl = visit_list %}
+{% set base = "/patients/" ~ key %}
+<div class="split">
+  <section class="card table-card split__list" aria-labelledby="visits-title">
+    <div class="table-card__head">
+      <h2 class="table-card__title" id="visits-title">Visits</h2>
+      <p class="table-card__count">{{ count_text(vl.pager, "visits") }}</p>
+    </div>
+    <div class="table-card__tools">
+      <nav class="segmented" aria-label="Visit filter">
+        {% for value, label in [("office", "Office visits"), ("all", "All entries")] %}
+        <a class="segmented__item{% if vl.filter == value %} segmented__item--active{% endif %}"
+           {%- if vl.filter == value %} aria-current="true"{% endif %}
+           href="{{ url_with(base, {'tab': 'visits', 'filter': value}) }}"
+           hx-get="{{ url_with(base ~ '/tab/visits', {'filter': value}) }}" hx-target="#chart-tabs" hx-swap="outerHTML">{{ label }}</a>
+        {% endfor %}
+      </nav>
+    </div>
+    {% if vl.visits %}
+    <ul class="visit-rows">
+      {% for v in vl.visits %}
+      {% set selected = vl.selected and vl.selected.visit.id == v.id %}
+      <li>
+        <a class="visit-row{% if selected %} visit-row--selected{% endif %}"
+           {%- if selected %} aria-current="true"{% endif %}
+           href="{{ url_with(base, {'tab': 'visits', 'filter': vl.filter, 'page': vl.pager.page, 'visit': v.id}) }}"
+           hx-get="{{ url_with(base ~ '/visits/' ~ v.source ~ '/' ~ v.id, {'filter': vl.filter, 'page': vl.pager.page}) }}"
+           hx-target="#visit-detail" hx-swap="innerHTML">
+          <span class="visit-row__title">{{ v.date }} · {{ v.type }}</span>
+          <span class="visit-row__sub">{{ v.provider }}{% if v.diagnoses %} · {{ v.diagnoses }}{% endif %}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {{ pager_nav(vl.pager, base, base ~ "/tab/visits", "#chart-tabs", dict(state, tab="visits")) }}
+    {% else %}
+      {{ empty_state("No visits recorded." if vl.filter == "all" else "No office visits recorded. Choose “All entries” to see other chart entries.") }}
+    {% endif %}
+  </section>
+
+  <section class="card split__detail" id="visit-detail" aria-label="Visit detail" aria-live="polite">
+    {% if vl.selected %}
+      {% with detail = vl.selected, partial = False %}{% include "partials/visit_detail.html" %}{% endwith %}
+    {% else %}
+      {{ empty_state("Select a visit to see its details.") }}
+    {% endif %}
+  </section>
+</div>

@@ -1,0 +1,56 @@
+{% from "components/badge.html" import source_badge, badge %}
+{% from "components/empty_state.html" import empty_state %}
+{% set v = detail.visit %}
+<article class="detail">
+  <div class="detail__head">
+    <div>
+      <h2 class="detail__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>{{ v.date }} · {{ v.type }}</h2>
+      <p class="detail__sub">{{ v.provider }} · {{ v.location }} · {{ "Signed" if v.signed else "Not signed" }}</p>
+    </div>
+    {{ source_badge(v.source) }}
+  </div>
+
+  <div class="panel-grid">
+    <section class="panel" aria-labelledby="vd-assessment">
+      <h3 class="panel__title" id="vd-assessment">Assessment</h3>
+      {% if detail.assessment %}
+      <dl class="kv">
+        {% for dx in detail.assessment %}<dt class="mono">{{ dx.label }}</dt><dd>{{ dx.value }}</dd>{% endfor %}
+      </dl>
+      {% else %}<p class="muted">No assessment recorded.</p>{% endif %}
+    </section>
+    <section class="panel" aria-labelledby="vd-vitals">
+      <h3 class="panel__title" id="vd-vitals">Vitals</h3>
+      {% if detail.vitals %}
+      <dl class="kv">
+        {% for item in detail.vitals %}<dt>{{ item.label }}</dt><dd>{{ item.value }}</dd>{% endfor %}
+      </dl>
+      {% else %}<p class="muted">No vitals recorded.</p>{% endif %}
+    </section>
+    {% if detail.plan %}
+    <section class="panel" aria-labelledby="vd-plan">
+      <h3 class="panel__title" id="vd-plan">Plan</h3>
+      <ul class="plain-list">{% for line in detail.plan %}<li>{{ line }}</li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+  </div>
+
+  <section aria-labelledby="vd-note">
+    <h3 class="section-title" id="vd-note">Visit note</h3>
+    {% if detail.note_html %}
+      {# note_html is sanitised with nh3 in the service layer (Phase 6). #}
+      <div class="note-html">{{ detail.note_html | safe }}</div>
+    {% elif detail.note_text %}
+      <div class="note-text">{{ detail.note_text }}</div>
+    {% else %}
+      {{ empty_state("Visit note not available in the archive.", compact=True) }}
+    {% endif %}
+  </section>
+
+  {% if detail.addenda %}
+  <section aria-labelledby="vd-addenda">
+    <h3 class="section-title" id="vd-addenda">Addenda</h3>
+    {% for a in detail.addenda %}<div class="note-text">{{ a }}</div>{% endfor %}
+  </section>
+  {% endif %}
+</article>

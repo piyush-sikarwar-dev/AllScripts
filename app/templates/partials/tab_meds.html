@@ -1,0 +1,46 @@
+{% from "components/badge.html" import source_badge %}
+{% from "components/table.html" import pager_nav, count_text %}
+{% from "components/empty_state.html" import empty_state %}
+{% set base = "/patients/" ~ key %}
+{% set med_filter = state.get("filter", "active") %}
+<section class="card table-card" aria-labelledby="meds-title">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="meds-title">Medications</h2>
+    <p class="table-card__count">{{ count_text(pager, "medications") }}</p>
+  </div>
+  <div class="table-card__tools">
+    <nav class="segmented" aria-label="Medication filter">
+      {% for value, label in [("active", "Active"), ("all", "All")] %}
+      <a class="segmented__item{% if med_filter == value %} segmented__item--active{% endif %}"
+         {%- if med_filter == value %} aria-current="true"{% endif %}
+         href="{{ url_with(base, {'tab': 'meds', 'filter': value}) }}"
+         hx-get="{{ url_with(base ~ '/tab/meds', {'filter': value}) }}" hx-target="#chart-tabs" hx-swap="outerHTML">{{ label }}</a>
+      {% endfor %}
+    </nav>
+  </div>
+  {% if meds %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr><th scope="col">Medication</th><th scope="col">Instructions</th><th scope="col">Start</th><th scope="col">End</th>
+            <th scope="col">Status</th><th scope="col">Source</th></tr>
+      </thead>
+      <tbody>
+        {% for m in meds %}
+        <tr>
+          <td>{{ m.name }}</td>
+          <td>{{ m.instructions }}</td>
+          <td class="nowrap">{{ m.start }}</td>
+          <td class="nowrap">{{ m.end }}</td>
+          <td>{{ m.status }}</td>
+          <td>{{ source_badge(m.source) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager_nav(pager, base, base ~ "/tab/meds", "#chart-tabs", dict(state, tab="meds")) }}
+  {% else %}
+    {{ empty_state("No active medications recorded." if med_filter == "active" else "No medications recorded.") }}
+  {% endif %}
+</section>

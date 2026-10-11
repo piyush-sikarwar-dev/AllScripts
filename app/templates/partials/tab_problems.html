@@ -1,0 +1,34 @@
+{% from "components/badge.html" import source_badge %}
+{% from "components/empty_state.html" import empty_state %}
+{% for g in groups %}
+<section class="card table-card" aria-labelledby="hx-{{ g.key }}">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="hx-{{ g.key }}">{{ g.label }}</h2>
+    <p class="table-card__count">{{ g.rows | length }} recorded</p>
+  </div>
+  {% if g.rows %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr><th scope="col">Title</th><th scope="col">Code</th><th scope="col">Onset</th><th scope="col">Resolved</th>
+            <th scope="col">Status</th><th scope="col">Source</th></tr>
+      </thead>
+      <tbody>
+        {% for r in g.rows %}
+        <tr>
+          <td>{{ r.title }}{% if r.detail %}<span class="cell-sub item-list__detail--abn">{{ r.detail }}</span>{% endif %}</td>
+          <td class="mono nowrap">{{ r.code }}</td>
+          <td class="nowrap">{{ r.onset }}</td>
+          <td class="nowrap">{{ r.resolved }}</td>
+          <td>{{ r.status }}</td>
+          <td>{{ source_badge(r.source) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {{ empty_state("No " ~ g.label | lower ~ " recorded.") }}
+  {% endif %}
+</section>
+{% endfor %}

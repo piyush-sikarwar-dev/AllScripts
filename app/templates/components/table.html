@@ -1,0 +1,33 @@
+{# Card header bar: title left, count right. #}
+{% macro table_head(title, count_text="", heading="h2") -%}
+<div class="table-card__head">
+  <{{ heading }} class="table-card__title">{{ title }}</{{ heading }}>
+  {% if count_text %}<p class="table-card__count">{{ count_text }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{# "Showing X of N" for a Pager. #}
+{% macro count_text(p, noun="records") -%}
+{% if p.total == 0 %}No {{ noun }}{% else %}Showing {{ p.shown }} of {{ "{:,}".format(p.total) }}{% endif %}
+{%- endmacro %}
+
+{#
+  Pager footer. Links work without JS (full_path) and are enhanced with HTMX (hx_path → target).
+#}
+{% macro pager_nav(p, full_path, hx_path, target, params={}, swap="outerHTML") -%}
+{% if p.pages > 1 %}
+<nav class="pager" aria-label="Pagination">
+  <span>Page {{ p.page }} of {{ p.pages }}</span>
+  <span class="pager__buttons">
+    {% for label, n, enabled in [("Previous", p.page - 1, p.has_prev), ("Next", p.page + 1, p.has_next)] %}
+      {% if enabled %}
+      <a class="btn btn--secondary btn--sm" href="{{ url_with(full_path, params, page=n) }}"
+         hx-get="{{ url_with(hx_path, params, page=n) }}" hx-target="{{ target }}" hx-swap="{{ swap }}">{{ label }}</a>
+      {% else %}
+      <span class="btn btn--secondary btn--sm" aria-disabled="true">{{ label }}</span>
+      {% endif %}
+    {% endfor %}
+  </span>
+</nav>
+{% endif %}
+{%- endmacro %}

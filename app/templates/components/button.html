@@ -1,0 +1,15 @@
+{% from "components/icons.html" import icon %}
+
+{# Real <button>. Extra attributes (hx-*, data-*) go in `attrs` as a dict. #}
+{% macro button(label, variant="primary", type="button", size=None, icon_name=None, attrs={}) -%}
+<button type="{{ type }}" class="btn btn--{{ variant }}{% if size %} btn--{{ size }}{% endif %}"
+  {%- for k, v in attrs.items() %} {{ k }}="{{ v }}"{% endfor %}>
+  {%- if icon_name %}{{ icon(icon_name) }}{% endif %}{{ label }}</button>
+{%- endmacro %}
+
+{# Link styled as a button; optional HTMX enhancement through `attrs`. #}
+{% macro link_button(label, href, variant="secondary", size=None, icon_name=None, attrs={}) -%}
+<a href="{{ href }}" class="btn btn--{{ variant }}{% if size %} btn--{{ size }}{% endif %}"
+  {%- for k, v in attrs.items() %} {{ k }}="{{ v }}"{% endfor %}>
+  {%- if icon_name %}{{ icon(icon_name) }}{% endif %}{{ label }}</a>
+{%- endmacro %}

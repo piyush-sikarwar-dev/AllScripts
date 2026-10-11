@@ -1,0 +1,6 @@
+{% macro empty_state(message, compact=False) -%}
+<div class="empty{% if compact %} empty--compact{% endif %}">
+  <p>{{ message }}</p>
+  {% if caller is defined %}{{ caller() }}{% endif %}
+</div>
+{%- endmacro %}

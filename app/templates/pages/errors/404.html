@@ -1,0 +1,12 @@
+{% extends "layout_app.html" %}
+{% block title %}Not found{% endblock %}
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">Page not found</h1>
+  <p class="page-subtitle">The patient or page you asked for does not exist in the archive.</p>
+</header>
+<section class="card error-card">
+  <p>Check the link, or search for the patient again.</p>
+  <a class="btn btn--primary" href="/patients">Back to patients</a>
+</section>
+{% endblock %}

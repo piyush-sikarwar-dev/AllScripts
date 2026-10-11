@@ -1,0 +1,39 @@
+{% from "components/badge.html" import source_badge %}
+{% from "components/table.html" import pager_nav, count_text %}
+{% from "components/empty_state.html" import empty_state %}
+{% set base = "/patients/" ~ key %}
+<section class="card table-card" aria-labelledby="vitals-title">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="vitals-title">Vitals</h2>
+    <p class="table-card__count">{{ count_text(pager, "vitals") }}</p>
+  </div>
+  {% if vitals %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr><th scope="col">Date</th><th scope="col">BP</th><th scope="col">Pulse</th><th scope="col">Temp</th>
+            <th scope="col">Weight</th><th scope="col">Height</th><th scope="col">SpO2</th><th scope="col">Pain</th>
+            <th scope="col">Source</th></tr>
+      </thead>
+      <tbody>
+        {% for v in vitals %}
+        <tr>
+          <td class="nowrap">{{ v.date }}</td>
+          <td class="mono nowrap">{{ v.bp }}</td>
+          <td class="mono">{{ v.pulse }}</td>
+          <td class="mono nowrap">{{ v.temp }}</td>
+          <td class="mono nowrap">{{ v.weight }}</td>
+          <td class="mono nowrap">{{ v.height }}</td>
+          <td class="mono">{{ v.spo2 }}</td>
+          <td class="mono">{{ v.pain }}</td>
+          <td>{{ source_badge(v.source) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager_nav(pager, base, base ~ "/tab/vitals", "#chart-tabs", dict(state, tab="vitals")) }}
+  {% else %}
+    {{ empty_state("No vitals recorded.") }}
+  {% endif %}
+</section>

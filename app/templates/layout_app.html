@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import icon %}
+{% block body %}
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      {{ icon("brand", "brand__icon") }}
+      <div>
+        <p class="brand__name">Legacy Records</p>
+        <p class="brand__clinic">{{ clinic_name() }}</p>
+      </div>
+    </div>
+    <nav class="nav" aria-label="Main">
+      {% for key, label, href, icon_name in [
+          ("dashboard", "Dashboard", "/patients", "dashboard"),
+          ("patients", "Patients", "/patients#patient-search", "patients"),
+          ("release", "Release log", "/release-log", "release")] %}
+      <a class="nav-link{% if nav == key %} nav-link--active{% endif %}" href="{{ href }}"
+         {%- if nav == key %} aria-current="page"{% endif %}>{{ icon(icon_name) }}{{ label }}</a>
+      {% endfor %}
+    </nav>
+    {% if user %}
+    <div class="sidebar__footer">
+      <p class="sidebar__user">{{ user.full_name }}</p>
+      <form method="post" action="/logout">
+        {# TODO(Phase 2): CSRF hidden input. #}
+        <button type="submit" class="link-button">Sign out</button>
+      </form>
+    </div>
+    {% endif %}
+  </aside>
+  <main id="main" class="main {% block main_class %}{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

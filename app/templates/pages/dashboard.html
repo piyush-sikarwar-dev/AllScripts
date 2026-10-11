@@ -1,0 +1,38 @@
+{% extends "layout_app.html" %}
+{% from "components/card.html" import stat_card %}
+{% from "components/input.html" import field %}
+{% from "components/icons.html" import icon %}
+{% block title %}Patients{% endblock %}
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">Patients</h1>
+  <p class="page-subtitle">Read-only archive of the Allscripts EHR, practice management and pre-2010 records.</p>
+</header>
+
+<section class="stat-grid" aria-label="Archive totals">
+  {{ stat_card("Patients", totals.patients, "Charts in the EHR") }}
+  {{ stat_card("Encounters", totals.encounters, "Visits and chart entries") }}
+  {{ stat_card("Lab results", totals.lab_results, "Result values on file") }}
+  {{ stat_card("Scanned documents", totals.scanned_documents, "Scanned into the EHR") }}
+</section>
+
+{% set s = results.search %}
+<section class="card search-card" id="patient-search" aria-labelledby="search-title">
+  <h2 class="card__title" id="search-title">Find a patient</h2>
+  <form class="toolbar" method="get" action="/patients" role="search"
+        hx-get="/patients/rows" hx-target="#patient-results" hx-swap="innerHTML"
+        hx-trigger="input delay:300ms, submit">
+    {{ field("q", "Search by name", value=s.q, placeholder="Last, First", cls="field--wide") }}
+    {{ field("dob", "Date of birth", value=s.dob, placeholder="MM/DD/YYYY", inputmode="numeric",
+             error=s.errors.get("dob"), error_slot=True) }}
+    {{ field("chart", "Chart ID / MRN", value=s.chart, error=s.errors.get("chart"), error_slot=True) }}
+    <div class="toolbar__actions">
+      <button type="submit" class="btn btn--primary">{{ icon("search") }}Search</button>
+    </div>
+  </form>
+</section>
+
+<div id="patient-results" aria-live="polite">
+  {% include "partials/patient_rows.html" %}
+</div>
+{% endblock %}

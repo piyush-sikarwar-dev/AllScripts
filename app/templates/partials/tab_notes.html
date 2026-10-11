@@ -1,0 +1,30 @@
+{% from "components/badge.html" import source_badge %}
+{% from "components/table.html" import pager_nav, count_text %}
+{% from "components/empty_state.html" import empty_state %}
+{% set base = "/patients/" ~ key %}
+<section class="card table-card" aria-labelledby="notes-title">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="notes-title">Notes</h2>
+    <p class="table-card__count">{{ count_text(pager, "notes") }}</p>
+  </div>
+  {% if notes %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead><tr><th scope="col">Date</th><th scope="col">Note</th><th scope="col">Author</th><th scope="col">Source</th></tr></thead>
+      <tbody>
+        {% for n in notes %}
+        <tr>
+          <td class="nowrap">{{ n.date }}</td>
+          <td>{{ n.title }}</td>
+          <td>{{ n.author }}</td>
+          <td>{{ source_badge(n.source) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager_nav(pager, base, base ~ "/tab/notes", "#chart-tabs", dict(state, tab="notes")) }}
+  {% else %}
+    {{ empty_state("No notes recorded.") }}
+  {% endif %}
+</section>

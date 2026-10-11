@@ -1,0 +1,55 @@
+{% from "components/badge.html" import source_badge %}
+{% from "components/table.html" import pager_nav, count_text %}
+{% from "components/banner.html" import warning_banner %}
+{% from "components/empty_state.html" import empty_state %}
+{% set base = "/patients/" ~ key %}
+{% if not scan_store_configured %}
+  {{ warning_banner("Scanned page images are not connected yet. Document details are listed below; pages can be viewed once the scan archive is mounted.") }}
+{% endif %}
+<section class="card table-card" aria-labelledby="docs-title">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="docs-title">Documents</h2>
+    <p class="table-card__count">{{ count_text(pager, "documents") }}</p>
+  </div>
+  {% if doc_types %}
+  <div class="table-card__tools">
+    <form class="toolbar" method="get" action="{{ base }}"
+          hx-get="{{ base }}/tab/docs" hx-target="#chart-tabs" hx-swap="outerHTML" hx-trigger="change, submit">
+      <input type="hidden" name="tab" value="docs">
+      <div class="field field--wide">
+        <label class="field__label" for="doc-type">Type</label>
+        <select class="select" id="doc-type" name="type">
+          <option value="">All types</option>
+          {% for t in doc_types %}<option value="{{ t }}"{% if t == doc_type %} selected{% endif %}>{{ t }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="toolbar__actions"><button type="submit" class="btn btn--secondary">Apply</button></div>
+    </form>
+  </div>
+  {% endif %}
+  {% if documents %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col">Title</th><th scope="col">Pages</th>
+            <th scope="col">Source</th><th scope="col">View</th></tr>
+      </thead>
+      <tbody>
+        {% for d in documents %}
+        <tr>
+          <td class="nowrap">{{ d.date }}</td>
+          <td>{{ d.type }}</td>
+          <td>{{ d.title }}</td>
+          <td class="mono">{{ d.pages }}</td>
+          <td>{{ source_badge(d.source) }}</td>
+          <td>{% if d.viewable %}<a href="/documents/{{ d.source }}/{{ d.id }}">View</a>{% else %}<span class="muted">Not available</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager_nav(pager, base, base ~ "/tab/docs", "#chart-tabs", dict(state, tab="docs")) }}
+  {% else %}
+    {{ empty_state("No documents recorded.") }}
+  {% endif %}
+</section>

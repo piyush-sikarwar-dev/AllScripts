@@ -1,0 +1,46 @@
+{% from "components/empty_state.html" import empty_state %}
+{% set o = overview %}
+<div class="card-grid">
+  <section class="card" aria-labelledby="ov-problems">
+    <h2 class="card__title" id="ov-problems">Active problems</h2>
+    {% if o.problems %}
+    <ul class="item-list">
+      {% for item in o.problems %}
+      <li><span class="item-list__name">{{ item.name }}</span><span class="item-list__detail">{{ item.detail }}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}{{ empty_state("No active problems recorded.", compact=True) }}{% endif %}
+  </section>
+
+  <section class="card" aria-labelledby="ov-allergies">
+    <h2 class="card__title" id="ov-allergies">Allergies</h2>
+    {% if o.allergies %}
+    <ul class="item-list">
+      {% for item in o.allergies %}
+      <li><span class="item-list__name">{{ item.name }}</span><span class="item-list__detail item-list__detail--abn">{{ item.detail }}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}{{ empty_state("No allergies recorded.", compact=True) }}{% endif %}
+  </section>
+
+  <section class="card" aria-labelledby="ov-meds">
+    <h2 class="card__title" id="ov-meds">Current medications</h2>
+    {% if o.medications %}
+    <ul class="item-list">
+      {% for item in o.medications %}
+      <li><span class="item-list__name">{{ item.name }}</span><span class="item-list__detail">{{ item.detail }}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}{{ empty_state("No current medications recorded.", compact=True) }}{% endif %}
+  </section>
+
+  <section class="card" aria-labelledby="ov-last-visit">
+    <h2 class="card__title" id="ov-last-visit">Last visit</h2>
+    {% if o.last_visit %}
+    <p class="last-visit__date">{{ o.last_visit.date }}</p>
+    <p class="last-visit__meta">{{ o.last_visit.type }} · {{ o.last_visit.provider }} · {{ o.last_visit.location }}</p>
+    <a class="btn btn--secondary btn--sm" href="{{ url_with('/patients/' ~ key, {'tab': 'visits'}) }}"
+       hx-get="/patients/{{ key }}/tab/visits" hx-target="#chart-tabs" hx-swap="outerHTML">All visits</a>
+    {% else %}{{ empty_state("No visits recorded.", compact=True) }}{% endif %}
+  </section>
+</div>

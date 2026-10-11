@@ -1,0 +1,22 @@
+{% set SOURCE_CLASSES = {"EMR": "emr", "EMR history": "emr", "PM": "pm", "Pre-2010": "legacy"} %}
+{% set FLAG_LABELS = {"H": "High", "L": "Low", "HH": "Critical high", "LL": "Critical low", "A": "Abnormal"} %}
+
+{% macro source_badge(source) -%}
+<span class="badge badge--{{ SOURCE_CLASSES.get(source, 'neutral') }}">{{ source }}</span>
+{%- endmacro %}
+
+{% macro source_badges(sources) -%}
+<span class="badges">{% for s in sources %}{{ source_badge(s) }}{% endfor %}</span>
+{%- endmacro %}
+
+{% macro flag_badge(flag) -%}
+<span class="badge badge--abn">{{ FLAG_LABELS.get(flag, "Abnormal") }}</span>
+{%- endmacro %}
+
+{% macro voided_badge() -%}
+<span class="badge badge--voided">Voided</span>
+{%- endmacro %}
+
+{% macro badge(text, variant="neutral") -%}
+<span class="badge badge--{{ variant }}">{{ text }}</span>
+{%- endmacro %}

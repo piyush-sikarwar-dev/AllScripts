@@ -1,0 +1,39 @@
+{% extends "layout_app.html" %}
+{% from "components/empty_state.html" import empty_state %}
+{% block title %}Release log{% endblock %}
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">Release log</h1>
+  <p class="page-subtitle">Every records release exported from this archive.</p>
+</header>
+<section class="card table-card" aria-labelledby="releases-title">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="releases-title">Releases</h2>
+    <p class="table-card__count">{{ rows | length }} releases</p>
+  </div>
+  {% if rows %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr><th scope="col">Date</th><th scope="col">Patient</th><th scope="col">Sections</th><th scope="col">Recipient</th>
+            <th scope="col">Pages</th><th scope="col">Released by</th></tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td class="nowrap">{{ r.date }}</td>
+          <td><a class="cell-link" href="/patients/{{ r.patient_key }}">{{ r.patient_name }}</a></td>
+          <td>{{ r.sections }}</td>
+          <td>{{ r.recipient }}</td>
+          <td class="mono">{{ r.pages }}</td>
+          <td>{{ r.released_by }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {{ empty_state("No records have been released yet.") }}
+  {% endif %}
+</section>
+{% endblock %}
