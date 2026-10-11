@@ -25,20 +25,11 @@ def test_root_redirects_to_patients(client):
     assert r.headers["location"] == "/patients"
 
 
-def test_login_page(client):
-    r = client.get("/login")
+def test_login_page(anon_client):
+    r = anon_client.get("/login")
     assert r.status_code == 200
     assert "Sign in" in r.text
     assert "Sessions end after 15 minutes of inactivity." in r.text
-
-
-def test_fake_login_and_logout_redirect(client):
-    r = client.post(
-        "/login", data={"email": "a@example.invalid", "password": "x"}, follow_redirects=False
-    )
-    assert r.status_code == 303 and r.headers["location"] == "/patients"
-    r = client.post("/logout", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/login"
 
 
 def test_dashboard(client):

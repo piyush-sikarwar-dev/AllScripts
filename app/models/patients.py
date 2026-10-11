@@ -37,6 +37,11 @@ class PatientSearch(BaseModel):
     def params(self) -> dict[str, str]:
         return {"q": self.q, "dob": self.dob, "chart": self.chart}
 
+    def fields_used(self) -> list[str]:
+        """For the audit log: which fields were filled in — never their values."""
+        return [name for name, value in (("name", self.q), ("dob", self.dob),
+                                         ("chart_id", self.chart)) if value]  # fmt: skip
+
 
 class PatientPage(BaseModel):
     search: PatientSearch

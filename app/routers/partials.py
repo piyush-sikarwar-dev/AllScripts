@@ -6,10 +6,11 @@ that full-page URL so reloads and shared links work without HTMX.
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 
-from app.auth import CurrentUser, current_user
+from app.audit import audit
+from app.auth import current_user
 from app.crosswalk import PatientRef, resolve
 from app.services import NotFoundError
 from app.services.patients import build_search, search_patients
@@ -18,8 +19,6 @@ from app.services.visits import visit_detail
 from app.templating import render, url_with
 
 router = APIRouter(dependencies=[Depends(current_user)])
-
-User = Annotated[CurrentUser, Depends(current_user)]
 
 
 async def _resolve(key: str) -> PatientRef:
@@ -32,6 +31,7 @@ async def _resolve(key: str) -> PatientRef:
 @router.get("/patients/rows", response_class=HTMLResponse)
 async def patient_rows(
     request: Request,
+    background: BackgroundTasks,
     q: str = "",
     dob: str = "",
     chart: str = "",
@@ -39,6 +39,8 @@ async def patient_rows(
 ) -> HTMLResponse:
     search = build_search(q, dob, chart)
     results = await search_patients(search, page)
+    audit(request, background, "search",
+          detail={"fields": search.fields_used(), "page": results.pager.page})  # fmt: skip
     push = url_with("/patients", search.params(), page=results.pager.page)
     return render(
         request,
@@ -49,7 +51,9 @@ async def patient_rows(
 
 
 @router.get("/patients/{key}/tab/{name}", response_class=HTMLResponse)
-async def chart_tab(request: Request, key: str, name: str) -> HTMLResponse:
+async def chart_tab(
+    request: Request, background: BackgroundTasks, key: str, name: str
+) -> HTMLResponse:
     if name not in TAB_NAMES:
         raise HTTPException(status_code=404)
     ref = await _resolve(key)
@@ -57,6 +61,7 @@ async def chart_tab(request: Request, key: str, name: str) -> HTMLResponse:
         ctx = await tab_context(ref, name, request.query_params)
     except NotFoundError as exc:
         raise HTTPException(status_code=404) from exc
+    audit(request, background, "view_tab", patient_key=ref.patient_key, detail={"tab": name})
     pager = ctx.get("pager") or getattr(ctx.get("visit_list"), "pager", None)
     push_params = {"tab": name, **ctx["state"], "page": pager.page if pager else None}
     if name == "visits" and ctx["visit_list"].selected:
@@ -72,6 +77,7 @@ async def chart_tab(request: Request, key: str, name: str) -> HTMLResponse:
 @router.get("/patients/{key}/visits/{source}/{visit_id}", response_class=HTMLResponse)
 async def visit_panel(
     request: Request,
+    background: BackgroundTasks,
     key: str,
     source: str,
     visit_id: int,
@@ -85,6 +91,8 @@ async def visit_panel(
         detail = await visit_detail(ref, visit_id)
     except NotFoundError as exc:
         raise HTTPException(status_code=404) from exc
+    audit(request, background, "view_tab", patient_key=ref.patient_key,
+          detail={"tab": "visits", "visit_id": visit_id})  # fmt: skip
     push = url_with(
         f"/patients/{ref.patient_key}",
         {"tab": "visits", "filter": filter, "page": page, "visit": visit_id},

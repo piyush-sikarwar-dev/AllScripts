@@ -24,7 +24,7 @@
     <div class="sidebar__footer">
       <p class="sidebar__user">{{ user.full_name }}</p>
       <form method="post" action="/logout">
-        {# TODO(Phase 2): CSRF hidden input. #}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="link-button">Sign out</button>
       </form>
     </div>

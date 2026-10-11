@@ -5,7 +5,7 @@
 <form class="auth-card" method="post" action="/login" novalidate>
   <h2 class="auth-card__title">Sign in</h2>
   {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
-  {# TODO(Phase 2): CSRF hidden input. Phase 0 fake mode accepts any credentials. #}
+  <input type="hidden" name="csrf_token" value="{{ login_csrf }}">
   {{ field("email", "Email", value=email, type="email", autocomplete="username", required=True) }}
   {{ field("password", "Password", type="password", autocomplete="current-password", required=True) }}
   <button type="submit" class="btn btn--primary btn--block btn--tall">Sign in</button>

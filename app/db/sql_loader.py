@@ -1,1 +1,46 @@
-"""Load and cache .sql files as SQLAlchemy text(). Phase 1."""
+"""Load and cache `.sql` files from app/sql/ as SQLAlchemy text() clauses.
+
+One query per file, bound parameters only (`:name`). Files are checked with the read-only guard
+when loaded, so a non-SELECT file fails at startup rather than at request time.
+"""
+
+import re
+from functools import lru_cache
+from pathlib import Path
+
+from sqlalchemy import TextClause, bindparam, text
+
+from app.db.readonly import assert_read_only
+
+SQL_DIR = Path(__file__).resolve().parent.parent / "sql"
+
+_NAME_RE = re.compile(r"^(emr|ntier|dmz|meta)/[a-z0-9_]+\.sql$")
+
+
+class SqlFileError(RuntimeError):
+    """A referenced .sql file is missing, misnamed or not read-only."""
+
+
+@lru_cache(maxsize=256)
+def load_sql(name: str, expanding: tuple[str, ...] = ()) -> TextClause:
+    """`load_sql("emr/patient_search.sql")`; `expanding=("ids",)` for `IN :ids` lists."""
+    if not _NAME_RE.match(name):
+        raise SqlFileError(f"invalid SQL file name: {name}")
+    path = SQL_DIR / name
+    if not path.is_file():
+        raise SqlFileError(f"missing SQL file: {name}")
+    sql = path.read_text(encoding="utf-8")
+    try:
+        assert_read_only(sql)
+    except Exception as exc:
+        raise SqlFileError(f"{name}: {exc}") from exc
+    clause = text(sql)
+    if expanding:
+        clause = clause.bindparams(*(bindparam(p, expanding=True) for p in expanding))
+    return clause
+
+
+def check_sql_files(names: list[str]) -> None:
+    """Fail fast at startup if any referenced SQL file is missing or invalid."""
+    for name in names:
+        load_sql(name)

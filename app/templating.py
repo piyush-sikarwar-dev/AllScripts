@@ -41,6 +41,10 @@ def render(
     status_code: int = 200,
     headers: dict[str, str] | None = None,
 ) -> HTMLResponse:
+    context = dict(context or {})
+    # Signed-in user and CSRF token (set by the current_user dependency) for every template.
+    context.setdefault("user", getattr(request.state, "user", None))
+    context.setdefault("csrf_token", getattr(request.state, "csrf_token", None))
     return templates.TemplateResponse(
-        request, template, context or {}, status_code=status_code, headers=headers
+        request, template, context, status_code=status_code, headers=headers
     )

@@ -7,10 +7,12 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.auth import LoginRequiredError
+from app.middleware import SecurityMiddleware
 from app.routers import auth, health, pages, partials
 from app.templating import is_htmx, render
 
@@ -42,6 +44,7 @@ def create_app() -> FastAPI:
         openapi_url=None,
         lifespan=lifespan,
     )
+    app.add_middleware(SecurityMiddleware)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
     app.include_router(health.router)
@@ -49,6 +52,13 @@ def create_app() -> FastAPI:
     # Partials before pages: /patients/rows must win over /patients/{key}.
     app.include_router(partials.router)
     app.include_router(pages.router)
+
+    @app.exception_handler(LoginRequiredError)
+    async def login_required(request: Request, _exc: LoginRequiredError) -> Response:
+        if is_htmx(request):
+            # HTMX follows HX-Redirect with a full page load.
+            return Response(status_code=204, headers={"HX-Redirect": "/login"})
+        return RedirectResponse("/login", status_code=303)
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, exc: StarletteHTTPException) -> HTMLResponse:

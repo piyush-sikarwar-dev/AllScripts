@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     sql_password: SecretStr = SecretStr("")
     sql_driver: str = "ODBC Driver 18 for SQL Server"
     sql_trust_server_certificate: bool = False
+    sql_login_timeout: int = 15
+    sql_query_timeout: int = 30
     emr_database: str = "EMR"
     ntier_database: str = "Ntier_0010060"
     dmz_database: str = "DMZ"

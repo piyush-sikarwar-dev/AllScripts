@@ -3,9 +3,10 @@
 import asyncio
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from app.audit import audit
 from app.auth import CurrentUser, current_user
 from app.crosswalk import resolve
 from app.services import NotFoundError
@@ -27,6 +28,7 @@ async def root() -> RedirectResponse:
 @router.get("/patients", response_class=HTMLResponse)
 async def dashboard(
     request: Request,
+    background: BackgroundTasks,
     user: User,
     q: str = "",
     dob: str = "",
@@ -35,6 +37,8 @@ async def dashboard(
 ) -> HTMLResponse:
     search = build_search(q, dob, chart)
     totals, results = await asyncio.gather(dashboard_totals(), search_patients(search, page))
+    audit(request, background, "search",
+          detail={"fields": search.fields_used(), "page": results.pager.page})  # fmt: skip
     return render(
         request,
         "pages/dashboard.html",
@@ -43,7 +47,9 @@ async def dashboard(
 
 
 @router.get("/patients/{key}", response_class=HTMLResponse)
-async def chart(request: Request, key: str, user: User, tab: str = "overview") -> HTMLResponse:
+async def chart(
+    request: Request, background: BackgroundTasks, key: str, user: User, tab: str = "overview"
+) -> HTMLResponse:
     if tab not in TAB_NAMES:
         raise HTTPException(status_code=404)
     try:
@@ -53,6 +59,7 @@ async def chart(request: Request, key: str, user: User, tab: str = "overview") -
         )
     except NotFoundError as exc:
         raise HTTPException(status_code=404) from exc
+    audit(request, background, "view_patient", patient_key=ref.patient_key, detail={"tab": tab})
     return render(
         request,
         "pages/chart.html",
