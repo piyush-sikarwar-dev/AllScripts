@@ -11,8 +11,12 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app import lookups
 from app.auth import LoginRequiredError
+from app.config import get_settings
+from app.crosswalk.check import check_crosswalk
 from app.middleware import SecurityMiddleware
+from app.repositories.live import NotConnectedError
 from app.routers import auth, health, pages, partials
 from app.templating import is_htmx, render
 
@@ -23,7 +27,9 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    # TODO(Phase 3): load lookups, warm caches.
+    lookups.load()  # malformed config/*.yaml fails here, not mid-request
+    if not get_settings().use_fake_data:
+        check_crosswalk()
     yield
 
 
@@ -59,6 +65,13 @@ def create_app() -> FastAPI:
             # HTMX follows HX-Redirect with a full page load.
             return Response(status_code=204, headers={"HX-Redirect": "/login"})
         return RedirectResponse("/login", status_code=303)
+
+    @app.exception_handler(NotConnectedError)
+    async def not_connected(request: Request, _exc: NotConnectedError) -> HTMLResponse:
+        if is_htmx(request):
+            return render(request, "partials/error.html", {"status_code": 501}, status_code=501)
+        return render(request, "pages/errors/not_connected.html", {"nav": "patients"},
+                      status_code=501)  # fmt: skip
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, exc: StarletteHTTPException) -> HTMLResponse:

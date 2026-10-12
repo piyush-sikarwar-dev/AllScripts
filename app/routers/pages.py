@@ -4,7 +4,7 @@ import asyncio
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
 from app.audit import audit
 from app.auth import CurrentUser, current_user
@@ -13,7 +13,7 @@ from app.services import NotFoundError
 from app.services.chart_header import get_header
 from app.services.patients import build_search, dashboard_totals, search_patients
 from app.services.tabs import TAB_LABELS, TAB_NAMES, TABS, tab_context
-from app.templating import render
+from app.templating import render, url_with
 
 router = APIRouter()
 
@@ -49,7 +49,7 @@ async def dashboard(
 @router.get("/patients/{key}", response_class=HTMLResponse)
 async def chart(
     request: Request, background: BackgroundTasks, key: str, user: User, tab: str = "overview"
-) -> HTMLResponse:
+) -> Response:
     if tab not in TAB_NAMES:
         raise HTTPException(status_code=404)
     try:
@@ -59,6 +59,9 @@ async def chart(
         )
     except NotFoundError as exc:
         raise HTTPException(status_code=404) from exc
+    if ref.patient_key != key:  # merged-away record → the surviving chart
+        return RedirectResponse(url_with(f"/patients/{ref.patient_key}", request.query_params),
+                                status_code=303)  # fmt: skip
     audit(request, background, "view_patient", patient_key=ref.patient_key, detail={"tab": tab})
     return render(
         request,

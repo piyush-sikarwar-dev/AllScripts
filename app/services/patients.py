@@ -4,7 +4,7 @@ import re
 from datetime import date, datetime
 
 from app.config import get_settings
-from app.formatting import date_us, person_name
+from app.formatting import date_us, partial_date_masked, person_name
 from app.lookups import label
 from app.models.common import PAGE_SIZE, Pager, SourceLabel, clamp_page
 from app.models.patients import DashboardTotals, PatientPage, PatientRow, PatientSearch
@@ -95,7 +95,7 @@ async def search_patients(search: PatientSearch, page: int | None) -> PatientPag
             PatientRow(
                 key=f"EMR:{r['emr_id']}",
                 name=person_name(r["last_name"], r["first_name"], r["middle_initial"]),
-                dob=date_us(r["dob"]),
+                dob=partial_date_masked(r["dob"], r.get("dob_mask")),
                 sex=label("sex", r["sex"]),
                 chart_id=r["chart_id"] or "—",
                 last_visit=date_us(last_visits.get(r["emr_id"])),

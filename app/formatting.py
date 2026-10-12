@@ -1,10 +1,12 @@
-"""Display formatting: US dates, partial dates, names, ages.
+"""Display formatting: US dates, partial dates, clinic-time datetimes, names, ages."""
 
-Phase 3 extends this with mask decoding (`config/date_masks.yaml`) and clinic-time-zone datetimes.
-"""
-
+import re
 from datetime import date, datetime
+from functools import lru_cache
 from typing import Literal
+from zoneinfo import ZoneInfo
+
+from app.config import get_settings
 
 DatePrecision = Literal["full", "month_year", "year"]
 
@@ -27,6 +29,46 @@ def partial_date(value: date | datetime | None, precision: DatePrecision = "full
     if precision == "month_year":
         return value.strftime("%m/%Y")
     return date_us(value)
+
+
+def partial_date_masked(value: date | datetime | None, mask: object) -> str:
+    """Partial date using a source *DATEMASK value (decoded via config/date_masks.yaml)."""
+    from app.lookups import get_lookups
+
+    return partial_date(value, get_lookups().date_precision(mask))
+
+
+@lru_cache
+def clinic_tz() -> ZoneInfo:
+    return ZoneInfo(get_settings().clinic_tz)
+
+
+def to_clinic_time(value: datetime) -> datetime:
+    """Aware datetimes convert to CLINIC_TZ; naive ones are assumed to already be clinic time."""
+    if value.tzinfo is None:
+        return value.replace(tzinfo=clinic_tz())
+    return value.astimezone(clinic_tz())
+
+
+def datetime_local(value: datetime | None) -> str:
+    """MM/DD/YYYY h:mm AM/PM in the clinic time zone."""
+    if value is None:
+        return EMPTY
+    local = to_clinic_time(value)
+    return f"{local:%m/%d/%Y} {local.hour % 12 or 12}:{local:%M} {local:%p}"
+
+
+def time_local(value: datetime | None) -> str:
+    if value is None:
+        return EMPTY
+    local = to_clinic_time(value)
+    return f"{local.hour % 12 or 12}:{local:%M} {local:%p}"
+
+
+def mask_ssn(value: str | None) -> str:
+    """Only the last 4 digits, if ever needed (SSN columns are never selected by default)."""
+    digits = re.sub(r"\D", "", value or "")
+    return f"***-**-{digits[-4:]}" if len(digits) >= 4 else EMPTY
 
 
 def person_name(last: str | None, first: str | None, middle_initial: str | None = None) -> str:

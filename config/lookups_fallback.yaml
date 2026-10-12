@@ -1,0 +1,13 @@
+# Used when a dictionary cannot be read from hpsystem.DICTIONARIES_MASTER / HPSITE.DICTIONARIES_SITE.
+# kind -> {code: label}. Unknown codes render as "Unknown (code N)".
+# TODO: replace with the real Allscripts codes once the dictionaries are identified.
+sex:
+  1: Male      # confirmed by clinic staff 2026-10-12
+  2: Female    # confirmed by clinic staff 2026-10-12
+  # 0: not confirmed — shows as "Unknown (code 0)"
+  F: Female    # fake data
+  M: Male      # fake data
+  U: Unknown   # fake data
+marital_status: {}
+language: {}
+patient_status: {}

@@ -17,6 +17,11 @@ TEST_EMAIL = "staff@example.invalid"
 TEST_PASSWORD = "correct horse battery"
 
 
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
+
+
 @pytest.fixture(autouse=True)
 def app_db():
     """Fresh app-database tables for every test."""

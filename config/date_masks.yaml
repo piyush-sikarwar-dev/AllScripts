@@ -1,0 +1,6 @@
+# *DATEMASK / *DATEMASK_CODE value -> precision: full | month_year | year.
+# TODO: confirm the real mask values. Unknown masks show the full date.
+default: full
+masks: {}
+#  1: year
+#  2: month_year

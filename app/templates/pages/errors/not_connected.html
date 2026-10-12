@@ -1,0 +1,12 @@
+{% extends "layout_app.html" %}
+{% block title %}Not connected yet{% endblock %}
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">Not connected yet</h1>
+  <p class="page-subtitle">The patient list reads the live archive. The patient chart is connected in the next build step.</p>
+</header>
+<section class="card error-card">
+  <p>No data was changed.</p>
+  <a class="btn btn--primary" href="/patients">Back to patients</a>
+</section>
+{% endblock %}

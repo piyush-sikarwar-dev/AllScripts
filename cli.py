@@ -1,22 +1,24 @@
 """Management commands.
 
-    uv run python cli.py dbcheck                                  # source DBs: metadata only
-    uv run python cli.py create-user --email a@b.org --name "First Last"
-    uv run python cli.py reset-password --email a@b.org
-    uv run python cli.py deactivate-user --email a@b.org
-
-build-crosswalk arrives in Phase 3.
+uv run python cli.py dbcheck                                  # source DBs: metadata only
+uv run python cli.py create-user --email a@b.org --name "First Last"
+uv run python cli.py reset-password --email a@b.org
+uv run python cli.py deactivate-user --email a@b.org
+uv run python cli.py build-crosswalk                          # EMR <-> Ntier IDs -> app DB
+uv run python cli.py patient-list-check                       # real patient list: counts only
 """
 
 import argparse
 import getpass
 import sys
+from collections import Counter
 
 from app.auth.passwords import hash_password, password_problem
+from app.crosswalk.build import build_crosswalk_rows, replace_crosswalk
 from app.db.app import new_session
 from app.db.source import Source, configured_sources, database_name, dispose_engines
 from app.repositories.appdb import sessions as session_repo
-from app.repositories.appdb import users
+from app.repositories.appdb import users, utcnow
 from app.repositories.base import run_query, run_scalar
 
 # (source, schema, table, expected rows from the verified restore)
@@ -124,6 +126,58 @@ def deactivate_user(email: str) -> int:
     return 0
 
 
+def print_crosswalk_summary(summary: Counter[str]) -> None:
+    """Counts only — no patient identifiers are printed."""
+    total = sum(summary.values())
+    print(f"Crosswalk rows: {total:,}")
+    for method in ("ExactId", "ExactId-ambiguous", "None", "Merged"):
+        print(f"  {method:<18} {summary.get(method, 0):>8,}")
+
+
+def build_crosswalk() -> int:
+    if Source.EMR not in configured_sources():
+        print("EMR source not configured: set SQL_HOST / SQL_USER / SQL_PASSWORD in .env.")
+        return 1
+    print("Reading EMR <-> Ntier IDs (read-only)...")
+    links = run_query(Source.EMR, "emr/crosswalk_emr_ntier.sql")
+    merges = run_query(Source.EMR, "emr/patient_merges.sql")
+    rows, summary = build_crosswalk_rows(links, merges, utcnow())
+    with new_session() as db:
+        replace_crosswalk(db, rows)
+    dispose_engines()
+    print_crosswalk_summary(summary)
+    return 0
+
+
+def patient_list_check() -> int:
+    """Run the dashboard's patient-list queries once and print counts only (no PHI)."""
+    from app.repositories import emr
+
+    if Source.EMR not in configured_sources():
+        print("EMR source not configured: set SQL_HOST / SQL_USER / SQL_PASSWORD in .env.")
+        return 1
+    try:
+        rows = emr.patient_search(
+            last_name=None, first_name=None, dob=None, chart_id=None, offset=0, limit=25
+        )
+        total = int(rows[0]["total_count"]) if rows else 0
+        print(f"Patients (excluding merged-away): {total:,}")
+        print(f"First page rows: {len(rows)}")
+        print(f"  with date of birth: {sum(1 for r in rows if r['dob'] is not None)}")
+        print(f"  with an MRN:        {len(emr.mrns([int(r['emr_id']) for r in rows]))}")
+        codes = Counter(repr(r["sex_code"]) for r in rows)
+        print(f"  sex codes on page:  {dict(codes)}")
+        visits = emr.last_visits([int(r["emr_id"]) for r in rows])
+        print(f"  with a last visit:  {len(visits)}")
+        print("OK: the patient list queries work.")
+        return 0
+    except Exception as exc:
+        print(f"ERROR {type(exc).__name__}: {str(exc).splitlines()[0][:400]}")
+        return 1
+    finally:
+        dispose_engines()
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="cli.py", description="Legacy Records Viewer commands")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -133,7 +187,13 @@ def main(argv: list[str]) -> int:
     create.add_argument("--name", required=True)
     for cmd, text in (("reset-password", "set a new password"), ("deactivate-user", "disable")):
         sub.add_parser(cmd, help=text).add_argument("--email", required=True)
+    sub.add_parser("build-crosswalk", help="rebuild EMR <-> Ntier patient links in the app DB")
+    sub.add_parser("patient-list-check", help="run the patient list queries; print counts only")
     args = parser.parse_args(argv)
+    if args.command == "patient-list-check":
+        return patient_list_check()
+    if args.command == "build-crosswalk":
+        return build_crosswalk()
     if args.command == "dbcheck":
         return dbcheck()
     if args.command == "create-user":

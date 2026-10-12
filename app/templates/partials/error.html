@@ -2,6 +2,8 @@
 <div class="card error-card" role="alert">
   {% if status_code == 404 %}
   <p>This record could not be found in the archive.</p>
+  {% elif status_code == 501 %}
+  <p>This part of the chart is not connected to the archive yet.</p>
   {% else %}
   <p>This section could not be loaded. Try again in a moment.</p>
   {% endif %}

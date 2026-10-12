@@ -1,0 +1,27 @@
+# HX_DIAGNOSIS.CATEGORY_CODE -> label + group (problem | allergy | surgical | family | social | other).
+# TODO: confirm meanings from HPSITE.HISTORYCATEGORY (codes 20, 21, 23, 24, 25 hold ~97% of rows).
+# Until confirmed every code shows as 'History (code N)' in the 'Other history' group.
+default_group: other
+categories:
+  18: {label: "History (code 18)", group: other}
+  19: {label: "History (code 19)", group: other}
+  20: {label: "History (code 20)", group: other}
+  21: {label: "History (code 21)", group: other}
+  22: {label: "History (code 22)", group: other}
+  23: {label: "History (code 23)", group: other}
+  24: {label: "History (code 24)", group: other}
+  25: {label: "History (code 25)", group: other}
+  26: {label: "History (code 26)", group: other}
+  27: {label: "History (code 27)", group: other}
+  28: {label: "History (code 28)", group: other}
+  29: {label: "History (code 29)", group: other}
+  30: {label: "History (code 30)", group: other}
+  31: {label: "History (code 31)", group: other}
+  32: {label: "History (code 32)", group: other}
+  33: {label: "History (code 33)", group: other}
+  34: {label: "History (code 34)", group: other}
+  35: {label: "History (code 35)", group: other}
+  36: {label: "History (code 36)", group: other}
+  37: {label: "History (code 37)", group: other}
+  38: {label: "History (code 38)", group: other}
+  39: {label: "History (code 39)", group: other}

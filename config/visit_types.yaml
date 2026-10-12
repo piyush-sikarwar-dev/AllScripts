@@ -1,0 +1,7 @@
+# ENCOUNTER.ENC_VISITTYPE -> label + whether it counts as an office visit (visit list filter).
+# TODO: confirm real values; until then each code shows as "Visit type N" and counts as a visit.
+default:
+  is_office_visit: true
+visit_types: {}
+#  1: {label: "Office visit", is_office_visit: true}
+#  7: {label: "Telephone encounter", is_office_visit: false}
