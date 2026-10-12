@@ -49,7 +49,14 @@ def test_codes_are_normalised():
 
 
 def _write_config(tmp_path, monkeypatch, **overrides):
-    for name in ("lookups_fallback", "history_categories", "visit_types", "date_masks", "statuses"):
+    for name in (
+        "lookups_fallback",
+        "history_categories",
+        "visit_types",
+        "date_masks",
+        "statuses",
+        "lab_flags",
+    ):
         src = CONFIG_DIR / f"{name}.yaml"
         data = overrides.get(name, yaml.safe_load(src.read_text(encoding="utf-8")))
         (tmp_path / f"{name}.yaml").write_text(yaml.safe_dump(data), encoding="utf-8")

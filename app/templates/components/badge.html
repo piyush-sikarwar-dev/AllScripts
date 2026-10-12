@@ -1,5 +1,5 @@
 {% set SOURCE_CLASSES = {"EMR": "emr", "EMR history": "emr", "PM": "pm", "Pre-2010": "legacy"} %}
-{% set FLAG_LABELS = {"H": "High", "L": "Low", "HH": "Critical high", "LL": "Critical low", "A": "Abnormal"} %}
+{% set FLAG_LABELS = {"H": "High", "L": "Low", "HH": "Critical high", "LL": "Critical low", "A": "Abnormal", ">": "Above range", "<": "Below range"} %}
 
 {% macro source_badge(source) -%}
 <span class="badge badge--{{ SOURCE_CLASSES.get(source, 'neutral') }}">{{ source }}</span>

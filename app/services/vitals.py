@@ -49,6 +49,6 @@ def vital_values(v: dict) -> list[LabeledValue]:
 
 async def vitals_tab(ref: PatientRef, page: int | None) -> tuple[list[VitalRow], Pager]:
     rows = await call(source_repository().vitals, ref.emr_id)
-    rows.sort(key=lambda v: v["date"], reverse=True)
+    rows.sort(key=lambda v: (v["date"] is not None, v["date"]), reverse=True)
     page_rows, pager = paginate(rows, page or 1)
     return [vital_row(v) for v in page_rows], pager

@@ -1,0 +1,11 @@
+# LAB_RESULT.RESULT_FLAGS values shown as an abnormal badge (counts read 2026-10-12):
+#   H 107,708 · L 62,924 · A 862 · LL 391 · HH 288 · > 102 · < 48
+# Results with RESULT_ABNORMAL = 1 and no recognised flag show as "A" (abnormal).
+flags:
+  H: High
+  L: Low
+  HH: Critical high
+  LL: Critical low
+  A: Abnormal
+  ">": Above range
+  "<": Below range

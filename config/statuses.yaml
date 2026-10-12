@@ -12,3 +12,5 @@ erroneous_codes:
   hx_diagnosis: [8]
   hx_medication: [8]
   medications: [6]
+  # LAB_RESULT.RESULT_COMPLETIONSTATUS (ORDCOMP): 6 Canceled (62,513 rows), 7 Erroneous (19 rows)
+  lab_result: [6, 7]

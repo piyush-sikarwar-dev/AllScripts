@@ -302,7 +302,7 @@ def test_real_chart_header_and_overview(chart_mode, client):
 def test_unwired_tab_shows_not_connected(chart_mode, client):
     r = client.get("/patients/EMR:11?tab=visits")
     assert r.status_code == 501 and "Not connected yet" in r.text
-    r = client.get("/patients/EMR:11/tab/labs", headers={"HX-Request": "true"})
+    r = client.get("/patients/EMR:11/tab/docs", headers={"HX-Request": "true"})
     assert r.status_code == 501 and "not connected to the archive yet" in r.text
 
 
@@ -342,3 +342,57 @@ def test_decoded_statuses_and_erroneous_rows(monkeypatch):
     assert meds["Discontinued med"]["status"] == "Discontinued"
     current = sorted(n for n, m in meds.items() if m["is_active"])
     assert current == ["Active med", "Continued med"]
+
+
+def _lab(result_id, test, value, status=3, flags=None, abnormal=0, observed=None, recorded=None):
+    return {"result_id": result_id, "test": test, "value": value, "units": "mg/dL",
+            "normal_range": "70-99", "abnormal": abnormal, "flags": flags, "observed": observed,
+            "completed": None, "recorded": recorded, "status_code": status,
+            "corrected": 0}  # fmt: skip
+
+
+def test_live_labs_flags_dates_and_hidden_statuses(monkeypatch):
+    monkeypatch.setattr(emr, "lab_results", lambda _id: [
+        _lab(1, "Glucose", "150", flags="H ", abnormal=1,
+             observed=datetime(2019, 3, 2, 14, tzinfo=UTC)),
+        _lab(2, "Glucose", "88", recorded=datetime(2018, 1, 5, 9, tzinfo=UTC)),  # no obs date
+        _lab(3, "Glucose", "999", status=6),  # canceled
+        _lab(4, "Glucose", "0", status=7),  # erroneous
+        _lab(5, "TSH", "abnormal text", abnormal=1, flags=""),
+    ])  # fmt: skip
+    rows = {r["id"]: r for r in live.labs(11)}
+    assert set(rows) == {1, 2, 5}
+    assert rows[1]["flag"] == "H" and rows[1]["date"] == date(2019, 3, 2)
+    assert rows[2]["flag"] is None and rows[2]["date"] == date(2018, 1, 5)
+    assert rows[5]["flag"] == "A"
+
+
+def test_live_vitals_units_and_numbers(monkeypatch):
+    from decimal import Decimal
+
+    monkeypatch.setattr(emr, "vitals", lambda _id: [{
+        "vital_id": 1, "contact_id": 9, "taken": datetime(2019, 3, 2, 14, tzinfo=UTC),
+        "systolic": 128, "diastolic": 82, "pulse": 70, "temperature": Decimal("98.60"),
+        "temperature_unit": 4, "weight": Decimal("180.500"), "weight_unit": 6,
+        "height": Decimal("68.0"), "height_unit": 2, "spo2": 97, "pain": None,
+    }])  # fmt: skip
+    v = live.vitals(11)[0]
+    assert (v["temp"], v["temp_unit"]) == ("98.6", "°F")
+    assert (v["weight"], v["weight_unit"]) == ("180.5", "lb")
+    assert (v["height"], v["height_unit"]) == ("68", "in")
+    assert v["pain"] is None
+
+
+def test_real_labs_and_vitals_tabs_render(chart_mode, client, monkeypatch):
+    monkeypatch.setattr(emr, "lab_results", lambda _id: [
+        _lab(1, "Glucose", "150", flags="H", abnormal=1, observed=datetime(2019, 3, 2, tzinfo=UTC))
+    ])  # fmt: skip
+    r = client.get("/patients/EMR:11?tab=labs")
+    assert r.status_code == 200 and "150 mg/dL" in r.text and "badge--abn" in r.text
+    r = client.get("/patients/EMR:11?tab=labs&view=trend")
+    assert r.status_code == 200 and "Lab trend" in r.text
+    monkeypatch.setattr(emr, "vitals", lambda _id: [])
+    r = client.get("/patients/EMR:11?tab=vitals")
+    assert r.status_code == 200 and "No vitals recorded." in r.text
+    for tab in ("problems", "meds"):
+        assert client.get(f"/patients/EMR:11?tab={tab}").status_code == 200

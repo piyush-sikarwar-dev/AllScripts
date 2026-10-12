@@ -6,10 +6,10 @@ phase wires them, which renders a friendly page.
 """
 
 import time
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
-from app.formatting import person_name
+from app.formatting import person_name, to_clinic_time
 from app.lookups import get_lookups
 from app.repositories import emr, ntier
 from app.repositories.appdb.crosswalk import links_for_emr_ids
@@ -225,9 +225,83 @@ def last_visit(emr_id: int) -> dict[str, Any] | None:
     }
 
 
+def _day(value: Any) -> date | None:
+    """Calendar day in the clinic time zone (labs/vitals list by day)."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return to_clinic_time(value).date() if value.tzinfo else value.date()
+    return value
+
+
+def labs(emr_id: int) -> list[dict[str, Any]]:
+    """LAB_RESULT rows; canceled / erroneous results hidden (config/statuses.yaml)."""
+    lk = get_lookups()
+    items = []
+    for r in emr.lab_results(emr_id):
+        if lk.is_erroneous("lab_result", r["status_code"]):
+            continue
+        flag = (r["flags"] or "").strip().upper() or None
+        if flag not in lk.lab_flags:
+            flag = "A" if r["abnormal"] == 1 else None
+        items.append(
+            {
+                "id": r["result_id"],
+                "date": _day(r["observed"] or r["completed"] or r["recorded"]),
+                "test": (r["test"] or "").strip() or "Unnamed test",
+                "result_text": (r["value"] or "").strip(),
+                "units": (r["units"] or "").strip(),
+                "range_text": (r["normal_range"] or "").strip() or None,
+                "flag": flag,
+                "corrected": bool(r["corrected"]),
+                "source": "EMR",
+            }
+        )
+    return items
+
+
+def _number(value: Any) -> str | None:
+    """Readable number: Decimal('180.500') -> '180.5'; None/0-length -> None."""
+    if value is None or value == "":
+        return None
+    try:
+        return f"{float(value):g}"
+    except (TypeError, ValueError):
+        return str(value).strip() or None
+
+
+def vitals(emr_id: int) -> list[dict[str, Any]]:
+    """VITALS_DATA rows (erroneous readings excluded in SQL)."""
+    lk = get_lookups()
+
+    def unit(code: Any) -> str:
+        return "" if code is None else lk.label("unit", code).replace("Unknown (code 0)", "")
+
+    return [
+        {
+            "id": r["vital_id"],
+            "contact_id": r["contact_id"],
+            "date": r["taken"],
+            "systolic": _number(r["systolic"]),
+            "diastolic": _number(r["diastolic"]),
+            "pulse": _number(r["pulse"]),
+            "temp": _number(r["temperature"]),
+            "temp_unit": unit(r["temperature_unit"]),
+            "weight": _number(r["weight"]),
+            "weight_unit": unit(r["weight_unit"]),
+            "height": _number(r["height"]),
+            "height_unit": unit(r["height_unit"]),
+            "spo2": _number(r["spo2"]),
+            "pain": _number(r["pain"]),
+            "source": "EMR",
+        }
+        for r in emr.vitals(emr_id)
+    ]
+
+
 def _not_connected(*_args: object, **_kwargs: object) -> Any:
     raise NotConnectedError
 
 
-# Chart areas wired in later phases (6–8).
-visits = visit = visit_vitals = notes = labs = vitals = documents = _not_connected
+# Chart areas wired in later phases (6 and 8).
+visits = visit = visit_vitals = notes = documents = _not_connected

@@ -68,6 +68,7 @@ class Lookups:
         self.mask_default: Precision = "full"
         self.active: dict[str, frozenset[object]] = {}
         self.erroneous: dict[str, frozenset[object]] = {}
+        self.lab_flags: dict[str, str] = {}
 
     # -- loading ----------------------------------------------------------------------------
 
@@ -106,6 +107,11 @@ class Lookups:
         self.erroneous = {
             kind: frozenset(_key(c) for c in (codes or []))
             for kind, codes in (statuses.get("erroneous_codes") or {}).items()
+        }
+
+        self.lab_flags = {
+            str(k).strip().upper(): str(v)
+            for k, v in (_read_yaml("lab_flags.yaml").get("flags") or {}).items()
         }
 
         masks = _read_yaml("date_masks.yaml")

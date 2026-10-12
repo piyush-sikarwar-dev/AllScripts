@@ -1,5 +1,7 @@
 """Lab results tab: list and single-test trend."""
 
+from datetime import date, datetime
+
 from app.crosswalk import PatientRef
 from app.formatting import date_us
 from app.models.chart import LabFilters, LabRow
@@ -15,7 +17,20 @@ def _num(value: float, decimals: int) -> str:
     return f"{value:.{decimals}f}"
 
 
+def _day(value: object) -> date | None:
+    return value.date() if isinstance(value, datetime) else value  # type: ignore[return-value]
+
+
 def lab_row(r: dict) -> LabRow:
+    if "result_text" in r:  # real data: values and ranges are free text
+        return LabRow(
+            date=date_us(r["date"]),
+            test=r["test"],
+            result=f"{r['result_text']} {r['units']}".strip() or "—",
+            reference_range=r["range_text"] or "—",
+            flag=r["flag"],
+            source=r["source"],
+        )
     dec = r["decimals"]
     units = r["units"] or ""
     if r["low"] is None and r["high"] is None:
@@ -65,10 +80,10 @@ async def labs_tab(
         rows = [
             r
             for r in rows
-            if (start is None or r["date"].date() >= start)
-            and (end is None or r["date"].date() <= end)
+            if (start is None or (_day(r["date"]) is not None and _day(r["date"]) >= start))
+            and (end is None or (_day(r["date"]) is not None and _day(r["date"]) <= end))
             and (not filters.test or r["test"] == filters.test)
         ]
-    rows.sort(key=lambda r: (r["date"], r["test"]), reverse=True)
+    rows.sort(key=lambda r: (_day(r["date"]) or date.min, r["test"]), reverse=True)
     page_rows, pager = paginate(rows, page or 1)
     return [lab_row(r) for r in page_rows], pager, test_names

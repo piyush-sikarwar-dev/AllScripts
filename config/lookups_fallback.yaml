@@ -16,5 +16,9 @@ patient_status: {}
 # Problem / allergy / medication-history activity (DXACT dictionary).
 hx_activity: {0: "—", 1: Active, 2: Inactive, 3: Resolved, 8: Erroneous Entry, 9: Undefined}
 hx_med_activity: {0: "—", 1: Active, 2: Inactive, 3: Resolved, 8: Erroneous Entry, 9: Undefined}
+# Measurement units (UNIT dictionary): vitals temperature / weight / height.
+unit: {0: "", 1: cm, 2: in, 3: "°C", 4: "°F", 5: kg, 6: lb, 7: yr, 8: mo}
+# Lab result completion status (ORDCOMP dictionary).
+lab_status: {0: Undefined, 1: Ordered, 2: Preliminary, 3: Final, 4: Reviewed, 5: Pending, 6: Canceled, 7: Erroneous}
 # Prescription status (MEDSTA dictionary).
 med_status: {1: Active, 2: Inactive, 3: Discontinued, 4: Ordered, 5: Continued, 6: Erroneous Entry, 7: Undefined}

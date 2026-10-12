@@ -16,6 +16,8 @@ HISTORY_ATTRIBUTES = "emr/history_attributes.sql"
 MEDICATIONS = "emr/medications.sql"
 HX_MEDICATIONS = "emr/hx_medications.sql"
 LAST_VISIT_DETAIL = "emr/last_visit_detail.sql"
+LAB_RESULTS = "emr/lab_results.sql"
+VITALS = "emr/vitals.sql"
 TABLE_ROW_COUNT = "meta/table_row_count.sql"
 
 
@@ -107,3 +109,11 @@ def hx_medications(emr_id: int) -> list[dict[str, Any]]:
 def last_visit_detail(emr_id: int) -> dict[str, Any] | None:
     rows = run_query(Source.EMR, LAST_VISIT_DETAIL, {"emr_id": emr_id})
     return rows[0] if rows else None
+
+
+def lab_results(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, LAB_RESULTS, {"emr_id": emr_id})
+
+
+def vitals(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, VITALS, {"emr_id": emr_id})
