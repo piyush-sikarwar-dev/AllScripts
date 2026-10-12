@@ -6,50 +6,55 @@
 {% if not scan_store_configured %}
   {{ warning_banner("Scanned page images are not connected yet. Document details are listed below; pages can be viewed once the scan archive is mounted.") }}
 {% endif %}
-<section class="card table-card" aria-labelledby="docs-title">
-  <div class="table-card__head">
-    <h2 class="table-card__title" id="docs-title">Documents</h2>
-    <p class="table-card__count">{{ count_text(pager, "documents") }}</p>
-  </div>
-  {% if doc_types %}
-  <div class="table-card__tools">
-    <form class="toolbar" method="get" action="{{ base }}"
-          hx-get="{{ base }}/tab/docs" hx-target="#chart-tabs" hx-swap="outerHTML" hx-trigger="change, submit">
-      <input type="hidden" name="tab" value="docs">
-      <div class="field field--wide">
-        <label class="field__label" for="doc-type">Type</label>
-        <select class="select" id="doc-type" name="type">
-          <option value="">All types</option>
-          {% for t in doc_types %}<option value="{{ t }}"{% if t == doc_type %} selected{% endif %}>{{ t }}</option>{% endfor %}
-        </select>
-      </div>
-      <div class="toolbar__actions"><button type="submit" class="btn btn--secondary">Apply</button></div>
-    </form>
-  </div>
-  {% endif %}
-  {% if documents %}
-  <div class="table-scroll">
-    <table class="table">
-      <thead>
-        <tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col">Title</th><th scope="col">Pages</th>
-            <th scope="col">Source</th><th scope="col">View</th></tr>
-      </thead>
-      <tbody>
-        {% for d in documents %}
-        <tr>
-          <td class="nowrap">{{ d.date }}</td>
-          <td>{{ d.type }}</td>
-          <td>{{ d.title }}</td>
-          <td class="mono">{{ d.pages }}</td>
-          <td>{{ source_badge(d.source) }}</td>
-          <td>{% if d.viewable %}<a href="/documents/{{ d.source }}/{{ d.id }}">View</a>{% else %}<span class="muted">Not available</span>{% endif %}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {{ pager_nav(pager, base, base ~ "/tab/docs", "#chart-tabs", dict(state, tab="docs")) }}
-  {% else %}
-    {{ empty_state("No documents recorded.") }}
-  {% endif %}
-</section>
+<div class="split">
+  <section class="card table-card split__list" aria-labelledby="docs-title">
+    <div class="table-card__head">
+      <h2 class="table-card__title" id="docs-title">Documents</h2>
+      <p class="table-card__count">{{ count_text(pager, "documents") }}</p>
+    </div>
+    {% if doc_types %}
+    <div class="table-card__tools">
+      <form class="toolbar" method="get" action="{{ base }}"
+            hx-get="{{ base }}/tab/docs" hx-target="#chart-tabs" hx-swap="outerHTML" hx-trigger="change, submit">
+        <input type="hidden" name="tab" value="docs">
+        <div class="field field--wide">
+          <label class="field__label" for="doc-type">Type</label>
+          <select class="select" id="doc-type" name="type">
+            <option value="">All types</option>
+            {% for t in doc_types %}<option value="{{ t }}"{% if t == doc_type %} selected{% endif %}>{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="toolbar__actions"><button type="submit" class="btn btn--secondary">Apply</button></div>
+      </form>
+    </div>
+    {% endif %}
+    {% if documents %}
+    <ul class="visit-rows">
+      {% for d in documents %}
+      {% set selected = viewer and viewer.kind == d.kind and viewer.id == d.id %}
+      <li>
+        <a class="visit-row{% if selected %} visit-row--selected{% endif %}"
+           {%- if selected %} aria-current="true"{% endif %}
+           href="{{ url_with(base, {'tab': 'docs', 'type': doc_type, 'page': pager.page, 'doc': d.kind ~ '-' ~ d.id}) }}"
+           hx-get="{{ url_with(base ~ '/documents/' ~ d.kind ~ '/' ~ d.id, {'type': doc_type, 'page': pager.page}) }}"
+           hx-target="#doc-viewer" hx-swap="innerHTML">
+          <span class="visit-row__title">{{ d.date }} · {{ d.type }}</span>
+          <span class="visit-row__sub">{{ d.title }}{% if d.kind == "scan" %} · {{ d.pages }} page{{ "s" if d.pages != "1" }}{% endif %} · {{ d.source }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {{ pager_nav(pager, base, base ~ "/tab/docs", "#chart-tabs", dict(state, tab="docs")) }}
+    {% else %}
+      {{ empty_state("No documents recorded.") }}
+    {% endif %}
+  </section>
+
+  <section class="card split__detail" id="doc-viewer" aria-label="Document" aria-live="polite">
+    {% if viewer %}
+      {% with partial = False, list_page = pager.page %}{% include "partials/document_viewer.html" %}{% endwith %}
+    {% else %}
+      {{ empty_state("Select a document to view it.") }}
+    {% endif %}
+  </section>
+</div>

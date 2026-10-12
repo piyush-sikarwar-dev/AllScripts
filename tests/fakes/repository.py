@@ -129,4 +129,28 @@ def vitals(emr_id: int) -> list[dict]:
 
 
 def documents(emr_id: int) -> list[dict]:
-    return list(PATIENTS_BY_ID[emr_id].documents)
+    return [
+        d | {"kind": "scan" if d["kind"] == "scan" else "document"}
+        for d in PATIENTS_BY_ID[emr_id].documents
+    ]
+
+
+def document_pages(emr_id: int, document_id: int) -> dict | None:
+    d = next((d for d in PATIENTS_BY_ID[emr_id].documents if d["id"] == document_id), None)
+    if d is None or d["kind"] != "scan":
+        return None
+    pages = [
+        {
+            "page_id": document_id * 100 + n,
+            "location": f"\\\\amhs-db1\\hmscan\\fake\\{document_id}-{n}",
+        }
+        for n in range(1, d["pages"] + 1)
+    ]
+    return {
+        "id": document_id,
+        "date": d["date"],
+        "type": d["type"],
+        "title": d["title"],
+        "pages": pages,
+        "source": "EMR",
+    }

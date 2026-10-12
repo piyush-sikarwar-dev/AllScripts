@@ -439,9 +439,52 @@ def note(emr_id: int, kind: str, note_id: int) -> dict[str, Any] | None:
     return None
 
 
-def _not_connected(*_args: object, **_kwargs: object) -> Any:
-    raise NotConnectedError
+def documents(emr_id: int) -> list[dict[str, Any]]:
+    """Documents tab: scanned documents (+ page counts) and clinical documents."""
+    lk = get_lookups()
+    items = [
+        {
+            "kind": "scan",
+            "id": d["document_id"],
+            "date": d["document_date"],
+            "type": (d["type"] or "").strip() or "Scanned document",
+            "title": (d["title"] or "").strip() or None,
+            "pages": int(d["pages"] or 0),
+            "source": "EMR",
+        }
+        for d in emr.scan_documents(emr_id)
+        if not lk.is_erroneous("scan_document", d["status_code"])
+    ]
+    items += [
+        {
+            "kind": "document",
+            "id": d["document_id"],
+            "date": d["created"],
+            "type": "Clinical document",
+            "title": (d["title"] or "").strip() or None,
+            "pages": None,
+            "source": "EMR",
+        }
+        for d in emr.patient_documents(emr_id)
+    ]
+    return items
 
 
-# Chart areas wired in a later phase (8).
-documents = _not_connected
+def document_pages(emr_id: int, document_id: int) -> dict[str, Any] | None:
+    """One scanned document (ownership-checked) with its pages in order."""
+    rows = emr.scan_document_pages(emr_id, document_id)
+    if not rows or get_lookups().is_erroneous("scan_document", rows[0]["status_code"]):
+        return None
+    first = rows[0]
+    return {
+        "id": document_id,
+        "date": first["document_date"],
+        "type": (first["type"] or "").strip() or "Scanned document",
+        "title": (first["title"] or "").strip() or None,
+        "pages": [
+            {"page_id": r["page_id"], "location": r["file_location"]}
+            for r in rows
+            if r["page_id"] is not None
+        ],
+        "source": "EMR",
+    }

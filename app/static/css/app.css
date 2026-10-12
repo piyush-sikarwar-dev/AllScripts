@@ -255,6 +255,11 @@ a:hover { color: var(--accent-hover); }
 .note-html p { margin: 0 0 6px; }
 .note-html h1, .note-html h2, .note-html h3, .note-html h4 { font-size: 15px; margin: 10px 0 4px; }
 
+.scan-page { margin: 0; background: var(--panel); border-radius: var(--r-ctl); padding: 8px;
+  text-align: center; }
+.scan-page__img { max-width: 100%; height: auto; background: #FFFFFF; border: 1px solid var(--border); }
+.pager--viewer { border-top: 0; padding: 0; }
+
 /* ---------- Labs ---------- */
 .result { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
 

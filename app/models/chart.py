@@ -172,6 +172,7 @@ class VitalRow(BaseModel):
 
 
 class DocumentRow(BaseModel):
+    kind: str  # "scan" | "document"
     id: int
     date: str
     type: str
@@ -179,3 +180,16 @@ class DocumentRow(BaseModel):
     pages: str
     source: SourceLabel
     viewable: bool
+
+
+class DocumentViewer(BaseModel):
+    kind: str
+    id: int
+    title: str
+    meta: str
+    source: SourceLabel
+    page: int = 1
+    pages: int = 0
+    image_url: str | None = None  # scanned page (served as PNG)
+    unavailable: str | None = None  # why the page image cannot be shown
+    note: NoteDetail | None = None  # clinical documents render like notes

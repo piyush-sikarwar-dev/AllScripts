@@ -14,3 +14,5 @@ erroneous_codes:
   medications: [6]
   # LAB_RESULT.RESULT_COMPLETIONSTATUS (ORDCOMP): 6 Canceled (62,513 rows), 7 Erroneous (19 rows)
   lab_result: [6, 7]
+  # SCAN_DOCUMENT.SCANSTATUS_CODE (SCANSTATUS): 10 Erroneous (1,591 rows); 4 Approved, 2 Submitted shown
+  scan_document: [10]

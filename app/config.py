@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     # Scanned documents. Unset SCAN_ROOT = metadata only + warning banner.
     scan_root: str | None = None
     scan_unc_prefix: str = r"\\amhs-db1\hmscan"
+    scan_store: str = "file"  # "file" (SCAN_ROOT mount) | "s3" (stub)
 
     # Features.
     feature_legacy_dmz: bool = False

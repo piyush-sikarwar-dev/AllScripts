@@ -1,0 +1,50 @@
+{% from "components/badge.html" import source_badge %}
+{% from "components/banner.html" import warning_banner %}
+{% from "components/empty_state.html" import empty_state %}
+{% set base = "/patients/" ~ key %}
+{% set v = viewer %}
+<article class="detail">
+  <div class="detail__head">
+    <div>
+      <h2 class="detail__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>{{ v.title }}</h2>
+      <p class="detail__sub">{{ v.meta }}{% if v.kind == "scan" and v.pages %} · {{ v.pages }} page{{ "s" if v.pages != 1 }}{% endif %}</p>
+    </div>
+    {{ source_badge(v.source) }}
+  </div>
+
+  {% if v.kind == "document" %}
+    {% if v.note and v.note.html %}
+      {# Sanitised with nh3 in app/documents/render.py before it reaches the template. #}
+      <div class="note-html">{{ v.note.html | safe }}</div>
+    {% elif v.note and v.note.text %}
+      <div class="note-text">{{ v.note.text }}</div>
+    {% else %}
+      {{ empty_state("This document's content is not available in the archive.", compact=True) }}
+    {% endif %}
+  {% else %}
+    {% if v.unavailable %}
+      {{ warning_banner(v.unavailable) }}
+    {% else %}
+      <figure class="scan-page">
+        <img class="scan-page__img" src="{{ v.image_url }}" alt="Page {{ v.page }} of {{ v.pages }}">
+      </figure>
+    {% endif %}
+    {% if v.pages > 1 %}
+    <nav class="pager pager--viewer" aria-label="Document pages">
+      <span>Page {{ v.page }} of {{ v.pages }}</span>
+      <span class="pager__buttons">
+        {% for label, n, enabled in [("Previous", v.page - 1, v.page > 1), ("Next", v.page + 1, v.page < v.pages)] %}
+          {% if enabled %}
+          <a class="btn btn--secondary btn--sm"
+             href="{{ url_with(base, {'tab': 'docs', 'type': doc_type, 'page': list_page, 'doc': 'scan-' ~ v.id, 'docpage': n}) }}"
+             hx-get="{{ url_with(base ~ '/documents/scan/' ~ v.id, {'type': doc_type, 'page': list_page, 'docpage': n}) }}"
+             hx-target="#doc-viewer" hx-swap="innerHTML">{{ label }}</a>
+          {% else %}
+          <span class="btn btn--secondary btn--sm" aria-disabled="true">{{ label }}</span>
+          {% endif %}
+        {% endfor %}
+      </span>
+    </nav>
+    {% endif %}
+  {% endif %}
+</article>

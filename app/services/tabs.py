@@ -5,7 +5,12 @@ from typing import Any
 
 from app.crosswalk import PatientRef
 from app.services import NotFoundError
-from app.services.documents import documents_tab, scan_store_configured
+from app.services.documents import (
+    document_viewer,
+    documents_tab,
+    parse_doc_ref,
+    scan_store_configured,
+)
 from app.services.labs import build_filters, labs_tab
 from app.services.meds import meds_tab
 from app.services.notes import note_detail, notes_tab, parse_note_ref
@@ -90,6 +95,17 @@ async def tab_context(ref: PatientRef, name: str, params: Mapping[str, str]) -> 
         ctx["doc_type"] = doc_type
         ctx["scan_store_configured"] = scan_store_configured()
         state = {"type": doc_type}
+        selected = parse_doc_ref(params.get("doc"))
+        if selected is None and ctx["documents"]:
+            selected = (ctx["documents"][0].kind, ctx["documents"][0].id)
+        ctx["viewer"] = None
+        if selected is not None:
+            try:
+                ctx["viewer"] = await document_viewer(
+                    ref, *selected, _int(params.get("docpage")) or 1
+                )
+            except NotFoundError:
+                ctx["viewer"] = None
     else:
         raise KeyError(name)
 

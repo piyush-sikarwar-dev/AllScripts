@@ -299,7 +299,13 @@ def test_real_chart_header_and_overview(chart_mode, client):
     assert "03/04/2021" in html and "Example, Doctor MD" in html and "Main Clinic" in html
 
 
-def test_unwired_tab_shows_not_connected(chart_mode, client):
+def test_not_connected_error_renders_friendly_page(chart_mode, client, monkeypatch):
+    """Any chart area that is not wired raises NotConnectedError -> friendly 501, not a crash."""
+
+    def boom(*_a):
+        raise live.NotConnectedError
+
+    monkeypatch.setattr(live, "documents", boom)
     r = client.get("/patients/EMR:11?tab=docs")
     assert r.status_code == 501 and "Not connected yet" in r.text
     r = client.get("/patients/EMR:11/tab/docs", headers={"HX-Request": "true"})
