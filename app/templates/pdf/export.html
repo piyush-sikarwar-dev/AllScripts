@@ -1,1 +1,176 @@
-{# PDF export template (WeasyPrint). Implemented in Phase 9. #}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Medical records release {{ cover.release_code }}</title>
+</head>
+<body>
+{% set h = header %}
+<section class="cover">
+  <p class="cover__clinic">{{ cover.clinic_name }}</p>
+  <h1 class="cover__title">Medical records release</h1>
+  <p class="cover__patient s-patient">{{ h.name }}</p>
+  <dl>
+    <dt>Date of birth</dt><dd class="s-dob">{{ h.dob }}</dd>
+    <dt>Chart ID / MRN</dt><dd class="s-chart">{{ h.chart_id }}</dd>
+    <dt>Period covered</dt><dd>{{ cover.period }}</dd>
+    <dt>Sections included</dt><dd>{{ cover.section_labels | join(", ") }}</dd>
+    <dt>Released to</dt><dd>{{ cover.recipient }}</dd>
+    <dt>Purpose</dt><dd>{{ cover.purpose }}</dd>
+    <dt>Released by</dt><dd>{{ cover.released_by }}</dd>
+    <dt>Release date and time</dt><dd>{{ cover.released_at }}</dd>
+    <dt>Release number</dt><dd class="s-release">{{ cover.release_code }}</dd>
+  </dl>
+  <p class="cover__notice">This document contains protected health information released from the
+    archived Allscripts records of {{ cover.clinic_name }}. Each entry shows the system it came from
+    (EMR = electronic health record, EMR history = medication history, PM = practice management,
+    Pre-2010 = legacy chart). Unauthorised disclosure is prohibited.</p>
+</section>
+
+{% if "demographics" in sections %}
+<h1 class="section">Demographics &amp; insurance</h1>
+<table class="kv">
+  <tr><td>Name</td><td>{{ h.name }}</td></tr>
+  <tr><td>Date of birth</td><td>{{ h.dob }}{% if h.age is not none %} (age {{ h.age }}){% endif %}</td></tr>
+  <tr><td>Sex</td><td>{{ h.sex }}</td></tr>
+  <tr><td>Chart ID / MRN</td><td class="mono">{{ h.chart_id }}</td></tr>
+  <tr><td>PM account</td><td class="mono">{{ h.pm_account }}</td></tr>
+  <tr><td>Phone</td><td>{{ h.phone }}</td></tr>
+  <tr><td>Address</td><td>{{ h.address }}</td></tr>
+  <tr><td>Primary insurance</td><td>{{ h.primary_insurance }}</td></tr>
+  {% if h.deceased %}<tr><td>Status</td><td>Deceased</td></tr>{% endif %}
+  <tr><td>Records in</td><td>{{ h.sources | join(", ") }}</td></tr>
+</table>
+{% endif %}
+
+{% if "visits" in sections %}
+<h1 class="section">Visits with notes</h1>
+{% for d in visits %}
+  {% set v = d.visit %}
+  <div class="visit">
+    <p class="visit__title">{{ v.date }} · {{ v.type }}</p>
+    <p class="muted">{{ v.provider }} · {{ v.location }} · {{ "Signed" if v.signed else "Not signed" }} · Source: {{ v.source }}</p>
+    {% if d.assessment %}
+    <h3>Assessment</h3>
+    <table><tbody>
+      {% for dx in d.assessment %}<tr><td class="mono">{{ dx.label }}</td><td>{{ dx.value }}</td></tr>{% endfor %}
+    </tbody></table>
+    {% endif %}
+    {% if d.plan %}
+    <h3>Plan</h3>
+    <table><tbody>{% for line in d.plan %}<tr><td>{{ line }}</td></tr>{% endfor %}</tbody></table>
+    {% endif %}
+    {% if d.vitals %}
+    <h3>Vitals</h3>
+    <p>{% for item in d.vitals %}{{ item.label }} {{ item.value }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+    {% endif %}
+    <h3>Visit note</h3>
+    {% if d.documents %}
+      {% for doc in d.documents %}
+      <p class="muted">{{ doc.title }}{% if doc.meta %} · {{ doc.meta }}{% endif %}</p>
+      {# Sanitised with nh3 in app/documents/render.py. #}
+      <div class="note-html">{{ doc.html | safe }}</div>
+      {% endfor %}
+    {% endif %}
+    {% if d.note_text %}<div class="note-text">{{ d.note_text }}</div>{% endif %}
+    {% if not d.documents and not d.note_text %}<p class="empty">Visit note not available in the archive.</p>{% endif %}
+    {% if d.addenda %}
+    <h3>Addenda</h3>
+    {% for a in d.addenda %}<div class="note-text">{{ a }}</div>{% endfor %}
+    {% endif %}
+    {% if d.other_documents %}
+    <p class="muted">Other documents for this visit: {% for o in d.other_documents %}{{ o.title }}{% if not loop.last %}; {% endif %}{% endfor %}</p>
+    {% endif %}
+  </div>
+{% else %}
+  <p class="empty">No visits in the selected period.</p>
+{% endfor %}
+{% endif %}
+
+{% if "problems" in sections %}
+<h1 class="section">Problems &amp; allergies</h1>
+{% for g in problem_groups %}
+  <h2>{{ g.label }}</h2>
+  {% if g.rows %}
+  <table>
+    <thead><tr><th>Title</th><th>Code</th><th>Onset</th><th>Resolved</th><th>Status</th><th>Source</th></tr></thead>
+    <tbody>
+      {% for r in g.rows %}
+      <tr><td>{{ r.title }}{% if r.detail %}<br><span class="flag">{{ r.detail }}</span>{% endif %}</td>
+        <td class="mono">{{ r.code }}</td><td>{{ r.onset }}</td><td>{{ r.resolved }}</td><td>{{ r.status }}</td><td>{{ r.source }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="empty">None recorded.</p>{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if "meds" in sections %}
+<h1 class="section">Medications</h1>
+{% if meds %}
+<table>
+  <thead><tr><th>Medication</th><th>Instructions</th><th>Start</th><th>End</th><th>Status</th><th>Source</th></tr></thead>
+  <tbody>
+    {% for m in meds %}
+    <tr><td>{{ m.name }}</td><td>{{ m.instructions }}</td><td>{{ m.start }}</td><td>{{ m.end }}</td><td>{{ m.status }}</td><td>{{ m.source }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="empty">No medications recorded.</p>{% endif %}
+{% endif %}
+
+{% if "labs" in sections %}
+<h1 class="section">Lab results</h1>
+{% if labs %}
+<table>
+  <thead><tr><th>Date</th><th>Test</th><th>Result</th><th>Reference range</th><th>Flag</th><th>Source</th></tr></thead>
+  <tbody>
+    {% for r in labs %}
+    <tr><td>{{ r.date }}</td><td>{{ r.test }}</td><td class="mono">{{ r.result }}</td><td class="mono">{{ r.reference_range }}</td>
+      <td>{% if r.flag %}<span class="flag">{{ r.flag }}</span>{% endif %}</td><td>{{ r.source }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="empty">No lab results in the selected period.</p>{% endif %}
+{% endif %}
+
+{% if "vitals" in sections %}
+<h1 class="section">Vitals</h1>
+{% if vitals %}
+<table>
+  <thead><tr><th>Date</th><th>BP</th><th>Pulse</th><th>Temp</th><th>Weight</th><th>Height</th><th>SpO2</th><th>Pain</th><th>Source</th></tr></thead>
+  <tbody>
+    {% for v in vitals %}
+    <tr><td>{{ v.date }}</td><td class="mono">{{ v.bp }}</td><td class="mono">{{ v.pulse }}</td><td class="mono">{{ v.temp }}</td>
+      <td class="mono">{{ v.weight }}</td><td class="mono">{{ v.height }}</td><td class="mono">{{ v.spo2 }}</td><td class="mono">{{ v.pain }}</td><td>{{ v.source }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="empty">No vitals in the selected period.</p>{% endif %}
+{% endif %}
+
+{% if "documents" in sections %}
+<h1 class="section">Documents</h1>
+{% if documents %}
+<table>
+  <thead><tr><th>Date</th><th>Type</th><th>Title</th><th>Pages included</th><th>Source</th></tr></thead>
+  <tbody>
+    {% for d in documents %}
+    <tr><td>{{ d.date }}</td><td>{{ d.type }}</td><td>{{ d.title }}</td>
+      <td>{% if d.kind == "scan" %}{% if d.pages %}{{ d.pages | length }}{% else %}Image not available{% endif %}{% else %}Clinical document{% endif %}</td>
+      <td>{{ d.source }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% for d in documents %}
+  {% for page_id in d.pages %}
+  <figure class="scan-page">
+    <img src="scanpage:{{ page_id }}" alt="{{ d.type }} page {{ loop.index }}">
+    <figcaption>{{ d.date }} · {{ d.type }} · {{ d.title }} · page {{ loop.index }} of {{ d.pages | length }}</figcaption>
+  </figure>
+  {% endfor %}
+{% endfor %}
+{% else %}<p class="empty">No documents in the selected period.</p>{% endif %}
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,14 @@
+{% extends "layout_app.html" %}
+{% from "components/icons.html" import icon %}
+{% block title %}Export records · {{ header.name }}{% endblock %}
+{% block main_class %}main--chart{% endblock %}
+{% block content %}
+<a class="back-link" href="/patients/{{ key }}">{{ icon("arrow-left") }}Back to chart</a>
+<header class="page-header">
+  <h1 class="page-title">Export records (PDF)</h1>
+  <p class="page-subtitle">{{ header.name }} · DOB {{ header.dob }} · Chart ID <span class="mono">{{ header.chart_id }}</span></p>
+</header>
+<section class="card">
+  {% include "partials/export_form.html" %}
+</section>
+{% endblock %}

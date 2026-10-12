@@ -31,6 +31,7 @@ TRANSCRIPTIONS = "emr/transcriptions.sql"
 TRANSCRIPTION_TEXT = "emr/transcription_text.sql"
 SCAN_DOCUMENTS = "emr/scan_documents.sql"
 SCAN_DOCUMENT_PAGES = "emr/scan_document_pages.sql"
+PATIENT_NAMES = "emr/patient_names.sql"
 TABLE_ROW_COUNT = "meta/table_row_count.sql"
 
 
@@ -196,3 +197,9 @@ def scan_documents(emr_id: int) -> list[dict[str, Any]]:
 def scan_document_pages(emr_id: int, document_id: int) -> list[dict[str, Any]]:
     params = {"emr_id": emr_id, "document_id": document_id}
     return run_query(Source.EMR, SCAN_DOCUMENT_PAGES, params)
+
+
+def patient_names(emr_ids: list[int]) -> list[dict[str, Any]]:
+    if not emr_ids:
+        return []
+    return run_query(Source.EMR, PATIENT_NAMES, {"emr_ids": emr_ids}, expanding=("emr_ids",))

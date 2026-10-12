@@ -187,10 +187,3 @@ async def document_page_image(
     audit(request, background, "view_document", patient_key=ref.patient_key,
           detail={"kind": "scan", "id": doc_id, "page": page_no, "image": True})  # fmt: skip
     return Response(content=png, media_type="image/png")
-
-
-@router.get("/patients/{key}/export", response_class=HTMLResponse)
-async def export_dialog(request: Request, key: str) -> HTMLResponse:
-    ref = await _resolve(key)
-    # TODO(Phase 9): sections, date range, recipient, purpose; CSRF-protected POST.
-    return render(request, "partials/export_dialog.html", {"key": ref.patient_key})

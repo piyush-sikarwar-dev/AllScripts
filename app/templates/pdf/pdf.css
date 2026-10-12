@@ -1,0 +1,67 @@
+/* Records release PDF (WeasyPrint). Letter, 0.75in margins, IBM Plex embedded. */
+@font-face { font-family: 'IBM Plex Sans'; font-weight: 400; src: url('ibm-plex-sans-latin-400-normal.woff2'); }
+@font-face { font-family: 'IBM Plex Sans'; font-weight: 500; src: url('ibm-plex-sans-latin-500-normal.woff2'); }
+@font-face { font-family: 'IBM Plex Sans'; font-weight: 600; src: url('ibm-plex-sans-latin-600-normal.woff2'); }
+@font-face { font-family: 'IBM Plex Mono'; font-weight: 400; src: url('ibm-plex-mono-latin-400-normal.woff2'); }
+
+@page {
+  size: letter;
+  margin: 0.75in 0.75in 0.9in;
+  @bottom-left {
+    content: string(patient) " · DOB " string(dob) " · Chart ID " string(chart);
+    font: 8pt 'IBM Plex Sans', sans-serif; color: #5B6875;
+  }
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages) " · " string(release);
+    font: 8pt 'IBM Plex Sans', sans-serif; color: #5B6875;
+  }
+}
+
+html { font-family: 'IBM Plex Sans', sans-serif; font-size: 9.5pt; line-height: 1.4; color: #17212B; }
+/* Footer strings are taken from the (visible) cover page values. */
+.s-patient { string-set: patient content(); }
+.s-dob { string-set: dob content(); }
+.s-chart { string-set: chart content(); }
+.s-release { string-set: release content(); }
+
+/* Cover */
+.cover { page-break-after: always; }
+.cover__clinic { font-size: 11pt; color: #5B6875; margin: 0 0 40pt; }
+.cover__title { font-size: 24pt; font-weight: 600; margin: 0 0 6pt; color: #08555A; }
+.cover__patient { font-size: 16pt; font-weight: 600; margin: 0 0 24pt; }
+.cover dl { display: block; margin: 0; }
+.cover dt { font-weight: 600; margin-top: 8pt; color: #3A4652; }
+.cover dd { margin: 0; }
+.cover__notice { margin-top: 36pt; font-size: 8.5pt; color: #5B6875; border-top: 1px solid #DDE3E8; padding-top: 8pt; }
+
+/* Sections */
+h1.section { font-size: 15pt; font-weight: 600; color: #08555A; border-bottom: 1.5pt solid #0B6E73;
+  padding-bottom: 3pt; margin: 0 0 10pt; page-break-before: always; }
+h2 { font-size: 11pt; font-weight: 600; margin: 12pt 0 4pt; }
+h3 { font-size: 10pt; font-weight: 600; margin: 8pt 0 3pt; }
+p { margin: 0 0 4pt; }
+.muted { color: #5B6875; }
+.mono { font-family: 'IBM Plex Mono', monospace; font-size: 8.5pt; }
+.empty { color: #5B6875; font-style: italic; }
+
+table { width: 100%; border-collapse: collapse; margin: 0 0 8pt; }
+th { text-align: left; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .04em; color: #5B6875;
+  font-weight: 500; border-bottom: 1px solid #C5CED6; padding: 3pt 4pt; }
+td { padding: 3pt 4pt; border-bottom: 0.5pt solid #EEF1F4; vertical-align: top; }
+tr { page-break-inside: avoid; }
+.flag { color: #9A3A0A; font-weight: 600; }
+
+.kv { width: auto; }
+.kv td { border: 0; padding: 1pt 12pt 1pt 0; }
+.kv td:first-child { color: #5B6875; }
+
+.visit { page-break-inside: auto; border-top: 1px solid #DDE3E8; padding-top: 6pt; margin-top: 10pt; }
+.visit__title { font-size: 10.5pt; font-weight: 600; margin: 0; }
+.note-html, .note-text { border: 0.5pt solid #DDE3E8; padding: 6pt 8pt; margin: 4pt 0 6pt; }
+.note-text { white-space: pre-wrap; }
+.note-html table { width: auto; }
+.note-html td { border: 0; padding: 1pt 6pt 1pt 0; }
+
+.scan-page { page-break-before: always; text-align: center; margin: 0; }
+.scan-page img { max-width: 100%; max-height: 8.6in; }
+.scan-page figcaption { font-size: 8pt; color: #5B6875; margin-top: 4pt; }

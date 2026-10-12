@@ -83,6 +83,8 @@ class ReleaseLog(Base):
     recipient: Mapped[str] = mapped_column(String(300))
     page_count: Mapped[int] = mapped_column(Integer)
     file_sha256: Mapped[str] = mapped_column(String(64))
+    release_code: Mapped[str | None] = mapped_column(String(32), unique=True, index=True)
+    purpose: Mapped[str | None] = mapped_column(String(40))
 
 
 class PatientCrosswalk(Base):

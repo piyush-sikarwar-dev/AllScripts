@@ -149,6 +149,12 @@ a:hover { color: var(--accent-hover); }
 .segmented__item--active, .segmented__item--active:hover { background: var(--accent-soft);
   color: var(--accent-ink); }
 
+.checks { border: 0; margin: 0; padding: 0; display: grid; gap: 4px 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.checks legend { margin-bottom: 6px; }
+.check { display: flex; align-items: center; gap: 8px; min-height: 36px; font-size: 14px; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+
 /* ---------- Tables ---------- */
 .table-card { padding: 0; overflow: hidden; }
 .table-card__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px;

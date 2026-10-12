@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     scan_unc_prefix: str = r"\\amhs-db1\hmscan"
     scan_store: str = "file"  # "file" (SCAN_ROOT mount) | "s3" (stub)
 
+    # PDF export: folder with the Pango/GTK DLLs on Windows dev machines (e.g. MSYS2 ucrt64in).
+    # Not needed in Docker / Linux.
+    weasyprint_dll_directories: str = ""
+
     # Features.
     feature_legacy_dmz: bool = False
     use_fake_data: bool = True

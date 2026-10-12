@@ -1,5 +1,4 @@
-{# TODO(Phase 9): sections, date range, recipient, purpose; CSRF-protected POST producing the PDF. #}
 <section class="card" aria-labelledby="export-title">
   <h2 class="card__title" id="export-title" tabindex="-1" data-focus-on-load>Export records (PDF)</h2>
-  <div class="banner--warn" role="note">PDF export is not available yet.</div>
+  {% include "partials/export_form.html" %}
 </section>

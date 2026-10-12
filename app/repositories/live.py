@@ -439,6 +439,14 @@ def note(emr_id: int, kind: str, note_id: int) -> dict[str, Any] | None:
     return None
 
 
+def patient_names(emr_ids: list[int]) -> dict[int, str]:
+    """Display names for a page of patients (one query)."""
+    return {
+        int(r["emr_id"]): person_name(r["last_name"], r["first_name"], r["middle_initial"])
+        for r in emr.patient_names(emr_ids)
+    }
+
+
 def documents(emr_id: int) -> list[dict[str, Any]]:
     """Documents tab: scanned documents (+ page counts) and clinical documents."""
     lk = get_lookups()

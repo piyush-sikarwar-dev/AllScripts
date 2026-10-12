@@ -1,0 +1,12 @@
+{% extends "layout_app.html" %}
+{% block title %}Export not available{% endblock %}
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">PDF export is not available</h1>
+  <p class="page-subtitle">The PDF engine is not installed on this server. No release was recorded.</p>
+</header>
+<section class="card error-card">
+  <p>Ask your system administrator to install the PDF libraries (see README), then try again.</p>
+  <a class="btn btn--primary" href="/patients">Back to patients</a>
+</section>
+{% endblock %}

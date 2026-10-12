@@ -21,6 +21,12 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.12.
 6. **Run:** `uv run uvicorn app.main:app --reload`, then open http://127.0.0.1:8000.
    Use `COOKIE_SECURE=false` only for local http.
 
+**PDF export (records release)** uses WeasyPrint, which needs the Pango/GTK libraries. In Docker or
+Linux they come from the system packages. On a Windows dev machine without admin rights: unpack the
+MSYS2 base archive into `%LOCALAPPDATA%\msys64`, run
+`pacman -S mingw-w64-ucrt-x86_64-pango` in its shell, and set
+`WEASYPRINT_DLL_DIRECTORIES=%LOCALAPPDATA%\msys64\ucrt64\bin` in `.env`.
+
 `USE_FAKE_DATA=true` (the default) shows obviously fake patients ("Sample, Patient A"). The real
 source databases are used once their repositories are wired in.
 

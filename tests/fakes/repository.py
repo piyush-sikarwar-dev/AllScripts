@@ -80,6 +80,14 @@ def get_patient(emr_id: int) -> dict | None:
     }
 
 
+def patient_names(emr_ids: list[int]) -> dict[int, str]:
+    return {
+        i: f"{PATIENTS_BY_ID[i].last_name}, {PATIENTS_BY_ID[i].first_name}"
+        for i in emr_ids
+        if i in PATIENTS_BY_ID
+    }
+
+
 def visits(emr_id: int) -> list[dict]:
     return list(PATIENTS_BY_ID[emr_id].visits)
 
