@@ -84,6 +84,14 @@ def visits(emr_id: int) -> list[dict]:
     return list(PATIENTS_BY_ID[emr_id].visits)
 
 
+def last_visit(emr_id: int) -> dict | None:
+    visits = PATIENTS_BY_ID[emr_id].visits
+    if not visits:
+        return None
+    v = max(visits, key=lambda v: v["start"])
+    return {k: v[k] for k in ("start", "visit_type", "provider", "location")}
+
+
 def visit(emr_id: int, contact_id: int) -> dict | None:
     return next((v for v in PATIENTS_BY_ID[emr_id].visits if v["contact_id"] == contact_id), None)
 

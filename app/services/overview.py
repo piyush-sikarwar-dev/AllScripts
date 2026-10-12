@@ -14,10 +14,9 @@ MAX_ITEMS = 8
 
 
 async def _last_visit(ref: PatientRef) -> LastVisit | None:
-    visits = await call(source_repository().visits, ref.emr_id)
-    if not visits:
+    v = await call(source_repository().last_visit, ref.emr_id)
+    if v is None:
         return None
-    v = max(visits, key=lambda v: v["start"])
     return LastVisit(
         date=date_us(v["start"]),
         type=or_dash(v["visit_type"]),
@@ -30,7 +29,9 @@ async def overview(ref: PatientRef) -> Overview:
     history, meds, last_visit = await asyncio.gather(
         history_items(ref), medication_items(ref, active_only=True), _last_visit(ref)
     )
-    problems = [h for h in history if h["group"] == "problem" and h["resolved"] is None]
+    problems = [
+        h for h in history if h["group"] == "problem" and h.get("is_active", h["resolved"] is None)
+    ]
     allergies = [h for h in history if h["group"] == "allergy"]
     return Overview(
         problems=[

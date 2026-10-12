@@ -1,6 +1,10 @@
 # *DATEMASK / *DATEMASK_CODE value -> precision: full | month_year | year.
-# TODO: confirm the real mask values. Unknown masks show the full date.
+# From the Allscripts DATEMASK dictionary (hpsystem.DICTIONARIES_MASTER, read 2026-10-12):
+#   0 = MM/DD/YYYY, 1 = YYYY, 2 = MM/YYYY, 3 = MM/DD/YYYY, 4 = MM/DD/YYYY HH:MI AM
 default: full
-masks: {}
-#  1: year
-#  2: month_year
+masks:
+  0: full
+  1: year
+  2: month_year
+  3: full
+  4: full

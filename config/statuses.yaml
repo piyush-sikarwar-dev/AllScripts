@@ -1,0 +1,14 @@
+# Status codes that count as "active" (Overview cards, Active filters) and codes that mark an
+# entry as erroneous (hidden like voided rows). Meanings: Allscripts dictionaries, read 2026-10-12.
+#   DXACT  (HX_DIAGNOSIS / HX_MEDICATION .ACTIVITY_CODE): 0 *, 1 Active, 2 Inactive, 3 Resolved,
+#                                                          8 Erroneous Entry, 9 Undefined
+#   MEDSTA (MEDICATIONS.MED_STATUS): 1 Active, 2 Inactive, 3 Discontinued, 4 Ordered, 5 Continued,
+#                                    6 Erroneous Entry, 7 Undefined
+active_codes:
+  hx_diagnosis: [1]
+  hx_medication: [1]
+  medications: [1, 4, 5]
+erroneous_codes:
+  hx_diagnosis: [8]
+  hx_medication: [8]
+  medications: [6]

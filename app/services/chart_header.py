@@ -1,7 +1,7 @@
 """Patient chart header."""
 
 from app.crosswalk import PatientRef
-from app.formatting import EMPTY, age, date_us, initials, or_dash, person_name
+from app.formatting import EMPTY, age, initials, or_dash, partial_date_masked, person_name
 from app.lookups import label
 from app.models.chart import ChartHeader
 from app.repositories import source_repository
@@ -27,7 +27,7 @@ async def get_header(ref: PatientRef) -> ChartHeader:
         name=person_name(p["last_name"], p["first_name"], p["middle_initial"]),
         initials=initials(p["last_name"], p["first_name"]),
         sources=record_sources(ref.ntier_id, ref.dmz_id),
-        dob=date_us(p["dob"]),
+        dob=partial_date_masked(p["dob"], p.get("dob_mask")),
         age=age(p["dob"]),
         sex=label("sex", p["sex"]),
         chart_id=or_dash(p["chart_id"]),

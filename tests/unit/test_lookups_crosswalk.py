@@ -22,10 +22,16 @@ BUILT = datetime(2026, 10, 11, tzinfo=UTC)
 
 def test_shipped_config_loads():
     lk = Lookups().load_config()
-    assert lk.history_category(21).group == "other"
-    assert lk.history_category(21).label == "History (code 21)"
-    assert lk.visit_type(5) == lk.visit_type("5")
-    assert lk.visit_type(5).label == "Visit type 5" and lk.visit_type(5).is_office_visit
+    assert lk.history_category(21).group == "allergy"
+    assert lk.history_category(24).group == "problem"
+    assert lk.history_category(99).label == "History (code 99)"
+    assert lk.history_category(99).group == "other"
+    assert lk.date_precision(3) == "full"
+    assert lk.is_active("hx_diagnosis", 1) and not lk.is_active("hx_diagnosis", 2)
+    assert lk.visit_type(6) == lk.visit_type("6")
+    assert lk.visit_type(6).label == "Office Visit" and lk.visit_type(6).is_office_visit
+    assert not lk.visit_type(98).is_office_visit  # Review
+    assert lk.visit_type(99999).label == "Visit type 99999"
     assert lk.date_precision(None) == "full"
 
 
@@ -43,7 +49,7 @@ def test_codes_are_normalised():
 
 
 def _write_config(tmp_path, monkeypatch, **overrides):
-    for name in ("lookups_fallback", "history_categories", "visit_types", "date_masks"):
+    for name in ("lookups_fallback", "history_categories", "visit_types", "date_masks", "statuses"):
         src = CONFIG_DIR / f"{name}.yaml"
         data = overrides.get(name, yaml.safe_load(src.read_text(encoding="utf-8")))
         (tmp_path / f"{name}.yaml").write_text(yaml.safe_dump(data), encoding="utf-8")

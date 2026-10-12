@@ -66,6 +66,8 @@ class Lookups:
         self.visit_default_office = True
         self.masks: dict[object, Precision] = {}
         self.mask_default: Precision = "full"
+        self.active: dict[str, frozenset[object]] = {}
+        self.erroneous: dict[str, frozenset[object]] = {}
 
     # -- loading ----------------------------------------------------------------------------
 
@@ -94,6 +96,16 @@ class Lookups:
                 is_office_visit=bool((e or {}).get("is_office_visit", self.visit_default_office)),
             )
             for code, e in (visits.get("visit_types") or {}).items()
+        }
+
+        statuses = _read_yaml("statuses.yaml")
+        self.active = {
+            kind: frozenset(_key(c) for c in (codes or []))
+            for kind, codes in (statuses.get("active_codes") or {}).items()
+        }
+        self.erroneous = {
+            kind: frozenset(_key(c) for c in (codes or []))
+            for kind, codes in (statuses.get("erroneous_codes") or {}).items()
         }
 
         masks = _read_yaml("date_masks.yaml")
@@ -139,6 +151,14 @@ class Lookups:
             return found
         label = f"Visit type {code}" if code is not None else "Visit"
         return VisitType(label=label, is_office_visit=self.visit_default_office)
+
+    def is_active(self, kind: str, code: object) -> bool:
+        """Whether a status code counts as active (config/statuses.yaml)."""
+        return _key(code) in self.active.get(kind, frozenset())
+
+    def is_erroneous(self, kind: str, code: object) -> bool:
+        """Entries marked 'Erroneous Entry' are hidden like voided rows (config/statuses.yaml)."""
+        return _key(code) in self.erroneous.get(kind, frozenset())
 
     def date_precision(self, mask: object) -> Precision:
         if mask is None or mask == "":

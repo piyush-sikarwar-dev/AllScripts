@@ -24,7 +24,7 @@ def med_row(m: dict) -> MedicationRow:
 async def medication_items(ref: PatientRef, active_only: bool) -> list[dict]:
     rows = await call(source_repository().medications, ref.emr_id)
     if active_only:
-        rows = [m for m in rows if m["status"] == "Active"]
+        rows = [m for m in rows if m.get("is_active", m["status"] == "Active")]
     # De-duplicate same title + start date (first source wins: EMR before history).
     seen: set[tuple[str, object]] = set()
     unique = []

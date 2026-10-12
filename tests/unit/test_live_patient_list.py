@@ -135,16 +135,210 @@ def test_dashboard_renders_real_rows(sql, real_mode, client):
     assert "05/04/1960" in r.text  # DOB
 
 
-def test_chart_not_connected_page(sql, real_mode, client, monkeypatch):
+class ChartSql(FakeSql):
+    """Canned rows for the chart header + Overview queries (clearly fake values)."""
+
+    def run_query(self, source, sql_name, params=None, *, expanding=()):
+        self.calls.append((sql_name, dict(params or {})))
+        onset = datetime(2015, 6, 1, tzinfo=UTC)
+        canned = {
+            emr.PATIENT_HEADER: [
+                {
+                    "emr_id": 11,
+                    "last_name": "Sample",
+                    "first_name": "Patient A",
+                    "middle_initial": None,
+                    "dob": date(1960, 5, 4),
+                    "dob_mask": 3,
+                    "sex_code": 1,
+                    "deceased": 0,
+                    "date_of_death": None,
+                    "date_of_death_mask": None,
+                    "address": "1 Example Street",
+                    "city": "Anytown",
+                    "state": "ST",
+                    "zip": "00000",
+                    "phone": "(555) 010-0000",
+                }
+            ],
+            emr.PRIMARY_INSURANCE: [{"carrier_name": "Sample Health Plan", "rank": 0}],
+            emr.MRNS: [{"emr_id": 11, "mrn": "M11"}],
+            emr.HISTORY_ITEMS: [
+                {
+                    "hx_id": 1,
+                    "category_code": 24,
+                    "title": "Sample problem",
+                    "code_system": "ICD10",
+                    "code": "Z00.0",
+                    "onset": onset,
+                    "onset_mask": 3,
+                    "resolved": None,
+                    "activity_code": 1,
+                },
+                {
+                    "hx_id": 2,
+                    "category_code": 24,
+                    "title": "Old problem",
+                    "code_system": None,
+                    "code": None,
+                    "onset": onset,
+                    "onset_mask": 3,
+                    "resolved": date(2016, 1, 1),
+                    "activity_code": 1,
+                },
+                {
+                    "hx_id": 3,
+                    "category_code": 21,
+                    "title": "Sample allergen",
+                    "code_system": None,
+                    "code": None,
+                    "onset": None,
+                    "onset_mask": None,
+                    "resolved": None,
+                    "activity_code": 1,
+                },
+            ],
+            emr.HISTORY_ATTRIBUTES: [
+                {"hx_id": 3, "title": "Rash", "sort_order": 2},
+                {"hx_id": 3, "title": "Hives", "sort_order": 1},
+            ],
+            emr.MEDICATIONS: [
+                {
+                    "med_id": 7,
+                    "title": "Sample med 10 mg",
+                    "dose": "1",
+                    "dose_unit": "tablet",
+                    "route": "by mouth",
+                    "frequency": "daily",
+                    "intake": None,
+                    "start_date": date(2020, 1, 1),
+                    "start_mask": 3,
+                    "end_date": None,
+                    "end_mask": None,
+                    "status_code": 1,
+                },
+                {
+                    "med_id": 8,
+                    "title": "Stopped med",
+                    "dose": None,
+                    "dose_unit": None,
+                    "route": None,
+                    "frequency": None,
+                    "intake": "as directed",
+                    "start_date": date(2019, 1, 1),
+                    "start_mask": 3,
+                    "end_date": date(2019, 2, 1),
+                    "end_mask": 3,
+                    "status_code": 3,
+                },
+            ],
+            emr.HX_MEDICATIONS: [],
+            emr.LAST_VISIT_DETAIL: [
+                {
+                    "contact_id": 5,
+                    "start": datetime(2021, 3, 4, 10, tzinfo=UTC),
+                    "visit_type_code": 98,
+                    "provider_last": "Example",
+                    "provider_first": "Doctor",
+                    "provider_title": "MD",
+                    "location": "Main Clinic",
+                }
+            ],
+        }
+        if sql_name in canned:
+            return canned[sql_name]
+        return super().run_query(source, sql_name, params, expanding=expanding)
+
+
+@pytest.fixture
+def chart_mode(monkeypatch, real_mode):
     from app import crosswalk as crosswalk_module
     from app.config import get_settings
+    from app.repositories import ntier
 
+    fake = ChartSql()
+    monkeypatch.setattr(emr, "run_query", fake.run_query)
+    monkeypatch.setattr(
+        ntier, "run_query", lambda *a, **k: [{"patient_number": "P1", "account_number": "A-900"}]
+    )
     settings = get_settings().model_copy(update={"use_fake_data": False})
     monkeypatch.setattr(crosswalk_module, "get_settings", lambda: settings)
     crosswalk_module.clear_cache()
     with new_session() as db:
-        replace_crosswalk(db, build_crosswalk_rows([{"emr_id": 11}], [], BUILT)[0])
-    r = client.get("/patients/EMR:11")
-    assert r.status_code == 501
-    assert "Not connected yet" in r.text
+        replace_crosswalk(
+            db,
+            build_crosswalk_rows(
+                [{"emr_id": 11, "ntier_id": 500, "ntier_active_id": 500}], [], BUILT
+            )[0],
+        )
+    yield fake
     crosswalk_module.clear_cache()
+
+
+def test_real_chart_header_and_overview(chart_mode, client):
+    r = client.get("/patients/EMR:11")
+    assert r.status_code == 200
+    html = r.text
+    for text in (
+        "Sample, Patient A",
+        "05/04/1960",
+        "Female",
+        "M11",
+        "A-900",
+        "(555) 010-0000",
+        "1 Example Street, Anytown, ST 00000",
+        "Sample Health Plan",
+        "badge--pm",
+    ):
+        assert text in html, text
+    assert "Sample problem" in html and "Onset 06/01/2015" in html
+    assert "Old problem" not in html  # resolved
+    assert "Sample allergen" in html and "Hives, Rash" in html
+    assert "Sample med 10 mg" in html and "1 tablet by mouth daily" in html
+    assert "Stopped med" not in html  # ended
+    assert "03/04/2021" in html and "Example, Doctor MD" in html and "Main Clinic" in html
+
+
+def test_unwired_tab_shows_not_connected(chart_mode, client):
+    r = client.get("/patients/EMR:11?tab=visits")
+    assert r.status_code == 501 and "Not connected yet" in r.text
+    r = client.get("/patients/EMR:11/tab/labs", headers={"HX-Request": "true"})
+    assert r.status_code == 501 and "not connected to the archive yet" in r.text
+
+
+def _hx(hx_id, category, title, activity, mask=3, resolved=None):
+    return {"hx_id": hx_id, "category_code": category, "title": title, "code_system": None,
+            "code": None, "onset": datetime(2015, 6, 1, tzinfo=UTC), "onset_mask": mask,
+            "resolved": resolved, "activity_code": activity}  # fmt: skip
+
+
+def _med(med_id, title, status, end=None):
+    return {"med_id": med_id, "title": title, "dose": None, "dose_unit": None, "route": None,
+            "frequency": None, "intake": None, "start_date": date(2020, 1, 1), "start_mask": 3,
+            "end_date": end, "end_mask": 3, "status_code": status}  # fmt: skip
+
+
+def test_decoded_statuses_and_erroneous_rows(monkeypatch):
+    monkeypatch.setattr(emr, "history_items", lambda _id: [
+        _hx(1, 24, "Active problem", 1, mask=1),
+        _hx(2, 24, "Resolved problem", 3),
+        _hx(3, 24, "Mistake", 8),
+    ])  # fmt: skip
+    monkeypatch.setattr(emr, "history_attributes", lambda *_a: [])
+    items = {h["title"]: h for h in live.history(11)}
+    assert "Mistake" not in items  # Erroneous Entry hidden
+    assert items["Active problem"]["is_active"] and items["Active problem"]["status"] == "Active"
+    assert items["Active problem"]["onset_precision"] == "year"  # DATEMASK 1 = YYYY
+    assert not items["Resolved problem"]["is_active"]
+    assert items["Resolved problem"]["status"] == "Resolved"
+
+    monkeypatch.setattr(emr, "medications", lambda _id: [
+        _med(1, "Active med", 1), _med(2, "Discontinued med", 3), _med(3, "Wrong med", 6),
+        _med(4, "Continued med", 5), _med(5, "Active but ended", 1, end=date(2019, 1, 1)),
+    ])  # fmt: skip
+    monkeypatch.setattr(emr, "hx_medications", lambda _id: [])
+    meds = {m["name"]: m for m in live.medications(11)}
+    assert "Wrong med" not in meds
+    assert meds["Discontinued med"]["status"] == "Discontinued"
+    current = sorted(n for n, m in meds.items() if m["is_active"])
+    assert current == ["Active med", "Continued med"]

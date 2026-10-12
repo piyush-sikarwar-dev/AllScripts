@@ -1,27 +1,18 @@
 # HX_DIAGNOSIS.CATEGORY_CODE -> label + group (problem | allergy | surgical | family | social | other).
-# TODO: confirm meanings from HPSITE.HISTORYCATEGORY (codes 20, 21, 23, 24, 25 hold ~97% of rows).
-# Until confirmed every code shows as 'History (code N)' in the 'Other history' group.
+# Labels come from HPSITE.HISTORYCATEGORY.TITLE (read 2026-10-12). Row counts in comments.
 default_group: other
 categories:
-  18: {label: "History (code 18)", group: other}
-  19: {label: "History (code 19)", group: other}
-  20: {label: "History (code 20)", group: other}
-  21: {label: "History (code 21)", group: other}
-  22: {label: "History (code 22)", group: other}
-  23: {label: "History (code 23)", group: other}
-  24: {label: "History (code 24)", group: other}
-  25: {label: "History (code 25)", group: other}
-  26: {label: "History (code 26)", group: other}
-  27: {label: "History (code 27)", group: other}
-  28: {label: "History (code 28)", group: other}
-  29: {label: "History (code 29)", group: other}
-  30: {label: "History (code 30)", group: other}
-  31: {label: "History (code 31)", group: other}
-  32: {label: "History (code 32)", group: other}
-  33: {label: "History (code 33)", group: other}
-  34: {label: "History (code 34)", group: other}
-  35: {label: "History (code 35)", group: other}
-  36: {label: "History (code 36)", group: other}
-  37: {label: "History (code 37)", group: other}
-  38: {label: "History (code 38)", group: other}
-  39: {label: "History (code 39)", group: other}
+  18: {label: "Health Maintenance", group: other}          # 187
+  19: {label: "Diagnostic Studies", group: other}          # 13
+  20: {label: "Past Surgical", group: surgical}            # 25,257
+  21: {label: "Allergy", group: allergy}                   # 26,633 (ISALLERGY_FLAG = 1)
+  22: {label: "Immunization", group: other}                # 14
+  23: {label: "Family", group: family}                     # 73,225
+  24: {label: "Problem List/Past Medical", group: problem} # 41,406
+  25: {label: "Social", group: social}                     # 87,546
+  26: {label: "Travel", group: other}
+  27: {label: "Medication", group: other}
+  28: {label: "Pregnancy/Birth", group: other}             # 1,484
+  29: {label: "Other Past History", group: other}          # 4,837
+  39: {label: "Impairments", group: other}                 # 1
+  40: {label: "Devices", group: other}

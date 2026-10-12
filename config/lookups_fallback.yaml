@@ -2,12 +2,19 @@
 # kind -> {code: label}. Unknown codes render as "Unknown (code N)".
 # TODO: replace with the real Allscripts codes once the dictionaries are identified.
 sex:
-  1: Male      # confirmed by clinic staff 2026-10-12
-  2: Female    # confirmed by clinic staff 2026-10-12
-  # 0: not confirmed — shows as "Unknown (code 0)"
+  # From the Allscripts SEX dictionary (hpsystem.DICTIONARIES_MASTER, read 2026-10-12).
+  0: Undefined
+  1: Female
+  2: Male
+  3: Other
   F: Female    # fake data
   M: Male      # fake data
   U: Unknown   # fake data
 marital_status: {}
 language: {}
 patient_status: {}
+# Problem / allergy / medication-history activity (DXACT dictionary).
+hx_activity: {0: "—", 1: Active, 2: Inactive, 3: Resolved, 8: Erroneous Entry, 9: Undefined}
+hx_med_activity: {0: "—", 1: Active, 2: Inactive, 3: Resolved, 8: Erroneous Entry, 9: Undefined}
+# Prescription status (MEDSTA dictionary).
+med_status: {1: Active, 2: Inactive, 3: Discontinued, 4: Ordered, 5: Continued, 6: Erroneous Entry, 7: Undefined}
