@@ -1,0 +1,20 @@
+-- Plan items of an encounter: lab orders, procedures and medications (titles resolved).
+SELECT
+    pl.SORTORDER AS sort_order,
+    pl.SOURCE AS source,
+    lo.LABORDER_NAME AS lab_title,
+    pr.PROC_TITLE AS procedure_title,
+    m.MED_TITLE AS medication_title
+FROM HPSITE.ENCOUNTER_PLAN AS pl
+LEFT JOIN HPSITE.LABORDERS AS lo
+    ON pl.SOURCE = 'LABORATORY' AND lo.IMRELABORDER_CODE = pl.SOURCE_ID
+LEFT JOIN HPSITE.PROCEDURES AS pr
+    ON pl.SOURCE = 'PROCEDURE' AND pr.IMREPROC_CODE = pl.SOURCE_ID
+OUTER APPLY (
+    SELECT TOP 1 mm.MED_TITLE
+    FROM HPSITE.MEDICATIONS AS mm
+    WHERE pl.SOURCE = 'MEDICATION'
+      AND mm.IMREMED_CODE = pl.SOURCE_ID
+    ORDER BY CASE WHEN mm.TAG_REVISION = pl.SOURCE_REVISION THEN 0 ELSE 1 END, mm.TAG_REVISION DESC
+) AS m
+WHERE pl.ENCOUNTER_ID = :encounter_id

@@ -1,14 +1,28 @@
 """Visits tab: visit list and visit detail."""
 
 from app.crosswalk import PatientRef
-from app.formatting import date_us, or_dash
-from app.models.chart import LabeledValue, VisitDetail, VisitList, VisitSummary
+from app.formatting import date_us, or_dash, sort_key
+from app.models.chart import (
+    DocumentLink,
+    LabeledValue,
+    RenderedDocument,
+    VisitDetail,
+    VisitList,
+    VisitSummary,
+)
 from app.models.common import paginate
 from app.repositories import source_repository
 from app.services import NotFoundError, call
 from app.services.vitals import vital_values
 
 VISIT_FILTERS = ("office", "all")
+
+
+def _diagnoses_text(v: dict) -> str:
+    dx = v["diagnoses"]
+    if isinstance(dx, str):  # real data: ENCOUNTER.ENC_DIAGNOSES summary
+        return dx
+    return ", ".join(title for title, _code in dx)  # fake data: (title, code) pairs
 
 
 def _summary(v: dict) -> VisitSummary:
@@ -19,9 +33,14 @@ def _summary(v: dict) -> VisitSummary:
         type=or_dash(v["visit_type"]),
         provider=or_dash(v["provider"]),
         location=or_dash(v["location"]),
-        diagnoses=", ".join(title for title, _code in v["diagnoses"]),
+        diagnoses=_diagnoses_text(v),
         signed=bool(v["signed"]),
     )
+
+
+def _doc_meta(d: dict) -> str:
+    parts = [date_us(d.get("created")), (d.get("author") or "").strip()]
+    return " · ".join(p for p in parts if p and p != "—")
 
 
 async def visit_detail(ref: PatientRef, visit_id: int) -> VisitDetail:
@@ -30,13 +49,24 @@ async def visit_detail(ref: PatientRef, visit_id: int) -> VisitDetail:
     if v is None:
         raise NotFoundError(f"visit {visit_id}")
     vitals = await call(repo.visit_vitals, ref.emr_id, visit_id)
+    pairs = v.get("assessment")
+    if pairs is None:  # fake data keeps the pairs in "diagnoses"
+        pairs = v["diagnoses"]
     return VisitDetail(
         visit=_summary(v),
-        assessment=[LabeledValue(label=code, value=title) for title, code in v["diagnoses"]],
+        assessment=[LabeledValue(label=code or "—", value=title) for title, code in pairs],
         plan=list(v["plan"]),
         vitals=vital_values(vitals[0]) if vitals else [],
         addenda=list(v["addenda"]),
         note_text=v["note_text"],
+        documents=[
+            RenderedDocument(title=d["title"], meta=_doc_meta(d), html=d["html"])
+            for d in v.get("note_documents", [])
+        ],
+        other_documents=[
+            DocumentLink(kind="document", id=d["id"], title=d["title"], meta=_doc_meta(d))
+            for d in v.get("other_documents", [])
+        ],
     )
 
 
@@ -47,7 +77,7 @@ async def visit_list(
     rows = await call(source_repository().visits, ref.emr_id)
     if visit_filter == "office":
         rows = [v for v in rows if v["is_office_visit"]]
-    rows.sort(key=lambda v: v["start"], reverse=True)
+    rows.sort(key=lambda v: sort_key(v["start"]), reverse=True)
     page_rows, pager = paginate(rows, page or 1)
     visits = [_summary(v) for v in page_rows]
     if selected_id is None and visits:

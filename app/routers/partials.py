@@ -13,6 +13,7 @@ from app.audit import audit
 from app.auth import current_user
 from app.crosswalk import PatientRef, resolve
 from app.services import NotFoundError
+from app.services.notes import NOTE_KINDS, note_detail
 from app.services.patients import build_search, search_patients
 from app.services.tabs import TAB_NAMES, TABS, tab_context
 from app.services.visits import visit_detail
@@ -66,6 +67,9 @@ async def chart_tab(
     push_params = {"tab": name, **ctx["state"], "page": pager.page if pager else None}
     if name == "visits" and ctx["visit_list"].selected:
         push_params["visit"] = ctx["visit_list"].selected.visit.id
+    if name == "notes" and ctx.get("selected_note"):
+        note = ctx["selected_note"]
+        push_params["note"] = f"{note.kind}-{note.id}"
     return render(
         request,
         "partials/tab_frame.html",
@@ -101,6 +105,35 @@ async def visit_panel(
         request,
         "partials/visit_detail.html",
         {"detail": detail, "partial": True},
+        headers={"HX-Push-Url": push},
+    )
+
+
+@router.get("/patients/{key}/notes/{kind}/{note_id}", response_class=HTMLResponse)
+async def note_panel(
+    request: Request,
+    background: BackgroundTasks,
+    key: str,
+    kind: str,
+    note_id: int,
+    page: Annotated[int, Query(ge=1, le=100_000)] = 1,
+) -> HTMLResponse:
+    if kind not in NOTE_KINDS:
+        raise HTTPException(status_code=404)
+    ref = await _resolve(key)
+    try:
+        detail = await note_detail(ref, kind, note_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    audit(request, background, "view_document", patient_key=ref.patient_key,
+          detail={"kind": kind, "id": note_id})  # fmt: skip
+    push = url_with(
+        f"/patients/{ref.patient_key}", {"tab": "notes", "page": page, "note": f"{kind}-{note_id}"}
+    )
+    return render(
+        request,
+        "partials/note_detail.html",
+        {"note": detail, "partial": True},
         headers={"HX-Push-Url": push},
     )
 

@@ -101,7 +101,15 @@ def visit_vitals(emr_id: int, contact_id: int) -> list[dict]:
 
 
 def notes(emr_id: int) -> list[dict]:
-    return list(PATIENTS_BY_ID[emr_id].notes)
+    return [n | {"kind": "document"} for n in PATIENTS_BY_ID[emr_id].notes]
+
+
+def note(emr_id: int, kind: str, note_id: int) -> dict | None:
+    found = next((n for n in PATIENTS_BY_ID[emr_id].notes if n["id"] == note_id), None)
+    if found is None or kind != "document":
+        return None
+    text = "Placeholder note text generated for interface review only."
+    return found | {"kind": kind, "html": None, "text": text}
 
 
 def history(emr_id: int) -> list[dict]:

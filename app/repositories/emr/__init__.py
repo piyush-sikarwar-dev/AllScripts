@@ -18,6 +18,17 @@ HX_MEDICATIONS = "emr/hx_medications.sql"
 LAST_VISIT_DETAIL = "emr/last_visit_detail.sql"
 LAB_RESULTS = "emr/lab_results.sql"
 VITALS = "emr/vitals.sql"
+VISITS = "emr/visits.sql"
+VISIT_ONE = "emr/visit_one.sql"
+VISIT_ASSESSMENT = "emr/visit_assessment.sql"
+VISIT_PLAN = "emr/visit_plan.sql"
+VISIT_ADDENDA = "emr/visit_addenda.sql"
+VISIT_TEXT_NOTES = "emr/visit_text_notes.sql"
+VISIT_DOCUMENTS = "emr/visit_documents.sql"
+PATIENT_DOCUMENTS = "emr/patient_documents.sql"
+DOCUMENT_CONTENT = "emr/document_content.sql"
+TRANSCRIPTIONS = "emr/transcriptions.sql"
+TRANSCRIPTION_TEXT = "emr/transcription_text.sql"
 TABLE_ROW_COUNT = "meta/table_row_count.sql"
 
 
@@ -106,8 +117,15 @@ def hx_medications(emr_id: int) -> list[dict[str, Any]]:
     return run_query(Source.EMR, HX_MEDICATIONS, {"emr_id": emr_id})
 
 
-def last_visit_detail(emr_id: int) -> dict[str, Any] | None:
-    rows = run_query(Source.EMR, LAST_VISIT_DETAIL, {"emr_id": emr_id})
+def last_visit_detail(emr_id: int, visit_types: list[int]) -> dict[str, Any] | None:
+    if not visit_types:
+        return None
+    rows = run_query(
+        Source.EMR,
+        LAST_VISIT_DETAIL,
+        {"emr_id": emr_id, "visit_types": visit_types},
+        expanding=("visit_types",),
+    )
     return rows[0] if rows else None
 
 
@@ -117,3 +135,53 @@ def lab_results(emr_id: int) -> list[dict[str, Any]]:
 
 def vitals(emr_id: int) -> list[dict[str, Any]]:
     return run_query(Source.EMR, VITALS, {"emr_id": emr_id})
+
+
+def visits(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, VISITS, {"emr_id": emr_id})
+
+
+def visit_one(emr_id: int, contact_id: int) -> dict[str, Any] | None:
+    rows = run_query(Source.EMR, VISIT_ONE, {"emr_id": emr_id, "contact_id": contact_id})
+    return rows[0] if rows else None
+
+
+def visit_assessment(encounter_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, VISIT_ASSESSMENT, {"encounter_id": encounter_id})
+
+
+def visit_plan(encounter_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, VISIT_PLAN, {"encounter_id": encounter_id})
+
+
+def visit_addenda(encounter_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, VISIT_ADDENDA, {"encounter_id": encounter_id})
+
+
+def visit_text_notes(contact_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, VISIT_TEXT_NOTES, {"contact_id": contact_id})
+
+
+def visit_documents(emr_id: int, encounter_id: int) -> list[dict[str, Any]]:
+    params = {"emr_id": emr_id, "encounter_code": str(encounter_id)}
+    return run_query(Source.EMR, VISIT_DOCUMENTS, params)
+
+
+def patient_documents(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, PATIENT_DOCUMENTS, {"emr_id": emr_id})
+
+
+def document_content(emr_id: int, document_id: int) -> dict[str, Any] | None:
+    params = {"emr_id": emr_id, "document_id": document_id}
+    rows = run_query(Source.EMR, DOCUMENT_CONTENT, params)
+    return rows[0] if rows else None
+
+
+def transcriptions(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, TRANSCRIPTIONS, {"emr_id": emr_id})
+
+
+def transcription_text(emr_id: int, transcription_id: int) -> dict[str, Any] | None:
+    params = {"emr_id": emr_id, "transcription_id": transcription_id}
+    rows = run_query(Source.EMR, TRANSCRIPTION_TEXT, params)
+    return rows[0] if rows else None

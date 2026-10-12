@@ -37,15 +37,36 @@
 
   <section aria-labelledby="vd-note">
     <h3 class="section-title" id="vd-note">Visit note</h3>
-    {% if detail.note_html %}
-      {# note_html is sanitised with nh3 in the service layer (Phase 6). #}
-      <div class="note-html">{{ detail.note_html | safe }}</div>
+    {% if detail.documents %}
+      {% for doc in detail.documents %}
+      <div class="note-doc">
+        <p class="note-doc__title">{{ doc.title }}{% if doc.meta %} <span class="muted">· {{ doc.meta }}</span>{% endif %}</p>
+        {# Sanitised with nh3 in app/documents/render.py before it reaches the template. #}
+        <div class="note-html">{{ doc.html | safe }}</div>
+      </div>
+      {% endfor %}
     {% elif detail.note_text %}
       <div class="note-text">{{ detail.note_text }}</div>
     {% else %}
       {{ empty_state("Visit note not available in the archive.", compact=True) }}
     {% endif %}
+    {% if detail.documents and detail.note_text %}
+      <h4 class="panel__title">Additional notes</h4>
+      <div class="note-text">{{ detail.note_text }}</div>
+    {% endif %}
   </section>
+
+  {% if detail.other_documents %}
+  <section aria-labelledby="vd-docs">
+    <h3 class="section-title" id="vd-docs">Other documents for this visit</h3>
+    <ul class="plain-list">
+      {% for d in detail.other_documents %}
+      <li><a href="{{ url_with('/patients/' ~ key, {'tab': 'notes', 'note': d.kind ~ '-' ~ d.id}) }}">{{ d.title }}</a>
+        {% if d.meta %}<span class="muted"> · {{ d.meta }}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
 
   {% if detail.addenda %}
   <section aria-labelledby="vd-addenda">

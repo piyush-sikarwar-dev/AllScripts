@@ -1,0 +1,19 @@
+{% from "components/badge.html" import source_badge %}
+{% from "components/empty_state.html" import empty_state %}
+<article class="detail">
+  <div class="detail__head">
+    <div>
+      <h2 class="detail__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>{{ note.title }}</h2>
+      <p class="detail__sub">{{ note.meta }}</p>
+    </div>
+    {{ source_badge(note.source) }}
+  </div>
+  {% if note.html %}
+    {# Sanitised with nh3 in app/documents/render.py before it reaches the template. #}
+    <div class="note-html">{{ note.html | safe }}</div>
+  {% elif note.text %}
+    <div class="note-text">{{ note.text }}</div>
+  {% else %}
+    {{ empty_state("This note's content is not available in the archive.", compact=True) }}
+  {% endif %}
+</article>

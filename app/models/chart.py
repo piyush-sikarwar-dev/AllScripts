@@ -62,6 +62,20 @@ class LabeledValue(BaseModel):
     value: str
 
 
+class DocumentLink(BaseModel):
+    kind: str
+    id: int
+    title: str
+    meta: str
+
+
+class RenderedDocument(BaseModel):
+    title: str
+    meta: str
+    # Sanitised HTML only (app.documents.render / nh3) — rendered with |safe.
+    html: str
+
+
 class VisitDetail(BaseModel):
     visit: VisitSummary
     assessment: list[LabeledValue]
@@ -69,8 +83,8 @@ class VisitDetail(BaseModel):
     vitals: list[LabeledValue]
     addenda: list[str]
     note_text: str | None
-    # Sanitised HTML only (nh3) — rendered with |safe. Wired in Phase 6.
-    note_html: str | None = None
+    documents: list[RenderedDocument] = []
+    other_documents: list[DocumentLink] = []
 
 
 class VisitList(BaseModel):
@@ -84,10 +98,23 @@ class VisitList(BaseModel):
 
 
 class NoteRow(BaseModel):
+    kind: str
+    id: int
     date: str
     title: str
     author: str
     source: SourceLabel
+
+
+class NoteDetail(BaseModel):
+    kind: str
+    id: int
+    title: str
+    meta: str
+    source: SourceLabel
+    # Sanitised HTML only (app.documents.render / nh3) — rendered with |safe.
+    html: str | None
+    text: str | None
 
 
 class ProblemRow(BaseModel):

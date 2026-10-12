@@ -1,0 +1,15 @@
+# Which clinical documents linked to a visit count as "the visit note" (shown in full in the
+# visit panel). Others (lab result reports, requisitions, letters) are listed underneath.
+# Most common titles of visit-linked documents (read 2026-10-12):
+#   76,160  * History & Physical Note with Caregiver Signoff (v8.3)
+#   61,237  * Lab Results by Date Range
+#   38,735  Laboratory Requisitions
+#   15,248  History & Physical Note with Results (v8.3)
+#    3,211  Cover page for * History & Physical Note with Caregiver Signoff (v8.3)
+#    2,340  DEC Letter to Referring Provider
+#    1,845  * OLD Encounter EMR Note
+# Matching is case-insensitive "title contains".
+visit_note_title_contains:
+  - "Note"
+not_visit_note_title_contains:
+  - "Cover page"

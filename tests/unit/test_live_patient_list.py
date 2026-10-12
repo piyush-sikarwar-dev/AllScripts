@@ -300,7 +300,7 @@ def test_real_chart_header_and_overview(chart_mode, client):
 
 
 def test_unwired_tab_shows_not_connected(chart_mode, client):
-    r = client.get("/patients/EMR:11?tab=visits")
+    r = client.get("/patients/EMR:11?tab=docs")
     assert r.status_code == 501 and "Not connected yet" in r.text
     r = client.get("/patients/EMR:11/tab/docs", headers={"HX-Request": "true"})
     assert r.status_code == 501 and "not connected to the archive yet" in r.text

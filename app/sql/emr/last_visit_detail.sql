@@ -1,4 +1,4 @@
--- Newest non-cancelled visit with provider and location. Never PROV_PASSWORD / PROV_SSNUM.
+-- Newest non-cancelled real visit (types from config/visit_types.yaml) with provider and location. Never PROV_PASSWORD / PROV_SSNUM.
 SELECT TOP 1
     c.IMRECONTACT_CODE AS contact_id,
     c.CON_START AS start,
@@ -16,4 +16,5 @@ LEFT JOIN HPSITE.LOCATION AS l
     ON l.LOCATION_ID = e.LOCATION_ID
 WHERE e.IMREDEMEC_CODE = :emr_id
   AND ISNULL(c.CON_CANCELED, 0) = 0
+  AND e.ENC_VISITTYPE IN :visit_types
 ORDER BY c.CON_START DESC

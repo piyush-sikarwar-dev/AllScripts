@@ -49,3 +49,7 @@ pythonpath = ["."]
 markers = [
     "integration: needs real database connections (deselect with -m 'not integration')",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# Pytest fixtures imported from another test module look like redefinitions.
+"tests/**" = ["F811"]

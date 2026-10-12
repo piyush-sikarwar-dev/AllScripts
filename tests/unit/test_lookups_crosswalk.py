@@ -56,6 +56,7 @@ def _write_config(tmp_path, monkeypatch, **overrides):
         "date_masks",
         "statuses",
         "lab_flags",
+        "documents",
     ):
         src = CONFIG_DIR / f"{name}.yaml"
         data = overrides.get(name, yaml.safe_load(src.read_text(encoding="utf-8")))

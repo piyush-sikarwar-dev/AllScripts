@@ -5,14 +5,18 @@ other history), medications and last visit. Other chart areas raise NotConnected
 phase wires them, which renders a friendly page.
 """
 
+import logging
 import time
 from datetime import date, datetime
 from typing import Any
 
-from app.formatting import person_name, to_clinic_time
+from app.documents.render import DocumentFormatError, render_document, rtf_to_text
+from app.formatting import date_us, person_name, sort_key, to_clinic_time
 from app.lookups import get_lookups
 from app.repositories import emr, ntier
 from app.repositories.appdb.crosswalk import links_for_emr_ids
+
+log = logging.getLogger("app.repositories")
 
 TOTALS_TTL_SECONDS = 24 * 3600
 _totals_cache: tuple[float, dict[str, int]] | None = None
@@ -209,14 +213,20 @@ def medications(emr_id: int) -> list[dict[str, Any]]:
     return items
 
 
-def last_visit(emr_id: int) -> dict[str, Any] | None:
-    r = emr.last_visit_detail(emr_id)
-    if r is None:
-        return None
-    provider = person_name(r["provider_last"], r["provider_first"])
-    title = (r["provider_title"] or "").strip()
+def _provider(last: Any, first: Any, title: Any = None) -> str:
+    provider = person_name(last, first)
+    title = (title or "").strip()
     if title and provider != "—":
         provider = f"{provider} {title}"
+    return provider
+
+
+def last_visit(emr_id: int) -> dict[str, Any] | None:
+    """Newest real visit (visit types configured as office visits)."""
+    r = emr.last_visit_detail(emr_id, get_lookups().office_visit_codes())
+    if r is None:
+        return None
+    provider = _provider(r["provider_last"], r["provider_first"], r["provider_title"])
     return {
         "start": r["start"],
         "visit_type": get_lookups().visit_type(r["visit_type_code"]).label,
@@ -299,9 +309,139 @@ def vitals(emr_id: int) -> list[dict[str, Any]]:
     ]
 
 
+def _visit_summary(r: dict[str, Any]) -> dict[str, Any]:
+    vt = get_lookups().visit_type(r["visit_type_code"])
+    return {
+        "contact_id": r["contact_id"],
+        "encounter_id": r["encounter_id"],
+        "start": r["start"],
+        "visit_type": vt.label,
+        "is_office_visit": vt.is_office_visit,
+        "provider": _provider(r["provider_last"], r["provider_first"], r["provider_title"]),
+        "location": r["location"],
+        "signed": bool(r["signed"]),
+        "diagnoses": (r["diagnoses"] or "").strip(),
+        "source": "EMR",
+    }
+
+
+def visits(emr_id: int) -> list[dict[str, Any]]:
+    """Every non-cancelled contact; the service filters to real visits by default."""
+    return [_visit_summary(r) for r in emr.visits(emr_id)]
+
+
+def _document_html(emr_id: int, document_id: int) -> str | None:
+    row = emr.document_content(emr_id, document_id)
+    if row is None:
+        return None
+    try:
+        return render_document(row["content"])
+    except DocumentFormatError:
+        log.warning("document %s could not be rendered", document_id)
+        return None
+
+
+def visit(emr_id: int, contact_id: int) -> dict[str, Any] | None:
+    """Visit detail: assessment, plan, addenda and the visit note (documents first, then text)."""
+    r = emr.visit_one(emr_id, contact_id)
+    if r is None:
+        return None
+    lk = get_lookups()
+    detail = _visit_summary(r)
+    enc = r["encounter_id"]
+    assessment = sorted(emr.visit_assessment(enc), key=lambda a: a["sort_order"] or 0)
+    detail["assessment"] = [((a["title"] or "").strip() or "Untitled", (a["code"] or "").strip())
+                            for a in assessment]  # fmt: skip
+    plan = sorted(emr.visit_plan(enc), key=lambda p: p["sort_order"] or 0)
+    labels = {"LABORATORY": "Lab order", "PROCEDURE": "Procedure", "MEDICATION": "Medication"}
+    detail["plan"] = [
+        f"{labels.get(p['source'], 'Plan item')}: "
+        f"{(p['lab_title'] or p['procedure_title'] or p['medication_title'] or '').strip() or '—'}"
+        for p in plan
+        if p["source"] in labels
+    ]
+    detail["addenda"] = [
+        f"{date_us(a['added'])} · {person_name(a['provider_last'], a['provider_first'])}: "
+        f"{(a['note_text'] or '').strip() or '(no text)'}"
+        for a in sorted(emr.visit_addenda(enc), key=lambda a: sort_key(a["added"]))
+    ]
+    docs = sorted(emr.visit_documents(emr_id, enc), key=lambda d: sort_key(d["created"]))
+    detail["note_documents"] = []
+    detail["other_documents"] = []
+    for d in docs:
+        meta = {"id": d["document_id"], "title": (d["title"] or "").strip() or "Untitled document",
+                "author": (d["author"] or "").strip(), "created": d["created"]}  # fmt: skip
+        if lk.is_visit_note_title(d["title"]):
+            html = _document_html(emr_id, d["document_id"])
+            if html:
+                detail["note_documents"].append(meta | {"html": html})
+                continue
+        detail["other_documents"].append(meta)
+    texts = [(n["note_text"] or "").strip() for n in emr.visit_text_notes(contact_id)]
+    detail["note_text"] = "\n\n".join(t for t in texts if t) or None
+    return detail
+
+
+def visit_vitals(emr_id: int, contact_id: int) -> list[dict[str, Any]]:
+    return [v for v in vitals(emr_id) if v["contact_id"] == contact_id]
+
+
+def notes(emr_id: int) -> list[dict[str, Any]]:
+    """Notes tab: clinical documents + dictations (metadata only)."""
+    items = [
+        {
+            "kind": "document",
+            "id": d["document_id"],
+            "date": d["created"],
+            "title": (d["title"] or "").strip() or "Untitled document",
+            "author": (d["author"] or "").strip() or None,
+            "source": "EMR",
+        }
+        for d in emr.patient_documents(emr_id)
+    ]
+    items += [
+        {
+            "kind": "transcription",
+            "id": t["transcription_id"],
+            "date": t["dictated"] or t["transcribed"] or t["encounter_date"],
+            "title": "Dictation",
+            "author": _provider(t["provider_last"], t["provider_first"], t["provider_title"]),
+            "source": "EMR",
+        }
+        for t in emr.transcriptions(emr_id)
+    ]
+    return items
+
+
+def note(emr_id: int, kind: str, note_id: int) -> dict[str, Any] | None:
+    """One note's content: sanitised HTML for documents, plain text for dictations."""
+    if kind == "document":
+        row = emr.document_content(emr_id, note_id)
+        if row is None:
+            return None
+        try:
+            html = render_document(row["content"])
+        except DocumentFormatError:
+            html = None
+        return {"kind": kind, "id": note_id, "date": row["created"],
+                "title": (row["title"] or "").strip() or "Untitled document",
+                "author": (row["author"] or "").strip() or None,
+                "html": html, "text": None, "source": "EMR"}  # fmt: skip
+    if kind == "transcription":
+        row = emr.transcription_text(emr_id, note_id)
+        if row is None:
+            return None
+        return {"kind": kind, "id": note_id, "date": row["dictated"] or row["encounter_date"],
+                "title": "Dictation",
+                "author": person_name(row["provider_last"], row["provider_first"]),
+                "html": None, "text": rtf_to_text(row["rtf"] or "") or None,
+                "source": "EMR"}  # fmt: skip
+    return None
+
+
 def _not_connected(*_args: object, **_kwargs: object) -> Any:
     raise NotConnectedError
 
 
-# Chart areas wired in later phases (6 and 8).
-visits = visit = visit_vitals = notes = documents = _not_connected
+# Chart areas wired in a later phase (8).
+documents = _not_connected

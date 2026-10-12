@@ -246,6 +246,15 @@ a:hover { color: var(--accent-hover); }
 .note-text { white-space: pre-wrap; font-size: 14px; background: var(--panel); border-radius: var(--r-ctl);
   padding: 14px 16px; overflow-wrap: anywhere; }
 
+.note-doc + .note-doc { margin-top: 16px; }
+.note-doc__title { font-weight: 600; margin-bottom: 6px; }
+.note-html { background: var(--surface); border: 1px solid var(--row-border); border-radius: var(--r-ctl);
+  padding: 14px 16px; overflow-x: auto; overflow-wrap: anywhere; font-size: 14px; }
+.note-html table { border-collapse: collapse; max-width: 100%; }
+.note-html td, .note-html th { padding: 2px 8px 2px 0; vertical-align: top; text-align: left; }
+.note-html p { margin: 0 0 6px; }
+.note-html h1, .note-html h2, .note-html h3, .note-html h4 { font-size: 15px; margin: 10px 0 4px; }
+
 /* ---------- Labs ---------- */
 .result { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
 

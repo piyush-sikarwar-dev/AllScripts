@@ -65,6 +65,15 @@ def time_local(value: datetime | None) -> str:
     return f"{local.hour % 12 or 12}:{local:%M} {local:%p}"
 
 
+def sort_key(value: date | datetime | None) -> datetime:
+    """Comparable key for mixed dates / naive / aware datetimes (missing values sort oldest)."""
+    if value is None:
+        return datetime.min
+    if isinstance(value, datetime):
+        return to_clinic_time(value).replace(tzinfo=None) if value.tzinfo else value
+    return datetime(value.year, value.month, value.day)
+
+
 def mask_ssn(value: str | None) -> str:
     """Only the last 4 digits, if ever needed (SSN columns are never selected by default)."""
     digits = re.sub(r"\D", "", value or "")

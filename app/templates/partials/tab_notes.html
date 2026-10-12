@@ -2,29 +2,39 @@
 {% from "components/table.html" import pager_nav, count_text %}
 {% from "components/empty_state.html" import empty_state %}
 {% set base = "/patients/" ~ key %}
-<section class="card table-card" aria-labelledby="notes-title">
-  <div class="table-card__head">
-    <h2 class="table-card__title" id="notes-title">Notes</h2>
-    <p class="table-card__count">{{ count_text(pager, "notes") }}</p>
-  </div>
-  {% if notes %}
-  <div class="table-scroll">
-    <table class="table">
-      <thead><tr><th scope="col">Date</th><th scope="col">Note</th><th scope="col">Author</th><th scope="col">Source</th></tr></thead>
-      <tbody>
-        {% for n in notes %}
-        <tr>
-          <td class="nowrap">{{ n.date }}</td>
-          <td>{{ n.title }}</td>
-          <td>{{ n.author }}</td>
-          <td>{{ source_badge(n.source) }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {{ pager_nav(pager, base, base ~ "/tab/notes", "#chart-tabs", dict(state, tab="notes")) }}
-  {% else %}
-    {{ empty_state("No notes recorded.") }}
-  {% endif %}
-</section>
+<div class="split">
+  <section class="card table-card split__list" aria-labelledby="notes-title">
+    <div class="table-card__head">
+      <h2 class="table-card__title" id="notes-title">Notes</h2>
+      <p class="table-card__count">{{ count_text(pager, "notes") }}</p>
+    </div>
+    {% if notes %}
+    <ul class="visit-rows">
+      {% for n in notes %}
+      {% set selected = selected_note and selected_note.kind == n.kind and selected_note.id == n.id %}
+      <li>
+        <a class="visit-row{% if selected %} visit-row--selected{% endif %}"
+           {%- if selected %} aria-current="true"{% endif %}
+           href="{{ url_with(base, {'tab': 'notes', 'page': pager.page, 'note': n.kind ~ '-' ~ n.id}) }}"
+           hx-get="{{ url_with(base ~ '/notes/' ~ n.kind ~ '/' ~ n.id, {'page': pager.page}) }}"
+           hx-target="#note-detail" hx-swap="innerHTML">
+          <span class="visit-row__title">{{ n.date }} · {{ n.title }}</span>
+          <span class="visit-row__sub">{{ n.author }} · {{ n.source }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {{ pager_nav(pager, base, base ~ "/tab/notes", "#chart-tabs", dict(state, tab="notes")) }}
+    {% else %}
+      {{ empty_state("No notes recorded.") }}
+    {% endif %}
+  </section>
+
+  <section class="card split__detail" id="note-detail" aria-label="Note" aria-live="polite">
+    {% if selected_note %}
+      {% with note = selected_note, partial = False %}{% include "partials/note_detail.html" %}{% endwith %}
+    {% else %}
+      {{ empty_state("Select a note to read it.") }}
+    {% endif %}
+  </section>
+</div>

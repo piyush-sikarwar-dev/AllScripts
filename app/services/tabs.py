@@ -4,10 +4,11 @@ from collections.abc import Mapping
 from typing import Any
 
 from app.crosswalk import PatientRef
+from app.services import NotFoundError
 from app.services.documents import documents_tab, scan_store_configured
 from app.services.labs import build_filters, labs_tab
 from app.services.meds import meds_tab
-from app.services.notes import notes_tab
+from app.services.notes import note_detail, notes_tab, parse_note_ref
 from app.services.overview import overview
 from app.services.problems import problem_groups
 from app.services.visits import visit_list
@@ -51,6 +52,15 @@ async def tab_context(ref: PatientRef, name: str, params: Mapping[str, str]) -> 
         state = {"filter": vl.filter}
     elif name == "notes":
         ctx["notes"], ctx["pager"] = await notes_tab(ref, page)
+        selected = parse_note_ref(params.get("note"))
+        if selected is None and ctx["notes"]:
+            selected = (ctx["notes"][0].kind, ctx["notes"][0].id)
+        ctx["selected_note"] = None
+        if selected is not None:
+            try:
+                ctx["selected_note"] = await note_detail(ref, *selected)
+            except NotFoundError:
+                ctx["selected_note"] = None
     elif name == "problems":
         ctx["groups"] = await problem_groups(ref)
     elif name == "meds":

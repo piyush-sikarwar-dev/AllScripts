@@ -69,6 +69,8 @@ class Lookups:
         self.active: dict[str, frozenset[object]] = {}
         self.erroneous: dict[str, frozenset[object]] = {}
         self.lab_flags: dict[str, str] = {}
+        self.note_title_include: tuple[str, ...] = ()
+        self.note_title_exclude: tuple[str, ...] = ()
 
     # -- loading ----------------------------------------------------------------------------
 
@@ -113,6 +115,14 @@ class Lookups:
             str(k).strip().upper(): str(v)
             for k, v in (_read_yaml("lab_flags.yaml").get("flags") or {}).items()
         }
+
+        docs = _read_yaml("documents.yaml")
+        self.note_title_include = tuple(
+            str(x).lower() for x in docs.get("visit_note_title_contains") or []
+        )
+        self.note_title_exclude = tuple(
+            str(x).lower() for x in docs.get("not_visit_note_title_contains") or []
+        )
 
         masks = _read_yaml("date_masks.yaml")
         self.mask_default = self._precision(masks.get("default", "full"), "default")
@@ -161,6 +171,19 @@ class Lookups:
     def is_active(self, kind: str, code: object) -> bool:
         """Whether a status code counts as active (config/statuses.yaml)."""
         return _key(code) in self.active.get(kind, frozenset())
+
+    def office_visit_codes(self) -> list[int]:
+        """Visit-type codes configured as real visits (config/visit_types.yaml)."""
+        return sorted(
+            c for c, v in self.visit_types.items() if v.is_office_visit and isinstance(c, int)
+        )
+
+    def is_visit_note_title(self, title: str | None) -> bool:
+        """Whether a visit-linked document is the visit note itself (config/documents.yaml)."""
+        t = (title or "").lower()
+        if any(x in t for x in self.note_title_exclude):
+            return False
+        return any(x in t for x in self.note_title_include)
 
     def is_erroneous(self, kind: str, code: object) -> bool:
         """Entries marked 'Erroneous Entry' are hidden like voided rows (config/statuses.yaml)."""
