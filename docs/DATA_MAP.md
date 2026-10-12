@@ -249,7 +249,7 @@ these: **SQL files must use explicit column lists that leave them out** (CLAUDE.
 4. Patient-scoped queries always filter on the patient key and are paged (25 rows).
 5. Nothing from the source databases is written anywhere except our own app database (IDs in the
    crosswalk, audit rows without PHI).
-6. The SQL login in use (`sqladmin`) can write. Replacing it with a `db_datareader`-only login is still
+6. The SQL login currently in use has write permissions (sysadmin). Replacing it with a `db_datareader`-only login is still
    recommended.
 
 ---
