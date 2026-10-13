@@ -5,6 +5,7 @@ from typing import Any
 
 from app.crosswalk import PatientRef
 from app.services import NotFoundError
+from app.services.appointments import appointments_tab
 from app.services.documents import (
     document_viewer,
     documents_tab,
@@ -23,6 +24,7 @@ from app.services.vitals import vitals_tab
 TABS: list[tuple[str, str]] = [
     ("overview", "Overview"),
     ("visits", "Visits"),
+    ("appointments", "Appointments"),
     ("notes", "Notes"),
     ("problems", "Problems & allergies"),
     ("meds", "Medications"),
@@ -58,6 +60,9 @@ async def tab_context(
         selection = await selected_visit_ids(session_id, ref.patient_key)
         ctx.update(await visits_tab(ref, parse_state(params), selection))
         state = ctx["visits_state"].params(tab=None)
+    elif name == "appointments":
+        ctx.update(await appointments_tab(ref, params))
+        state = ctx["appts_state"].params()
     elif name == "notes":
         ctx.update(await notes_tab(ref, parse_notes_state(params), session_id))
         state = ctx["notes_state"].params(tab=None)

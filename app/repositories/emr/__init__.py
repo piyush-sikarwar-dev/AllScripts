@@ -324,3 +324,11 @@ def history_entry_attributes(emr_id: int) -> list[dict[str, Any]]:
 
 def history_changes(emr_id: int, hx_id: int) -> list[dict[str, Any]]:
     return run_query(Source.EMR, HISTORY_CHANGES, {"emr_id": emr_id, "hx_id": hx_id})
+
+
+# --- Appointments tab ----------------------------------------------------------------------------
+APPOINTMENTS = "emr/appointments.sql"
+
+
+def appointments(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, APPOINTMENTS, {"emr_id": emr_id})

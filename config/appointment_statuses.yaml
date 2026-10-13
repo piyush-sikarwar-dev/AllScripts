@@ -1,0 +1,28 @@
+# Appointments tab: status codes → label + filter group (kept | cancelled | no_show | scheduled | other).
+# EMR HPSITE.ARCH_SCHEDULE.SCHED_STATUS = SCHST dictionary (hpsystem.DICTIONARIES_MASTER, read
+# 2026-10-13). Rows: 2 Completed 103,797 · 4 Canceled 81,068 · 1 Pending 20,949 · 5 In Progress 8,242
+# · 8 No Show 3,761 · 77 (not in the dictionary) 1,026.
+# PM PM.Appointments.Status (letters; meaning inferred from the timestamps, DRAFT):
+#   A 83,982 (kept; check-out times recorded) · X 59,755 (all have DateTime_Cancelled) · S 5,437
+#   (scheduled, never updated) · N 3,879 (all have DateTime_NoShow) · B 200 (all have DateTime_Bumped)
+#   · C 154 (confirmed) · W 1 (wait list).
+# When an EMR appointment is matched to its PM appointment (same patient, same day), the PM status wins.
+emr:
+  0: {label: Unknown, group: other}
+  1: {label: Scheduled, group: scheduled}
+  2: {label: Completed, group: kept}
+  3: {label: Blocked, group: other}
+  4: {label: Cancelled, group: cancelled}
+  5: {label: In progress, group: kept}
+  6: {label: Rescheduled, group: cancelled}
+  7: {label: End blocked, group: other}
+  8: {label: No-show, group: no_show}
+pm:
+  A: {label: Completed, group: kept}
+  X: {label: Cancelled, group: cancelled}
+  S: {label: Scheduled, group: scheduled}
+  N: {label: No-show, group: no_show}
+  B: {label: Bumped, group: cancelled}
+  C: {label: Confirmed, group: scheduled}
+  W: {label: Wait list, group: other}
+default: {label: Unknown, group: other}

@@ -550,6 +550,22 @@ a:hover { color: var(--accent-hover); }
   .section-rail__name { flex: none; }
 }
 
+/* ---------- Appointments tab ---------- */
+.appts { display: flex; flex-direction: column; gap: 16px; }
+.appts-summary__stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px 20px;
+  margin: 0; }
+.appts-summary__stat dt { font-size: 13px; color: var(--muted); }
+.appts-summary__stat dd { margin: 0; }
+.appts-summary__value { font-size: 22px; font-weight: 600; line-height: 1.3; }
+.appts-summary__caption { font-size: 12px; color: var(--muted); }
+.appts-tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
+  padding: 0 18px 14px; }
+.appts-tools .chips { margin-top: 0; }
+.chips a.chip { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.chip__count { font-family: var(--mono); font-size: 12px; opacity: .8; }
+.appts-year .select { min-width: 140px; }
+.appts-comment { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 420px; }
+
 /* ---------- Labs ---------- */
 .result { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
 

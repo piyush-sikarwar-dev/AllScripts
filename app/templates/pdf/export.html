@@ -123,6 +123,21 @@
 {% endfor %}
 {% endif %}
 
+{% if "appointments" in sections %}
+<h1 class="section">Appointments</h1>
+{% if appointments %}
+<table>
+  <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Provider</th><th>Location</th><th>Status</th><th>Details</th></tr></thead>
+  <tbody>
+    {% for r in appointments %}
+    <tr><td>{{ r.date }}</td><td>{{ r.time }}</td><td>{{ r.type }}</td><td>{{ r.provider }}</td><td>{{ r.location }}</td>
+      <td>{{ r.status_label }}</td><td>{{ r.details }}{% if r.comment %}<br><span class="muted">{{ r.comment }}</span>{% endif %}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="empty">No appointments in the selected period.</p>{% endif %}
+{% endif %}
+
 {% if "problems" in sections %}
 <h1 class="section">Problems &amp; allergies</h1>
 {% for g in problem_groups %}

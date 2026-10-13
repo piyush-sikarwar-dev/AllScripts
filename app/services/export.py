@@ -27,6 +27,7 @@ from app.formatting import EMPTY, date_us, datetime_local, sort_key, to_clinic_t
 from app.models.chart import ChartHeader
 from app.repositories import source_repository
 from app.services import NotFoundError, call
+from app.services.appointments import all_appointments, appointment_row
 from app.services.chart_header import get_header
 from app.services.history_service import selected_entries_for_pdf
 from app.services.labs import lab_row
@@ -40,6 +41,7 @@ from app.services.vitals import vital_row
 SECTIONS: list[tuple[str, str]] = [
     ("demographics", "Demographics & insurance"),
     ("visits", "Visits with notes"),
+    ("appointments", "Appointments"),
     ("problems", "Problems & allergies"),
     ("meds", "Medications"),
     ("labs", "Lab results"),
@@ -219,6 +221,9 @@ async def gather(ref: PatientRef, req: ExportRequest) -> dict[str, Any]:
     ctx: dict[str, Any] = {"header": await get_header(ref), "sections": sections}
     if "visits" in sections:
         ctx["visits"] = await _visits(ref, req)
+    if "appointments" in req.sections:
+        appts = [a for a in await all_appointments(ref) if _in_range(a["starts"], req)]
+        ctx["appointments"] = [appointment_row(a) for a in appts]
     if "problems" in req.sections:
         ctx["problem_groups"] = await problem_groups(ref)
     if "meds" in req.sections:

@@ -291,3 +291,7 @@ def history_entries(emr_id: int) -> list[dict]:
 
 def history_changes(emr_id: int, hx_id: int) -> list[dict]:
     return [dict(r) for r in PATIENTS_BY_ID[emr_id].hx_revisions.get(hx_id, [])]
+
+
+def appointments(emr_id: int, ntier_id: int | None) -> list[dict]:
+    return [dict(a) for a in PATIENTS_BY_ID[emr_id].appointments]

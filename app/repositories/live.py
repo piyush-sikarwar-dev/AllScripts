@@ -809,3 +809,85 @@ def history_changes(emr_id: int, hx_id: int) -> list[dict[str, Any]]:
             "provider": None if who == "—" else who,
         })  # fmt: skip
     return revisions
+
+
+# --- Appointments tab -----------------------------------------------------------------------------
+
+
+def _hhmm(value: Any) -> str | None:
+    """PM times are stored as HHMM integers (924 = 9:24 AM)."""
+    if not value or not isinstance(value, int) or not 0 < value < 2400 or value % 100 > 59:
+        return None
+    hour, minute = divmod(value, 100)
+    return f"{hour % 12 or 12}:{minute:02d} {'AM' if hour < 12 else 'PM'}"
+
+
+def _clock(value: Any) -> str | None:
+    if value is None:
+        return None
+    local = to_clinic_time(value) if value.tzinfo else value
+    return f"{local.hour % 12 or 12}:{local:%M} {'AM' if local.hour < 12 else 'PM'}"
+
+
+def _local_day(value: Any) -> date | None:
+    if value is None:
+        return None
+    return (to_clinic_time(value) if value.tzinfo else value).date()
+
+
+@cached
+def appointments(emr_id: int, ntier_id: int | None) -> list[dict[str, Any]]:
+    """EMR schedule (2010 onwards), enriched with the practice-management appointment when it is
+    the same patient's on the same day (type, duration, PM status, cancellation reason). PM
+    appointments with no EMR row are added. Status interpretation happens in the service."""
+    if ntier_id is not None:
+        emr_rows, pm_rows = parallel(
+            lambda: emr.appointments(emr_id), lambda: ntier.appointments(ntier_id)
+        )
+    else:
+        emr_rows, pm_rows = emr.appointments(emr_id), []
+    pm_by_id = {int(r["pm_id"]): r for r in pm_rows}
+    used: set[int] = set()
+    items = []
+    for r in emr_rows:
+        pm_key = str(r["pm_id"] or "").strip()
+        pm = pm_by_id.get(int(pm_key)) if pm_key.isdigit() and len(pm_key) <= 9 else None
+        if pm is not None and _local_day(pm["starts"]) != _local_day(r["starts"]):
+            pm = None  # same id, different day: an id from the older PM system
+        if pm is not None:
+            used.add(int(pm["pm_id"]))
+        who = _provider(r["provider_last"], r["provider_first"], r["provider_title"])
+        items.append({
+            "id": f"emr-{r['sched_id']}",
+            "starts": r["starts"],
+            "emr_status": r["status_code"],
+            "pm_status": (pm["status"] or "").strip() if pm else None,
+            "type": _text(pm["appt_type"]) if pm else None,
+            "duration": pm["duration"] if pm else None,
+            "provider": None if who == "—" else who,
+            "location": _text(r["location"]) or (_text(pm["location"]) if pm else None),
+            "cancel_reason": _text(pm["cancel_reason"]) if pm else None,
+            "arrived": _clock(r["time_in"]) or (_hhmm(pm["time_in"]) if pm else None),
+            "left": _clock(r["time_out"]) or (_hhmm(pm["check_out"]) if pm else None),
+            "comment": _text(r["comment"]) or (_text(pm["comment"]) if pm else None),
+            "sources": ["EMR", "PM"] if pm else ["EMR"],
+        })  # fmt: skip
+    for pm_id, pm in pm_by_id.items():
+        if pm_id in used:
+            continue
+        items.append({
+            "id": f"pm-{pm_id}",
+            "starts": pm["starts"],
+            "emr_status": None,
+            "pm_status": (pm["status"] or "").strip(),
+            "type": _text(pm["appt_type"]),
+            "duration": pm["duration"],
+            "provider": _text(pm["resource"]),
+            "location": _text(pm["location"]),
+            "cancel_reason": _text(pm["cancel_reason"]),
+            "arrived": _hhmm(pm["time_in"]),
+            "left": _hhmm(pm["check_out"]),
+            "comment": _text(pm["comment"]),
+            "sources": ["PM"],
+        })  # fmt: skip
+    return items

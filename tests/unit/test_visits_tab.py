@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 from app.db.app import new_session
 from app.models.visits import VisitsState
 from app.repositories.appdb.models import AuditLog, ExportSelection
-from app.services.export import ExportRequest, _visits
+from app.services.export import SECTIONS, ExportRequest, _visits
 from app.services.visits import build_detail, parse_state, year_bars
 from app.templating import templates
 from tests.conftest import page_csrf
@@ -292,7 +292,8 @@ async def test_pdf_visits_are_only_the_selected_encounters(client):
 def test_export_dialog_defaults_to_added_items_only(client):
     r = client.get(f"/patients/{FIRST}/export", headers=HTMX)
     assert r.text.count('name="sections"') == r.text.count('name="sections" value=') > 0
-    assert len(re.findall(r'name="sections" value="\w+" checked', r.text)) == 7  # nothing added
+    # nothing added → every section ticked
+    assert len(re.findall(r'name="sections" value="\w+" checked', r.text)) == len(SECTIONS)
     visit = _office()[0]
     client.post(f"/patients/{FIRST}/export-selection/visits/{visit['encounter_id']}",
                 headers=_csrf(client))  # fmt: skip

@@ -1,0 +1,82 @@
+{# Appointments tab: summary, status chips + year, paged table. Every control is a link or a GET form
+   that works without JS; with HTMX the tab swaps in place and the URL follows. #}
+{% from "components/badge.html" import source_badges %}
+{% from "components/table.html" import pager_nav %}
+{% from "components/empty_state.html" import empty_state %}
+{% set base = "/patients/" ~ key %}
+{% set s = appts_state %}
+{% set a = appts %}
+<div class="appts">
+  <section class="card appts-summary" aria-label="Appointment summary">
+    <dl class="appts-summary__stats">
+      {% for st in a.stats %}
+      <div class="appts-summary__stat">
+        <dt>{{ st.label }}</dt>
+        <dd class="appts-summary__value">{{ st.value }}</dd>
+        {% if st.caption %}<dd class="appts-summary__caption">{{ st.caption }}</dd>{% endif %}
+      </div>
+      {% endfor %}
+    </dl>
+  </section>
+
+  <section class="card table-card" aria-labelledby="appts-title">
+    <div class="table-card__head">
+      <h2 class="table-card__title" id="appts-title">Appointments</h2>
+      <p class="table-card__count">{{ a.context }}</p>
+    </div>
+    <div class="appts-tools">
+      <nav class="chips" aria-label="Appointment status">
+        {% for c in a.chips %}
+        <a class="chip{% if c.selected %} chip--on{% endif %}"{% if c.selected %} aria-current="true"{% endif %}
+           href="{{ url_with(base, dict(s.params(status=c.key, page=1), tab='appointments')) }}"
+           hx-get="{{ url_with(base ~ '/tab/appointments', s.params(status=c.key, page=1)) }}"
+           hx-target="#chart-tabs" hx-swap="outerHTML">{{ c.label }} <span class="chip__count">{{ "{:,}".format(c.count) }}</span></a>
+        {% endfor %}
+      </nav>
+      {% if a.years | length > 1 %}
+      <form class="appts-year" method="get" action="{{ base }}"
+            hx-get="{{ base }}/tab/appointments" hx-target="#chart-tabs" hx-swap="outerHTML" hx-trigger="change">
+        <input type="hidden" name="tab" value="appointments">
+        {% if s.status != "all" %}<input type="hidden" name="status" value="{{ s.status }}">{% endif %}
+        <label class="visually-hidden" for="appts-year">Year</label>
+        <select class="select" id="appts-year" name="year">
+          <option value="">All years</option>
+          {% for y in a.years %}<option value="{{ y }}"{% if y == s.year %} selected{% endif %}>{{ y }}</option>{% endfor %}
+        </select>
+        <noscript><button type="submit" class="btn btn--secondary">Apply</button></noscript>
+      </form>
+      {% endif %}
+    </div>
+    {% if a.rows %}
+    <div class="table-scroll">
+      <table class="table appts-table">
+        <thead>
+          <tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col">Provider</th>
+              <th scope="col">Location</th><th scope="col">Status</th><th scope="col">Details</th><th scope="col">Source</th></tr>
+        </thead>
+        <tbody>
+          {% for r in a.rows %}
+          <tr>
+            <td class="nowrap">{{ r.date }}<span class="cell-sub">{{ r.time }}</span></td>
+            <td>{{ r.type }}</td>
+            <td>{{ r.provider }}</td>
+            <td>{{ r.location }}</td>
+            <td><span class="pill pill--{{ 'active' if r.status == 'kept' else 'alert' if r.status in ('cancelled', 'no_show') else 'neutral' }}">{{ r.status_label }}</span></td>
+            <td>{{ r.details or "—" }}{% if r.comment %}<span class="cell-sub appts-comment">{{ r.comment }}</span>{% endif %}</td>
+            <td>{{ source_badges(r.sources) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {{ pager_nav(a.pager, base, base ~ "/tab/appointments", "#chart-tabs", dict(s.params(page=None), tab="appointments")) }}
+    {% elif s.status == "all" and not s.year %}
+      {{ empty_state("No appointments recorded.") }}
+    {% else %}
+      {% call empty_state("No appointments match these filters.") %}
+        <a class="btn btn--secondary" href="{{ url_with(base, {'tab': 'appointments'}) }}"
+           hx-get="{{ base }}/tab/appointments" hx-target="#chart-tabs" hx-swap="outerHTML">Clear filters</a>
+      {% endcall %}
+    {% endif %}
+  </section>
+</div>

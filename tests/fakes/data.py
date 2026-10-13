@@ -101,6 +101,7 @@ class FakePatient:
     clinical_notes: list[dict] = field(default_factory=list)  # Notes tab
     hx_entries: list[dict] = field(default_factory=list)  # Problems & allergies tab
     hx_revisions: dict[int, list[dict]] = field(default_factory=dict)
+    appointments: list[dict] = field(default_factory=list)  # Appointments tab
 
 
 def _letter(i: int) -> str:
@@ -648,6 +649,70 @@ def add_history_entries(p: FakePatient, seed: int) -> None:
     p.hx_entries = entries
 
 
+# --- Appointments tab: one kept appointment per visit plus cancelled / no-show / scheduled ones
+# (own seed, so the data above stays exactly as it was). Shaped like live.appointments output.
+
+APPT_TYPES = [
+    ("Office Visit 20 Min", 20),
+    ("Office Visit 15 Minute", 15),
+    ("Lab", 20),
+    ("Consult 40", 40),
+    ("Bone Density", 30),
+]
+CANCEL_REASONS = ["Reschedule", "Patient Cancelled", "Office Cancelled", "Weather"]
+
+
+def add_appointments(p: FakePatient, seed: int) -> None:
+    rng = random.Random(seed * 13 + p.emr_id)
+    linked = p.ntier_id is not None
+    appts = []
+    for i, v in enumerate(sorted(p.visits, key=lambda v: v["start"])):
+        appt_type, minutes = rng.choice(APPT_TYPES)
+        appts.append(
+            {
+                "id": f"emr-{p.emr_id * 1000 + i}",
+                "starts": v["start"],
+                "emr_status": 2,
+                "pm_status": "A" if linked else None,
+                "type": appt_type if linked else None,
+                "duration": minutes if linked else None,
+                "provider": v["provider"],
+                "location": v["location"],
+                "cancel_reason": None,
+                "arrived": f"{v['start'].hour % 12 or 12}:{v['start'].minute:02d} "
+                f"{'AM' if v['start'].hour < 12 else 'PM'}",
+                "left": None,
+                "comment": None,
+                "sources": ["EMR", "PM"] if linked else ["EMR"],
+            }
+        )
+    for j in range(rng.randint(1, 6)):
+        kind = rng.choice(["cancelled", "cancelled", "no_show", "scheduled"])
+        start = _rand_dt(rng, EMR_START, EMR_END)
+        appts.append(
+            {
+                "id": f"emr-{p.emr_id * 1000 + 900 + j}",
+                "starts": start,
+                "emr_status": {"cancelled": 4, "no_show": 8, "scheduled": 1}[kind],
+                "pm_status": {"cancelled": "X", "no_show": "N", "scheduled": "S"}[kind]
+                if linked
+                else None,
+                "type": "Office Visit 20 Min" if linked else None,
+                "duration": 20 if linked else None,
+                "provider": rng.choice(PROVIDERS),
+                "location": rng.choice(LOCATIONS),
+                "cancel_reason": rng.choice(CANCEL_REASONS)
+                if kind == "cancelled" and linked
+                else None,
+                "arrived": None,
+                "left": None,
+                "comment": "Placeholder appointment note." if rng.random() < 0.3 else None,
+                "sources": ["EMR", "PM"] if linked else ["EMR"],
+            }
+        )
+    p.appointments = appts
+
+
 def build_patients(count: int = 30, seed: int = 20100827) -> list[FakePatient]:
     rng = random.Random(seed)
     ids = dict.fromkeys(("contact", "note", "hx", "med", "lab", "vital", "doc"), 0)
@@ -656,6 +721,7 @@ def build_patients(count: int = 30, seed: int = 20100827) -> list[FakePatient]:
         if i != 29:  # the patient with no clinical data stays empty
             add_clinical_notes(p, seed)
             add_history_entries(p, seed)
+            add_appointments(p, seed)
     return patients
 
 
