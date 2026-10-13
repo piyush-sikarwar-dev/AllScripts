@@ -112,25 +112,25 @@ def test_empty_patient_every_tab(client, tab):
 
 def test_visit_detail_partial(client):
     visit = next(v for v in PATIENTS[0].visits if v["is_office_visit"])
-    r = client.get(f"/patients/{FIRST}/visits/EMR/{visit['contact_id']}", headers=HTMX)
+    r = client.get(f"/patients/{FIRST}/visits/{visit['encounter_id']}", headers=HTMX)
     assert r.status_code == 200
-    assert "Assessment" in r.text and "Visit note" in r.text
-    assert f"visit={visit['contact_id']}" in r.headers["HX-Push-Url"]
+    assert "Assessment" in r.text and "data-focus-on-load" in r.text
+    assert f"visit={visit['encounter_id']}" in r.headers["HX-Push-Url"]
 
 
 def test_visit_deep_link(client):
     visit = PATIENTS[0].visits[0]
     r = client.get(
         f"/patients/{FIRST}",
-        params={"tab": "visits", "filter": "all", "visit": visit["contact_id"]},
+        params={"tab": "visits", "type": "all", "visit": visit["encounter_id"]},
     )
     assert r.status_code == 200
     assert "visit-row--selected" in r.text
 
 
 def test_visit_of_other_patient_is_404(client):
-    other = PATIENTS[1].visits[0]["contact_id"]
-    r = client.get(f"/patients/{FIRST}/visits/EMR/{other}", headers=HTMX)
+    other = PATIENTS[1].visits[0]["encounter_id"]
+    r = client.get(f"/patients/{FIRST}/visits/{other}", headers=HTMX)
     assert r.status_code == 404
 
 
@@ -199,3 +199,12 @@ def test_no_cdn_references():
     pattern = re.compile(r"https?://(?!www\.w3\.org)", re.I)
     files = [*root.rglob("*.html"), *root.rglob("*.css"), root / "static" / "js" / "app.js"]
     assert [str(p) for p in files if pattern.search(p.read_text(encoding="utf-8"))] == []
+
+
+def test_static_assets_are_versioned_so_updates_reach_the_browser(client):
+    html = client.get("/patients").text
+    css = re.search(r'href="(/static/css/app\.css\?v=[0-9a-f]{12})"', html)
+    assert css and re.search(r'src="/static/js/app\.js\?v=[0-9a-f]{12}"', html)
+    r = client.get(css.group(1))
+    assert r.status_code == 200 and "immutable" in r.headers["cache-control"]
+    assert client.get("/static/css/app.css").headers["cache-control"] == "no-cache"

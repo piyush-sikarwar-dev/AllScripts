@@ -1,5 +1,6 @@
 """Jinja2 environment shared by all routers."""
 
+import hashlib
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -12,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 from app.config import get_settings
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
+STATIC_DIR = Path(__file__).parent / "static"
 
 templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
@@ -25,7 +27,26 @@ def url_with(path: str, params: Mapping[str, Any] | None = None, **overrides: An
     return f"{path}?{query}" if query else path
 
 
+_static_versions: dict[str, tuple[float, str]] = {}
+
+
+def static_url(path: str) -> str:
+    """'/static/css/app.css' → '/static/css/app.css?v=<content hash>'. A changed file gets a new
+    URL, so browsers never keep using an old stylesheet or script after an update."""
+    file = STATIC_DIR / path.removeprefix("/static/")
+    try:
+        mtime = file.stat().st_mtime
+    except OSError:
+        return path
+    cached = _static_versions.get(path)
+    if cached is None or cached[0] != mtime:
+        cached = (mtime, hashlib.sha256(file.read_bytes()).hexdigest()[:12])
+        _static_versions[path] = cached
+    return f"{path}?v={cached[1]}"
+
+
 templates.env.globals["url_with"] = url_with
+templates.env.globals["static_url"] = static_url
 templates.env.globals["clinic_name"] = lambda: get_settings().clinic_name
 
 

@@ -6,6 +6,7 @@ from Phase 4 on: plain dicts / lists of dicts with raw values.
 
 from datetime import date
 
+from app.documents.render import sanitize_html
 from tests.fakes.data import PATIENTS, PATIENTS_BY_ID, FakePatient
 
 
@@ -114,7 +115,27 @@ def notes(emr_id: int) -> list[dict]:
     return [n | {"kind": "document"} for n in PATIENTS_BY_ID[emr_id].notes]
 
 
+def note_index(emr_id: int) -> list[dict]:
+    """Notes tab index: the synthetic clinical notes + the older fake notes (as documents)."""
+    p = PATIENTS_BY_ID[emr_id]
+    rows = [{k: v for k, v in n.items() if k not in ("html", "text")} for n in p.clinical_notes]
+    rows += [
+        {"kind": "document", "id": n["id"], "date": n["date"], "title": n["title"],
+         "who": n["author"], "app_source": None, "map_sources": [], "source": n["source"],
+         "encounter_id": None}
+        for n in p.notes
+    ]  # fmt: skip
+    return rows
+
+
 def note(emr_id: int, kind: str, note_id: int) -> dict | None:
+    p = PATIENTS_BY_ID[emr_id]
+    synthetic = next(
+        (n for n in p.clinical_notes if n["kind"] == kind and n["id"] == note_id), None
+    )
+    if synthetic is not None:
+        html = sanitize_html(synthetic["html"]) if synthetic.get("html") else None
+        return synthetic | {"html": html, "text": synthetic.get("text"), "author": synthetic["who"]}
     found = next((n for n in PATIENTS_BY_ID[emr_id].notes if n["id"] == note_id), None)
     if found is None or kind != "document":
         return None
@@ -163,4 +184,99 @@ def document_pages(emr_id: int, document_id: int) -> dict | None:
         "title": d["title"],
         "pages": pages,
         "source": "EMR",
+    }
+
+
+# --- Visits tab (Option C): fake data has one contact per encounter -------------------------
+
+
+def _fake_category(v: dict) -> str:
+    return "office" if v["is_office_visit"] else "other"
+
+
+def _fake_encounters(emr_id: int, category: str | None) -> list[dict]:
+    rows = [
+        v
+        for v in PATIENTS_BY_ID[emr_id].visits
+        if category is None or _fake_category(v) == category
+    ]
+    return sorted(rows, key=lambda v: (v["start"], v["encounter_id"]), reverse=True)
+
+
+def _fake_summary(v: dict) -> dict:
+    last, _, first = v["provider"].partition(", ")
+    return {
+        "encounter_id": v["encounter_id"],
+        "date": v["start"],
+        "visit_type": v["visit_type"],
+        "category": _fake_category(v),
+        "signed": v["signed"],
+        "provider": v["provider"],
+        "provider_short": f"{first[:1]}. {last}" if first else last,
+        "location": v["location"],
+        "source": "EMR",
+    }
+
+
+def visits_page(
+    emr_id: int, category: str | None, year: int | None, q: str | None, page: int
+) -> dict:
+    rows = _fake_encounters(emr_id, category)
+    if year is not None:
+        rows = [v for v in rows if v["start"].year == year]
+    if q:
+        needle = q.lower()
+        rows = [
+            v
+            for v in rows
+            if needle in v["provider"].lower()
+            or any(needle in t.lower() or needle in c.lower() for t, c in v["diagnoses"])
+        ]
+    start = (page - 1) * 25
+    return {
+        "total": len(rows),
+        "rows": [
+            _fake_summary(v) | {"diagnoses": [(c, t) for t, c in v["diagnoses"]]}
+            for v in rows[start : start + 25]
+        ],
+    }
+
+
+def visits_activity(emr_id: int, category: str | None) -> dict:
+    rows = _fake_encounters(emr_id, category)
+    years: dict[int, int] = {}
+    providers: dict[str, list] = {}
+    diagnoses: dict[tuple[str, str], list] = {}
+    for v in rows:
+        years[v["start"].year] = years.get(v["start"].year, 0) + 1
+        providers.setdefault(v["provider"], []).append(v["start"])
+        for title, code in v["diagnoses"]:
+            diagnoses.setdefault((code, title), []).append(v["start"])
+    top_p = max(providers.items(), key=lambda kv: (len(kv[1]), max(kv[1])), default=None)
+    top_d = max(diagnoses.items(), key=lambda kv: (len(kv[1]), max(kv[1])), default=None)
+    return {
+        "years": years,
+        "total": len(rows),
+        "last_visit": rows[0]["start"] if rows else None,
+        "top_provider": top_p[0] if top_p else None,
+        "top_provider_count": len(top_p[1]) if top_p else 0,
+        "top_diagnosis": top_d[0][1] if top_d else None,
+        "top_diagnosis_code": top_d[0][0] if top_d else None,
+        "top_diagnosis_count": len(top_d[1]) if top_d else 0,
+    }
+
+
+def encounter(emr_id: int, encounter_id: int) -> dict | None:
+    v = next((v for v in PATIENTS_BY_ID[emr_id].visits if v["encounter_id"] == encounter_id), None)
+    if v is None:
+        return None
+    readings = [r for r in PATIENTS_BY_ID[emr_id].vitals if r["contact_id"] == v["contact_id"]]
+    return _fake_summary(v) | {
+        "assessment": [(c, t) for t, c in v["diagnoses"]],
+        "plan": list(v["plan"]),
+        "addenda": list(v["addenda"]),
+        "note_documents": [],
+        "other_documents": [],
+        "text_notes": [v["note_text"]] if v["note_text"] else [],
+        "vitals": sorted(readings, key=lambda r: (r["date"], r["id"])),
     }

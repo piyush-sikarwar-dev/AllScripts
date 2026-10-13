@@ -1,0 +1,54 @@
+# Notes tab: which type each note gets. Checked in this order; the first category that matches wins.
+#   map_sources  HTML_DOCUMENTMAP.SOURCE names that mark the type (strongest signal; checked first
+#                for every category before any title rule)
+#   title_regex  Python regexes tried on the document title
+#   title_exclude titles that never get this type (e.g. fax cover pages)
+#   transcription: true  dictations (HPSITE.TRANSCRIPTION) get this type
+#   default: true        everything else
+# Discovery 2026-10-13 (EMR, counts only): 479,438 documents; map sources IMREMED_CODE 171,767
+# (prescription printouts; 170,020 titles carry "#<qty>"), IMREQUISITION_CODE/_C 48,283 (lab
+# requisitions), IMREENC_CODE 214,912 (encounter link only, not a type). 3,455 dictations, all
+# transtype 1. Titles: "* Lab Results by Date Range" 78,399, "* History & Physical Note..." 76,160,
+# "Laboratory Requisitions" 48,284, "Entire Chart Receipt" 14,277, "Incoming Fax" 7,225.
+categories:
+  rx:
+    label: Prescriptions
+    badge: Prescription
+    map_sources: [IMREMED_CODE]
+    title_regex: ['#\d+', '\bRef\.\s*x\d+']
+  lab:
+    label: Lab reports
+    badge: Lab report
+    map_sources: [IMREQUISITION_CODE, IMREQUISITION_C]
+    title_regex:
+      - '(?i)\blab(oratory)?\b'
+      - '(?i)\bresults?\b'
+      - '(?i)\bpanel\b'
+      - '(?i)culture'
+      - '(?i)\bA1C\b'
+      - '(?i)\bEKG\b'
+      - '(?i)fibroscan'
+      - '(?i)bone density'
+      - '(?i)biopsy'
+      - '(?i)x-ray'
+      - '(?i)echocardiogram'
+      - '(?i)\bBGM\b'
+      - '(?i)\bCGMS?\b'
+    title_exclude: ['(?i)^\W*cover page']
+  visit:
+    label: Visit notes
+    badge: Visit note
+    title_regex:
+      - '(?i)history\s*&\s*physical'
+      - '(?i)progress note'
+      - '(?i)visit note'
+      - '(?i)office visit'
+      - '(?i)encounter emr note'
+      - '(?i)discharge summary'
+      - '(?i)plan summary'
+    title_exclude: ['(?i)^\W*cover page']
+    transcription: true
+  letter:
+    label: Letters & other
+    badge: Letter/other
+    default: true

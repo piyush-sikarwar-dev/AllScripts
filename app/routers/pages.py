@@ -13,6 +13,7 @@ from app.services import NotFoundError
 from app.services.chart_header import get_header
 from app.services.patients import build_search, dashboard_totals, parse_dob, search_patients
 from app.services.release_log import release_page
+from app.services.selection import export_item_count
 from app.services.tabs import TAB_LABELS, TAB_NAMES, TABS, tab_context
 from app.templating import render, url_with
 
@@ -56,14 +57,23 @@ async def chart(
     try:
         ref = await resolve(key)
         header, ctx = await asyncio.gather(
-            get_header(ref), tab_context(ref, tab, request.query_params)
+            get_header(ref),
+            tab_context(ref, tab, request.query_params, request.state.session_id),
         )
+        export_count = await export_item_count(request.state.session_id, ref.patient_key)
     except NotFoundError as exc:
         raise HTTPException(status_code=404) from exc
     if ref.patient_key != key:  # merged-away record → the surviving chart
         return RedirectResponse(url_with(f"/patients/{ref.patient_key}", request.query_params),
                                 status_code=303)  # fmt: skip
     audit(request, background, "view_patient", patient_key=ref.patient_key, detail={"tab": tab})
+    if tab == "notes" and ctx.get("note"):
+        audit(request, background, "view_note", patient_key=ref.patient_key,
+              detail={"note": ctx["note"].ref, "category": ctx["note"].category,
+                      "view": ctx["note"].view})  # fmt: skip
+    if tab == "visits" and ctx.get("detail"):
+        audit(request, background, "view_visit", patient_key=ref.patient_key,
+              detail={"encounter_id": ctx["detail"].id, "view": ctx["detail"].view})  # fmt: skip
     return render(
         request,
         "pages/chart.html",
@@ -75,6 +85,7 @@ async def chart(
             "tabs": TABS,
             "tab_labels": TAB_LABELS,
             "tab": tab,
+            "export_count": export_count,
             **ctx,
         },
     )

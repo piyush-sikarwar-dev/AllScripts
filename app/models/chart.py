@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel
 
-from app.models.common import Pager, SourceLabel
+from app.models.common import SourceLabel
 
 
 class ChartHeader(BaseModel):
@@ -91,16 +91,6 @@ class VisitDetail(BaseModel):
     note_text: str | None
     documents: list[RenderedDocument] = []
     other_documents: list[DocumentLink] = []
-
-
-class VisitList(BaseModel):
-    visits: list[VisitSummary]
-    pager: Pager
-    filter: str  # "office" | "all"
-    selected: VisitDetail | None
-
-
-# --- Other tabs ---------------------------------------------------------------------------------
 
 
 class NoteRow(BaseModel):

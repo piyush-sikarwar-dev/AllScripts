@@ -30,9 +30,10 @@ from app.services import NotFoundError, call
 from app.services.chart_header import get_header
 from app.services.labs import lab_row
 from app.services.meds import med_row, medication_items
+from app.services.notes_service import note_detail, note_index, parse_note_ref
 from app.services.patients import parse_dob as parse_us_date
 from app.services.problems import problem_groups
-from app.services.visits import visit_detail
+from app.services.visit_contacts import visit_detail
 from app.services.vitals import vital_row
 
 SECTIONS: list[tuple[str, str]] = [
@@ -63,6 +64,11 @@ class ExportRequest:
     # Raw form values (echoed back into the dialog on validation errors).
     raw_from: str = ""
     raw_to: str = ""
+    # Visits picked with "Add to export" (encounter ids). When set, the Visits section holds
+    # exactly these visits (any visit type, regardless of the date range).
+    visit_ids: list[int] = field(default_factory=list)
+    # Notes picked with "Add to export" ("document-123"): printed formatted, then the original.
+    note_ids: list[str] = field(default_factory=list)
     errors: dict[str, str] = field(default_factory=dict)
 
 
@@ -74,8 +80,10 @@ def parse_export_form(form: Mapping[str, Any]) -> ExportRequest:
         purpose=str(form.get("purpose", "")),
         raw_from=str(form.get("date_from", "")).strip()[:10],
         raw_to=str(form.get("date_to", "")).strip()[:10],
+        visit_ids=_ids(form.getlist("visit_ids") if hasattr(form, "getlist") else []),
+        note_ids=_note_refs(form.getlist("note_ids") if hasattr(form, "getlist") else []),
     )
-    if not req.sections:
+    if not req.sections and not req.note_ids:
         req.errors["sections"] = "Choose at least one section."
     if not req.recipient:
         req.errors["recipient"] = "Enter who the records are being released to."
@@ -89,6 +97,16 @@ def parse_export_form(form: Mapping[str, Any]) -> ExportRequest:
     if req.date_from and req.date_to and req.date_from > req.date_to:
         req.errors["date_to"] = "The end date is before the start date."
     return req
+
+
+def _ids(raw: list[Any]) -> list[int]:
+    ids = {int(v) for v in raw if str(v).isdigit() and len(str(v)) <= 10}
+    return sorted(ids)[:500]
+
+
+def _note_refs(raw: list[Any]) -> list[str]:
+    refs = {str(v) for v in raw if parse_note_ref(str(v))}
+    return sorted(refs)[:500]
 
 
 def _day(value: Any) -> date | None:
@@ -121,8 +139,13 @@ def pdf_filename(header: ChartHeader, now: datetime) -> str:
 
 
 async def _visits(ref: PatientRef, req: ExportRequest) -> list:
-    rows = await call(source_repository().visits, ref.emr_id, True)
-    rows = [v for v in rows if v["is_office_visit"] and _in_range(v["start"], req)]
+    if req.visit_ids:  # visits picked with "Add to export": all their contacts, any type
+        wanted = set(req.visit_ids)
+        rows = await call(source_repository().visits, ref.emr_id)
+        rows = [v for v in rows if v["encounter_id"] in wanted]
+    else:
+        rows = await call(source_repository().visits, ref.emr_id, True)
+        rows = [v for v in rows if v["is_office_visit"] and _in_range(v["start"], req)]
     rows.sort(key=lambda v: (sort_key(v["start"]), v["contact_id"]), reverse=True)
     sem = asyncio.Semaphore(VISIT_CONCURRENCY)
 
@@ -134,6 +157,24 @@ async def _visits(ref: PatientRef, req: ExportRequest) -> list:
                 return None
 
     details = await asyncio.gather(*(one(v["contact_id"]) for v in rows))
+    return [d for d in details if d is not None]
+
+
+async def _notes(ref: PatientRef, refs: list[str]) -> list:
+    """Selected notes of this patient, newest first (anything not this patient's is skipped)."""
+    index = {m.ref: m for m in await note_index(ref)}
+    found = sorted((index[r] for r in refs if r in index),
+                   key=lambda m: (m.sort_key, m.kind, m.id), reverse=True)  # fmt: skip
+    sem = asyncio.Semaphore(VISIT_CONCURRENCY)
+
+    async def one(note_ref: str):
+        async with sem:
+            try:
+                return await note_detail(ref, note_ref, "formatted")
+            except NotFoundError:
+                return None
+
+    details = await asyncio.gather(*(one(m.ref) for m in found))
     return [d for d in details if d is not None]
 
 
@@ -177,6 +218,8 @@ async def gather(ref: PatientRef, req: ExportRequest) -> dict[str, Any]:
         vit = [v for v in await call(repo.vitals, ref.emr_id) if _in_range(v["date"], req)]
         vit.sort(key=lambda v: sort_key(v["date"]), reverse=True)
         ctx["vitals"] = [vital_row(v) for v in vit]
+    if req.note_ids:
+        ctx["selected_notes"] = await _notes(ref, req.note_ids)
     ctx["page_locations"] = {}
     if "documents" in req.sections:
         ctx["documents"], ctx["page_locations"] = await _documents(ref, req)
@@ -234,5 +277,6 @@ def cover_context(req: ExportRequest, released_by: str, code: str, now: datetime
         "recipient": req.recipient,
         "purpose": req.purpose,
         "period": period,
-        "section_labels": [SECTION_LABELS[s] for s in req.sections],
+        "section_labels": [SECTION_LABELS[s] for s in req.sections]
+        + ([f"Selected notes ({len(req.note_ids)})"] if req.note_ids else []),
     }

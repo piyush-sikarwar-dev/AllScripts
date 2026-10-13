@@ -27,6 +27,8 @@ from app.services.export import (
     pdf_filename,
     render_pdf,
 )
+from app.services.notes_service import note_choices, selected_note_refs
+from app.services.visits import selected_visit_ids, visit_choices
 from app.templating import is_htmx, render, templates
 
 log = logging.getLogger("app.export")
@@ -43,9 +45,15 @@ async def _resolve(key: str) -> PatientRef:
         raise HTTPException(status_code=404) from exc
 
 
-def _form(request: Request, ref: PatientRef, header, req: ExportRequest, status: int = 200):
+async def _form(
+    request: Request, ref: PatientRef, header, req: ExportRequest, status: int = 200
+) -> HTMLResponse:
+    selected = await selected_visit_ids(request.state.session_id, ref.patient_key)
+    notes = await selected_note_refs(request.state.session_id, ref.patient_key)
     ctx = {"key": ref.patient_key, "header": header, "req": req, "sections": SECTIONS,
-           "purposes": PURPOSES, "nav": "patients"}  # fmt: skip
+           "purposes": PURPOSES, "nav": "patients",
+           "visit_choices": await visit_choices(ref, selected),
+           "note_choices": await note_choices(ref, notes)}  # fmt: skip
     if is_htmx(request):
         return render(request, "partials/export_dialog.html", ctx, status_code=status)
     return render(request, "pages/export.html", ctx, status_code=status)
@@ -55,7 +63,11 @@ def _form(request: Request, ref: PatientRef, header, req: ExportRequest, status:
 async def export_form(request: Request, key: str) -> HTMLResponse:
     ref = await _resolve(key)
     header = await get_header(ref)
-    return _form(request, ref, header, ExportRequest(sections=[s for s, _ in SECTIONS]))
+    selected = await selected_visit_ids(request.state.session_id, ref.patient_key)
+    notes = await selected_note_refs(request.state.session_id, ref.patient_key)
+    req = ExportRequest(sections=[s for s, _ in SECTIONS], visit_ids=sorted(selected),
+                        note_ids=sorted(notes))  # fmt: skip
+    return await _form(request, ref, header, req)
 
 
 @router.post("/patients/{key}/export", dependencies=[Depends(require_csrf)])
@@ -66,7 +78,7 @@ async def export_pdf(
     header = await get_header(ref)
     req = parse_export_form(await request.form())
     if req.errors:
-        return _form(request, ref, header, req, status=400)
+        return await _form(request, ref, header, req, status=400)
 
     now = utcnow()
     code = new_release_code(to_clinic_time(now))
@@ -86,7 +98,7 @@ async def export_pdf(
                 db,
                 user_id=user.id,
                 patient_key=ref.patient_key,
-                sections=req.sections,
+                sections=req.sections + (["selected_notes"] if req.note_ids else []),
                 date_from=req.date_from,
                 date_to=req.date_to,
                 recipient=req.recipient,
@@ -98,7 +110,9 @@ async def export_pdf(
 
     await call(save)
     audit(request, background, "export", patient_key=ref.patient_key,
-          detail={"release_code": code, "sections": req.sections, "pages": pages})  # fmt: skip
+          detail={"release_code": code, "sections": req.sections, "pages": pages,
+                  "selected_visits": len(req.visit_ids),
+                  "selected_notes": len(req.note_ids)})  # fmt: skip
     filename = pdf_filename(header, to_clinic_time(now))
     return Response(
         content=pdf,

@@ -1,0 +1,32 @@
+{# Structured visit note rows (Visits tab detail and the visit print page). #}
+{% macro note_rows(rows, base, link_documents=True) -%}
+<dl class="note-grid">
+  {% for r in rows %}
+  <div class="note-grid__row">
+    <dt class="note-grid__label">{{ r.label }}</dt>
+    <dd class="note-grid__body">
+      {% if r.kind == "text" %}
+        {% for p in r.paragraphs %}<p>{{ p }}</p>{% endfor %}
+      {% elif r.kind == "html" %}
+        {% if r.caption %}<p class="note-grid__caption">{{ r.caption }}</p>{% endif %}
+        {# Sanitised with nh3 in app/documents/render.py before it reaches the template. #}
+        <div class="note-html">{{ r.html | safe }}</div>
+      {% elif r.kind == "dx" %}
+        <ul class="note-grid__list">
+          {% for code, title in r.dx %}<li>{{ title }}{% if code %} <span class="mono muted">{{ code }}</span>{% endif %}</li>{% endfor %}
+        </ul>
+      {% elif r.kind == "list" %}
+        <ul class="note-grid__list">{% for item in r.items %}<li>{{ item }}</li>{% endfor %}</ul>
+      {% elif r.kind == "links" %}
+        <ul class="note-grid__list">
+          {% for d in r.links %}
+          <li>{% if link_documents %}<a href="{{ url_with(base, {'tab': 'notes', 'note': d.kind ~ '-' ~ d.id}) }}">{{ d.title }}</a>{% else %}{{ d.title }}{% endif %}
+            {%- if d.meta %} <span class="muted">· {{ d.meta }}</span>{% endif %}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </dd>
+  </div>
+  {% endfor %}
+</dl>
+{%- endmacro %}

@@ -1,40 +1,44 @@
-{% from "components/badge.html" import source_badge %}
-{% from "components/table.html" import pager_nav, count_text %}
+{# Notes tab (Option A): type tiles + date range, searchable list, formatted / original note.
+   Shared state lives in inputs with class "nstate" (cat, range, from, to, q, sort, page, note,
+   view); every HTMX request includes them and overrides one value with hx-vals. Full-page URLs
+   render the same state without JavaScript. #}
 {% from "components/empty_state.html" import empty_state %}
-{% set base = "/patients/" ~ key %}
-<div class="split">
-  <section class="card table-card split__list" aria-labelledby="notes-title">
-    <div class="table-card__head">
-      <h2 class="table-card__title" id="notes-title">Notes</h2>
-      <p class="table-card__count">{{ count_text(pager, "notes") }}</p>
-    </div>
-    {% if notes %}
-    <ul class="visit-rows">
-      {% for n in notes %}
-      {% set selected = selected_note and selected_note.kind == n.kind and selected_note.id == n.id %}
-      <li>
-        <a class="visit-row{% if selected %} visit-row--selected{% endif %}"
-           {%- if selected %} aria-current="true"{% endif %}
-           href="{{ url_with(base, {'tab': 'notes', 'page': pager.page, 'note': n.kind ~ '-' ~ n.id}) }}"
-           hx-get="{{ url_with(base ~ '/notes/' ~ n.kind ~ '/' ~ n.id, {'page': pager.page}) }}"
-           hx-target="#note-detail" hx-swap="innerHTML">
-          <span class="visit-row__title">{{ n.date }} · {{ n.title }}</span>
-          <span class="visit-row__sub">{{ n.author }} · {{ n.source }}</span>
-        </a>
-      </li>
-      {% endfor %}
-    </ul>
-    {{ pager_nav(pager, base, base ~ "/tab/notes", "#chart-tabs", dict(state, tab="notes")) }}
-    {% else %}
-      {{ empty_state("No notes recorded.") }}
-    {% endif %}
-  </section>
+{% set s = notes_state %}
+<div class="notes">
+  {% include "partials/notes_filters.html" %}
 
-  <section class="card split__detail" id="note-detail" aria-label="Note" aria-live="polite">
-    {% if selected_note %}
-      {% with note = selected_note, partial = False %}{% include "partials/note_detail.html" %}{% endwith %}
-    {% else %}
-      {{ empty_state("Select a note to read it.") }}
-    {% endif %}
-  </section>
+  <div class="notes__cols">
+    <section class="card note-list" aria-labelledby="notes-title">
+      <h2 class="visually-hidden" id="notes-title">Notes</h2>
+      <form class="note-list__tools" id="note-tools" role="search" method="get" action="/patients/{{ key }}"
+            hx-get="/patients/{{ key }}/notes/list" hx-include=".nstate" hx-vals='{"page": "1"}'
+            hx-target="#note-results" hx-indicator="#note-results" hx-swap="outerHTML"
+            hx-trigger="input changed delay:300ms from:#note-q, search from:#note-q, change from:#note-sort, submit">
+        <input type="hidden" name="tab" value="notes">
+        <div class="note-list__search">
+          <label class="visually-hidden" for="note-q">Search notes</label>
+          <input class="input nstate" type="search" id="note-q" name="q" value="{{ s.q }}" maxlength="100"
+                 placeholder="Search drug, title, source…" autocomplete="off">
+        </div>
+        <div class="note-list__sort">
+          <label class="visually-hidden" for="note-sort">Sort</label>
+          <select class="select nstate" id="note-sort" name="sort">
+            {% for value, label in note_sorts %}
+            <option value="{{ value }}"{% if value == s.sort %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <noscript><button type="submit" class="btn btn--secondary">Apply</button></noscript>
+      </form>
+      {% include "partials/notes_list.html" %}
+    </section>
+
+    <section class="card note-detail" id="note-detail" aria-label="Note" aria-live="polite">
+      {% if note %}
+        {% with partial = False %}{% include "partials/note_detail.html" %}{% endwith %}
+      {% else %}
+        {{ empty_state("Select a note to read it.") }}
+      {% endif %}
+    </section>
+  </div>
 </div>

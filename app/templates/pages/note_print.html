@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{# Printable note (formatted view, or the original when it cannot be formatted), opened from
+   "Print note". No sidebar; the print dialog opens automatically (static/js/print-auto.js). #}
+{% from "components/note_fields.html" import note_formatted, note_original %}
+{% block title %}Print note · {{ header.name }}{% endblock %}
+{% block head %}<script src="{{ static_url('/static/js/print-auto.js') }}" defer></script>{% endblock %}
+{% block body %}
+<main class="print-visit">
+  <header class="print-visit__patient">
+    <p class="print-visit__name">{{ header.name }}</p>
+    <p class="meta-line">
+      <span><span class="meta-line__label">DOB</span> {{ header.dob }}</span>
+      <span><span class="meta-line__label">Chart ID</span> <span class="mono">{{ header.chart_id }}</span></span>
+    </p>
+  </header>
+  <p class="note-view__badge-line"><span class="badge-type badge-type--{{ note.category }}">{{ note.badge }}</span></p>
+  <h1 class="print-visit__title">{{ note.title }}</h1>
+  <p class="note-view__meta">{{ note.meta }}</p>
+  {% if not note.has_content %}
+  <p class="muted">This note's content is not available in the archive.</p>
+  {% elif note.view == "original" %}
+  {{ note_original(note) }}
+  {% else %}
+  {{ note_formatted(note) }}
+  {% endif %}
+  <p class="print-visit__footer">Printed by {{ user.full_name }} · {{ printed_at }}</p>
+  <p class="print-visit__screen-note no-print">The print dialog opens automatically. <button type="button" class="btn btn--secondary btn--sm" data-action="print">Print again</button></p>
+</main>
+{% endblock %}

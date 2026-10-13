@@ -1,0 +1,6 @@
+{# Chart header "Export records (PDF)" button; shows how many items (visits + notes) were added. #}
+{% from "components/icons.html" import icon %}
+<a class="btn btn--primary" id="export-button" href="/patients/{{ key }}/export"
+   hx-get="/patients/{{ key }}/export" hx-target="#export-dialog" hx-swap="innerHTML"
+   {%- if oob %} hx-swap-oob="true"{% endif %}>{{ icon("download") }}Export records (PDF)
+  {%- if export_count %} · {{ export_count }} item{{ "s" if export_count != 1 }}{% endif %}</a>

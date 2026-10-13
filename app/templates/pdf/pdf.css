@@ -65,3 +65,16 @@ tr { page-break-inside: avoid; }
 .scan-page { page-break-before: always; text-align: center; margin: 0; }
 .scan-page img { max-width: 100%; max-height: 8.6in; }
 .scan-page figcaption { font-size: 8pt; color: #5B6875; margin-top: 4pt; }
+
+/* Selected notes: formatted fields, then the original on a new page */
+.note-kv { display: block; margin: 4pt 0; }
+.note-kv__row { display: block; page-break-inside: avoid; border-top: 0.5pt solid #EEF1F4; padding: 3pt 0; }
+.note-kv__label { display: inline-block; width: 1.5in; vertical-align: top; font-size: 8pt; font-weight: 600;
+  text-transform: uppercase; color: #5B6875; }
+.note-kv__value { display: inline-block; width: 5in; margin: 0; white-space: pre-wrap; }
+.note-kv__value--strong { font-weight: 600; }
+.note-original-page { page-break-before: always; }
+.note-original { white-space: pre-wrap; font-family: 'IBM Plex Mono', monospace; font-size: 8.5pt;
+  border: 0.5pt solid #DDE3E8; padding: 6pt 8pt; }
+.note-original--html { white-space: normal; font-family: inherit; font-size: inherit; }
+.note-readable { border: 0.5pt solid #DDE3E8; padding: 6pt 8pt; margin: 4pt 0 6pt; }

@@ -28,10 +28,14 @@ class HistoryCategory:
     group: HistoryGroup
 
 
+VISIT_CATEGORIES: tuple[str, ...] = ("office", "phone", "lab", "annual", "other")
+
+
 @dataclass(frozen=True)
 class VisitType:
     label: str
     is_office_visit: bool
+    category: str = "other"
 
 
 class LookupConfigError(RuntimeError):
@@ -63,7 +67,8 @@ class Lookups:
         self.history: dict[object, HistoryCategory] = {}
         self.history_default_group: HistoryGroup = "other"
         self.visit_types: dict[object, VisitType] = {}
-        self.visit_default_office = True
+        self.visit_default_office = False
+        self.visit_default_category = "other"
         self.masks: dict[object, Precision] = {}
         self.mask_default: Precision = "full"
         self.active: dict[str, frozenset[object]] = {}
@@ -92,14 +97,26 @@ class Lookups:
             )
 
         visits = _read_yaml("visit_types.yaml")
-        self.visit_default_office = bool((visits.get("default") or {}).get("is_office_visit", True))
-        self.visit_types = {
-            _key(code): VisitType(
-                label=str((e or {}).get("label") or f"Visit type {code}"),
-                is_office_visit=bool((e or {}).get("is_office_visit", self.visit_default_office)),
+        default = visits.get("default") or {}
+        self.visit_default_category = self._category(
+            default.get("category", "office" if default.get("is_office_visit") else "other"),
+            "default",
+        )
+        self.visit_default_office = self.visit_default_category == "office"
+        self.visit_types = {}
+        for code, e in (visits.get("visit_types") or {}).items():
+            e = e or {}
+            if "category" in e:
+                category = self._category(e["category"], code)
+            elif "is_office_visit" in e:  # older config format
+                category = "office" if e["is_office_visit"] else "other"
+            else:
+                category = self.visit_default_category
+            self.visit_types[_key(code)] = VisitType(
+                label=str(e.get("label") or f"Visit type {code}"),
+                is_office_visit=category == "office",
+                category=category,
             )
-            for code, e in (visits.get("visit_types") or {}).items()
-        }
 
         statuses = _read_yaml("statuses.yaml")
         self.active = {
@@ -142,6 +159,12 @@ class Lookups:
         return value  # type: ignore[return-value]
 
     @staticmethod
+    def _category(value: object, code: object) -> str:
+        if value not in VISIT_CATEGORIES:
+            raise LookupConfigError(f"visit_types.yaml: bad category {value!r} for {code}")
+        return str(value)
+
+    @staticmethod
     def _precision(value: object, code: object) -> Precision:
         if value not in PRECISIONS:
             raise LookupConfigError(f"date_masks.yaml: bad precision {value!r} for {code}")
@@ -166,7 +189,11 @@ class Lookups:
         if found:
             return found
         label = f"Visit type {code}" if code is not None else "Visit"
-        return VisitType(label=label, is_office_visit=self.visit_default_office)
+        return VisitType(
+            label=label,
+            is_office_visit=self.visit_default_office,
+            category=self.visit_default_category,
+        )
 
     def is_active(self, kind: str, code: object) -> bool:
         """Whether a status code counts as active (config/statuses.yaml)."""
@@ -178,8 +205,12 @@ class Lookups:
 
     def office_visit_codes(self) -> list[int]:
         """Visit-type codes configured as real visits (config/visit_types.yaml)."""
+        return self.visit_codes("office")
+
+    def visit_codes(self, category: str) -> list[int]:
+        """Visit-type codes of one category (office | phone | lab | annual | other)."""
         return sorted(
-            c for c, v in self.visit_types.items() if v.is_office_visit and isinstance(c, int)
+            c for c, v in self.visit_types.items() if v.category == category and isinstance(c, int)
         )
 
     def is_visit_note_title(self, title: str | None) -> bool:

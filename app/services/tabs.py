@@ -13,10 +13,11 @@ from app.services.documents import (
 )
 from app.services.labs import build_filters, labs_tab
 from app.services.meds import meds_tab
-from app.services.notes import note_detail, notes_tab, parse_note_ref
+from app.services.notes_service import notes_tab
+from app.services.notes_service import parse_state as parse_notes_state
 from app.services.overview import overview
 from app.services.problems import problem_groups
-from app.services.visits import visit_list
+from app.services.visits import parse_state, selected_visit_ids, visits_tab
 from app.services.vitals import vitals_tab
 
 TABS: list[tuple[str, str]] = [
@@ -39,7 +40,9 @@ def _int(raw: str | None) -> int | None:
     return int(raw)
 
 
-async def tab_context(ref: PatientRef, name: str, params: Mapping[str, str]) -> dict[str, Any]:
+async def tab_context(
+    ref: PatientRef, name: str, params: Mapping[str, str], session_id: str | None = None
+) -> dict[str, Any]:
     """Context for `partials/tab_<name>.html`.
 
     `state` holds the query parameters that describe the tab's current view; it is used for pager
@@ -52,20 +55,12 @@ async def tab_context(ref: PatientRef, name: str, params: Mapping[str, str]) -> 
     if name == "overview":
         ctx["overview"] = await overview(ref)
     elif name == "visits":
-        vl = await visit_list(ref, page, params.get("filter", "office"), _int(params.get("visit")))
-        ctx["visit_list"] = vl
-        state = {"filter": vl.filter}
+        selection = await selected_visit_ids(session_id, ref.patient_key)
+        ctx.update(await visits_tab(ref, parse_state(params), selection))
+        state = ctx["visits_state"].params(tab=None)
     elif name == "notes":
-        ctx["notes"], ctx["pager"] = await notes_tab(ref, page)
-        selected = parse_note_ref(params.get("note"))
-        if selected is None and ctx["notes"]:
-            selected = (ctx["notes"][0].kind, ctx["notes"][0].id)
-        ctx["selected_note"] = None
-        if selected is not None:
-            try:
-                ctx["selected_note"] = await note_detail(ref, *selected)
-            except NotFoundError:
-                ctx["selected_note"] = None
+        ctx.update(await notes_tab(ref, parse_notes_state(params), session_id))
+        state = ctx["notes_state"].params(tab=None)
     elif name == "problems":
         ctx["groups"] = await problem_groups(ref)
     elif name == "meds":

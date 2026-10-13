@@ -1,0 +1,67 @@
+{# Notes tab: list results (context line, rows, pager). Swapped on every filter change; the HTMX
+   response also carries the filter card out of band, and the first note when the open one is
+   no longer in the result. #}
+{% from "components/empty_state.html" import empty_state %}
+{% set s = notes_state %}
+{% set lp = note_page %}
+{% set base = "/patients/" ~ key %}
+<div class="note-list__results" id="note-results" aria-live="polite">
+  <input type="hidden" class="nstate" name="page" value="{{ lp.pager.page }}">
+  <p class="note-list__context">{{ lp.context }}</p>
+  {% if lp.rows %}
+  <ul class="note-list__rows" data-list>
+    {% for n in lp.rows %}
+    {% set selected = s.note == n.ref %}
+    <li>
+      <a class="note-row{% if selected %} note-row--selected{% endif %}" data-list-row
+         {%- if selected %} aria-current="true"{% endif %}
+         href="{{ url_with(base, s.params(note=n.ref)) }}"
+         hx-get="{{ base }}/notes/{{ n.ref }}" hx-include=".nstate"
+         hx-target="#note-detail" hx-indicator="#note-detail" hx-swap="innerHTML">
+        <span class="note-row__meta">
+          <span>{{ n.date }} · {{ n.who }}</span>
+          <span class="badge-type badge-type--{{ n.category }}">{{ n.badge }}</span>
+        </span>
+        <span class="note-row__title">{{ n.title }}</span>
+        {% if n.subtitle %}<span class="note-row__sub">{{ n.subtitle }}</span>{% endif %}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if lp.pager.pages > 1 %}
+  <nav class="pager note-list__pager" aria-label="Note pages">
+    <span>Page {{ lp.pager.page }} of {{ lp.pager.pages }}</span>
+    <span class="pager__buttons">
+      {% for label, n, enabled in [("‹ Previous", lp.pager.page - 1, lp.pager.has_prev), ("Next ›", lp.pager.page + 1, lp.pager.has_next)] %}
+        {% if enabled %}
+        <a class="btn btn--secondary btn--sm" href="{{ url_with(base, s.params(page=n)) }}"
+           hx-get="{{ base }}/notes/list" hx-include=".nstate" hx-vals='{"page": "{{ n }}"}'
+           hx-target="#note-results" hx-indicator="#note-results" hx-swap="outerHTML">{{ label }}</a>
+        {% else %}
+        <span class="btn btn--secondary btn--sm" aria-disabled="true">{{ label }}</span>
+        {% endif %}
+      {% endfor %}
+    </span>
+  </nav>
+  {% endif %}
+  {% elif s.cat == "all" and s.range == "all" and not s.q %}
+    {{ empty_state("No notes recorded.") }}
+  {% else %}
+    {% call empty_state("No notes match these filters.") %}
+      <a class="btn btn--secondary" href="{{ url_with(base, {'tab': 'notes'}) }}"
+         hx-get="{{ base }}/tab/notes" hx-target="#chart-tabs" hx-swap="outerHTML">Clear filters</a>
+    {% endcall %}
+  {% endif %}
+</div>
+{% if oob %}
+  {% include "partials/notes_filters.html" %}
+  {% if oob_note %}
+  <section class="card note-detail" id="note-detail" aria-label="Note" aria-live="polite" hx-swap-oob="true">
+    {% if note %}
+      {% with partial = False %}{% include "partials/note_detail.html" %}{% endwith %}
+    {% else %}
+      {{ empty_state("Select a note to read it.") }}
+    {% endif %}
+  </section>
+  {% endif %}
+{% endif %}

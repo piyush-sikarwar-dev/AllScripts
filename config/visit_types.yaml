@@ -1,219 +1,221 @@
-# ENCOUNTER.ENC_VISITTYPE -> label + whether it is a real visit (Visits tab default filter).
+# ENCOUNTER.ENC_VISITTYPE -> label + category (Visits tab "Visit type" filter):
+#   office = real visits (the default list, Overview "Last visit", PDF export)
+#   phone = phone encounters · lab = lab reviews · annual = annual exams · other = everything else
 # Labels: Allscripts VISKD dictionary (hpsystem.DICTIONARIES_MASTER + HPSITE.DICTIONARIES_SITE),
 # read 2026-10-12. Trailing comment = number of encounters with that type.
-# is_office_visit = DRAFT: 'the patient was seen by a clinician' (visit or in-office procedure).
+# office = DRAFT: 'the patient was seen by a clinician' (visit or in-office procedure).
 # Evidence: Office Visit 99.5% have diagnoses and are signed; Review / Undefined 0% / 0%.
-# Everything stays visible under 'All entries'. Edit is_office_visit to change the default list.
+# Everything stays visible under 'All entries'. Edit a category to move a type between filters.
 default:
-  is_office_visit: false
+  category: other
 visit_types:
   # --- Real visits ---
-  6: {label: "Office Visit", is_office_visit: true}  # 91,853
-  -80: {label: "DEC Follow-up Visit", is_office_visit: true}  # 33,173
-  -166: {label: "Drug Study Visit", is_office_visit: true}  # 9,744
-  11: {label: "Consultation", is_office_visit: true}  # 7,219
-  -59: {label: "Injection Visit", is_office_visit: true}  # 6,466
-  -61: {label: "DEC Consult", is_office_visit: true}  # 5,870
-  -79: {label: "Thyroid Ultrasound", is_office_visit: true}  # 2,050
-  -191: {label: "Fibroscan", is_office_visit: true}  # 1,973
-  -38: {label: "Thyroid Aspiration", is_office_visit: true}  # 431
-  64: {label: "Nurse Visit", is_office_visit: true}  # 424
-  -147: {label: "Nurse Visit- Cgms", is_office_visit: true}  # 230
-  -77: {label: "Radioactive Iodine Treatment", is_office_visit: true}  # 211
-  -188: {label: "Liver Ultrasound", is_office_visit: true}  # 109
-  -78: {label: "Uptake", is_office_visit: true}  # 100
-  -145: {label: "Testosterone Shot", is_office_visit: true}  # 53
-  -81: {label: "OLD Office Visit", is_office_visit: true}  # 51
-  -159: {label: "Testopel Insertion", is_office_visit: true}  # 39
-  -144: {label: "Nurse Visit- Prolia", is_office_visit: true}  # 25
-  -129: {label: "Procdr - OP Note", is_office_visit: true}  # 23
-  -146: {label: "IV Boniva", is_office_visit: true}  # 22
-  -142: {label: "Nurse Visit- IV Boniva", is_office_visit: true}  # 15
-  -139: {label: "Level I (new)", is_office_visit: true}  # 9
-  -100: {label: "Ultrasound", is_office_visit: true}  # 7
-  -143: {label: "Nurse Visit- Testosterone", is_office_visit: true}  # 5
-  -140: {label: "Level III (established)", is_office_visit: true}  # 3
-  -138: {label: "Level V (new)", is_office_visit: true}  # 1
-  -99: {label: "EKG", is_office_visit: true}  # 1
-  -76: {label: "Diabetes Consult", is_office_visit: true}  # 1
+  6: {label: "Office Visit", category: office}  # 91,853
+  -80: {label: "DEC Follow-up Visit", category: office}  # 33,173
+  -166: {label: "Drug Study Visit", category: office}  # 9,744
+  11: {label: "Consultation", category: office}  # 7,219
+  -59: {label: "Injection Visit", category: office}  # 6,466
+  -61: {label: "DEC Consult", category: office}  # 5,870
+  -79: {label: "Thyroid Ultrasound", category: office}  # 2,050
+  -191: {label: "Fibroscan", category: office}  # 1,973
+  -38: {label: "Thyroid Aspiration", category: office}  # 431
+  64: {label: "Nurse Visit", category: office}  # 424
+  -147: {label: "Nurse Visit- Cgms", category: office}  # 230
+  -77: {label: "Radioactive Iodine Treatment", category: office}  # 211
+  -188: {label: "Liver Ultrasound", category: office}  # 109
+  -78: {label: "Uptake", category: office}  # 100
+  -145: {label: "Testosterone Shot", category: office}  # 53
+  -81: {label: "OLD Office Visit", category: office}  # 51
+  -159: {label: "Testopel Insertion", category: office}  # 39
+  -144: {label: "Nurse Visit- Prolia", category: office}  # 25
+  -129: {label: "Procdr - OP Note", category: office}  # 23
+  -146: {label: "IV Boniva", category: office}  # 22
+  -142: {label: "Nurse Visit- IV Boniva", category: office}  # 15
+  -139: {label: "Level I (new)", category: office}  # 9
+  -100: {label: "Ultrasound", category: office}  # 7
+  -143: {label: "Nurse Visit- Testosterone", category: office}  # 5
+  -140: {label: "Level III (established)", category: office}  # 3
+  -138: {label: "Level V (new)", category: office}  # 1
+  -99: {label: "EKG", category: office}  # 1
+  -76: {label: "Diabetes Consult", category: office}  # 1
   # --- Not visits (chart activity, messages, refills, letters, results, admin) ---
-  98: {label: "Review", is_office_visit: false}  # 1,667,059
-  65: {label: "Annotation/Addendum", is_office_visit: false}  # 248,432
-  23: {label: "Historical Summary", is_office_visit: false}  # 147,917
-  1: {label: "Undefined Type", is_office_visit: false}  # 131,661
-  119: {label: "Patient Message", is_office_visit: false}  # 94,147
-  120: {label: "Refill Request", is_office_visit: false}  # 36,745
-  -60: {label: "Nurse Phone Call", is_office_visit: false}  # 19,402
-  -39: {label: "RX Prescription Refill", is_office_visit: false}  # 15,484
-  -151: {label: "LAB Order Note", is_office_visit: false}  # 10,675
-  70: {label: "Medication Auto-Inactivation", is_office_visit: false}  # 7,771
-  -132: {label: "LTR - Misc: About Patient", is_office_visit: false}  # 5,360
-  -72: {label: "Referring Dr. Letter", is_office_visit: false}  # 2,674
-  -190: {label: "Adverse Event (Resolved)", is_office_visit: false}  # 2,078
-  123: {label: "Web Message", is_office_visit: false}  # 1,958
-  -148: {label: "Samples Given", is_office_visit: false}  # 1,944
-  -27: {label: "Dnka", is_office_visit: false}  # 1,719
-  -67: {label: "Medication Phone Call", is_office_visit: false}  # 1,597
-  -137: {label: "Telephone/messages - Telephone", is_office_visit: false}  # 1,362
-  -167: {label: "Medical history After Chart Review", is_office_visit: false}  # 1,273
-  -165: {label: "Inclusion/Exclusion Criteria", is_office_visit: false}  # 1,180
-  -136: {label: "Misc - Message TO Chart", is_office_visit: false}  # 894
-  30: {label: "Order Entry", is_office_visit: false}  # 751
-  -189: {label: "Adverse Event (Ongoing)", is_office_visit: false}  # 724
-  122: {label: "Internal Transcription", is_office_visit: false}  # 608
-  -25: {label: "Internet Contact", is_office_visit: false}  # 415
-  -152: {label: "Erroneous Encounter", is_office_visit: false}  # 387
-  -57: {label: "Medical History Questionnaire", is_office_visit: false}  # 383
-  -69: {label: "LAB Results", is_office_visit: false}  # 302
-  -192: {label: "Adverse Event (Archived)", is_office_visit: false}  # 244
-  -182: {label: "Drug Study Medical/Surgical History", is_office_visit: false}  # 123
-  -37: {label: "Referral Request", is_office_visit: false}  # 97
-  8: {label: "Phone Encounter", is_office_visit: false}  # 86
-  -58: {label: "Patient Letter", is_office_visit: false}  # 79
-  -130: {label: "Addendum TO Previous Note", is_office_visit: false}  # 56
-  -36: {label: "In-house Labs", is_office_visit: false}  # 49
-  -28: {label: "Patient Education Information", is_office_visit: false}  # 21
-  201: {label: "ePHI Import", is_office_visit: false}  # 21
-  -96: {label: "A1c", is_office_visit: false}  # 17
-  -29: {label: "Retinopathy Results", is_office_visit: false}  # 13
-  -73: {label: "Correspondence Other", is_office_visit: false}  # 11
-  -63: {label: "OLD EKG", is_office_visit: false}  # 11
-  -97: {label: "Outside Labs", is_office_visit: false}  # 10
-  -161: {label: "Con Meds", is_office_visit: false}  # 9
-  -83: {label: "Consultant Note", is_office_visit: false}  # 9
-  -33: {label: "Drug Study Labs", is_office_visit: false}  # 7
-  -150: {label: "Cancellation Letter", is_office_visit: false}  # 6
-  -105: {label: "Hipaa Contact Form", is_office_visit: false}  # 6
-  -95: {label: "Urine Micral", is_office_visit: false}  # 6
-  -98: {label: "UA", is_office_visit: false}  # 5
-  -70: {label: "Demographics", is_office_visit: false}  # 5
-  -62: {label: "DEC Outside Data", is_office_visit: false}  # 5
-  -52: {label: "Cgms Results", is_office_visit: false}  # 5
-  -110: {label: "Signature ON File", is_office_visit: false}  # 4
-  -53: {label: "Cgms Documents", is_office_visit: false}  # 4
-  -133: {label: "LTR - Misc: Hosice Eligibility", is_office_visit: false}  # 3
-  -108: {label: "Precert", is_office_visit: false}  # 3
-  -104: {label: "ABN Form", is_office_visit: false}  # 3
-  -94: {label: "Lipid Panel", is_office_visit: false}  # 3
-  -84: {label: "EKG Report", is_office_visit: false}  # 3
-  -74: {label: "Records Release", is_office_visit: false}  # 3
-  -135: {label: "Rachest", is_office_visit: false}  # 2
-  -128: {label: "E-mail Message", is_office_visit: false}  # 2
-  -127: {label: "Order Management Result", is_office_visit: false}  # 2
-  -50: {label: "BGM Results", is_office_visit: false}  # 2
-  -46: {label: "Medical Necessity Letter", is_office_visit: false}  # 2
-  0: {label: "Visit type 0", is_office_visit: false}  # 2
-  117: {label: "Admission Note", is_office_visit: false}  # 2
-  -162: {label: "Adverse Events", is_office_visit: false}  # 1
-  -134: {label: "LTR - Misc: Jury Duty Release", is_office_visit: false}  # 1
-  -131: {label: "LTR - TO Patient: Misc", is_office_visit: false}  # 1
-  -125: {label: "Medicaid", is_office_visit: false}  # 1
-  -120: {label: "Close OF DAY", is_office_visit: false}  # 1
-  -118: {label: "Billing Reports", is_office_visit: false}  # 1
-  -113: {label: "Legal", is_office_visit: false}  # 1
-  -107: {label: "Business Other", is_office_visit: false}  # 1
-  -106: {label: "Hipaa", is_office_visit: false}  # 1
-  -102: {label: "X-ray Report", is_office_visit: false}  # 1
-  -101: {label: "Bone Density Order", is_office_visit: false}  # 1
-  -82: {label: "OLD Outside Data", is_office_visit: false}  # 1
-  -71: {label: "Photographs", is_office_visit: false}  # 1
-  -64: {label: "OLD Ultrasound", is_office_visit: false}  # 1
-  -54: {label: "Growth Chart", is_office_visit: false}  # 1
-  -1: {label: "Visit type -1", is_office_visit: false}  # 1
-  203: {label: "eAuth Medication Prescribed", is_office_visit: false}  # 1
+  98: {label: "Review", category: other}  # 1,667,059
+  65: {label: "Annotation/Addendum", category: other}  # 248,432
+  23: {label: "Historical Summary", category: other}  # 147,917
+  1: {label: "Undefined Type", category: other}  # 131,661
+  119: {label: "Patient Message", category: other}  # 94,147
+  120: {label: "Refill Request", category: other}  # 36,745
+  -60: {label: "Nurse Phone Call", category: phone}  # 19,402
+  -39: {label: "RX Prescription Refill", category: other}  # 15,484
+  -151: {label: "LAB Order Note", category: lab}  # 10,675
+  70: {label: "Medication Auto-Inactivation", category: other}  # 7,771
+  -132: {label: "LTR - Misc: About Patient", category: other}  # 5,360
+  -72: {label: "Referring Dr. Letter", category: other}  # 2,674
+  -190: {label: "Adverse Event (Resolved)", category: other}  # 2,078
+  123: {label: "Web Message", category: other}  # 1,958
+  -148: {label: "Samples Given", category: other}  # 1,944
+  -27: {label: "Dnka", category: other}  # 1,719
+  -67: {label: "Medication Phone Call", category: phone}  # 1,597
+  -137: {label: "Telephone/messages - Telephone", category: phone}  # 1,362
+  -167: {label: "Medical history After Chart Review", category: other}  # 1,273
+  -165: {label: "Inclusion/Exclusion Criteria", category: other}  # 1,180
+  -136: {label: "Misc - Message TO Chart", category: other}  # 894
+  30: {label: "Order Entry", category: other}  # 751
+  -189: {label: "Adverse Event (Ongoing)", category: other}  # 724
+  122: {label: "Internal Transcription", category: other}  # 608
+  -25: {label: "Internet Contact", category: other}  # 415
+  -152: {label: "Erroneous Encounter", category: other}  # 387
+  -57: {label: "Medical History Questionnaire", category: other}  # 383
+  -69: {label: "LAB Results", category: lab}  # 302
+  -192: {label: "Adverse Event (Archived)", category: other}  # 244
+  -182: {label: "Drug Study Medical/Surgical History", category: other}  # 123
+  -37: {label: "Referral Request", category: other}  # 97
+  8: {label: "Phone Encounter", category: phone}  # 86
+  -58: {label: "Patient Letter", category: other}  # 79
+  -130: {label: "Addendum TO Previous Note", category: other}  # 56
+  -36: {label: "In-house Labs", category: lab}  # 49
+  -28: {label: "Patient Education Information", category: other}  # 21
+  201: {label: "ePHI Import", category: other}  # 21
+  -96: {label: "A1c", category: lab}  # 17
+  -29: {label: "Retinopathy Results", category: lab}  # 13
+  -73: {label: "Correspondence Other", category: other}  # 11
+  -63: {label: "OLD EKG", category: other}  # 11
+  -97: {label: "Outside Labs", category: lab}  # 10
+  -161: {label: "Con Meds", category: other}  # 9
+  -83: {label: "Consultant Note", category: other}  # 9
+  -33: {label: "Drug Study Labs", category: lab}  # 7
+  -150: {label: "Cancellation Letter", category: other}  # 6
+  -105: {label: "Hipaa Contact Form", category: other}  # 6
+  -95: {label: "Urine Micral", category: lab}  # 6
+  -98: {label: "UA", category: lab}  # 5
+  -70: {label: "Demographics", category: other}  # 5
+  -62: {label: "DEC Outside Data", category: other}  # 5
+  -52: {label: "Cgms Results", category: lab}  # 5
+  -110: {label: "Signature ON File", category: other}  # 4
+  -53: {label: "Cgms Documents", category: other}  # 4
+  -133: {label: "LTR - Misc: Hosice Eligibility", category: other}  # 3
+  -108: {label: "Precert", category: other}  # 3
+  -104: {label: "ABN Form", category: other}  # 3
+  -94: {label: "Lipid Panel", category: lab}  # 3
+  -84: {label: "EKG Report", category: other}  # 3
+  -74: {label: "Records Release", category: other}  # 3
+  -135: {label: "Rachest", category: other}  # 2
+  -128: {label: "E-mail Message", category: other}  # 2
+  -127: {label: "Order Management Result", category: lab}  # 2
+  -50: {label: "BGM Results", category: lab}  # 2
+  -46: {label: "Medical Necessity Letter", category: other}  # 2
+  0: {label: "Visit type 0", category: other}  # 2
+  117: {label: "Admission Note", category: other}  # 2
+  -162: {label: "Adverse Events", category: other}  # 1
+  -134: {label: "LTR - Misc: Jury Duty Release", category: other}  # 1
+  -131: {label: "LTR - TO Patient: Misc", category: other}  # 1
+  -125: {label: "Medicaid", category: other}  # 1
+  -120: {label: "Close OF DAY", category: other}  # 1
+  -118: {label: "Billing Reports", category: other}  # 1
+  -113: {label: "Legal", category: other}  # 1
+  -107: {label: "Business Other", category: other}  # 1
+  -106: {label: "Hipaa", category: other}  # 1
+  -102: {label: "X-ray Report", category: other}  # 1
+  -101: {label: "Bone Density Order", category: other}  # 1
+  -82: {label: "OLD Outside Data", category: other}  # 1
+  -71: {label: "Photographs", category: other}  # 1
+  -64: {label: "OLD Ultrasound", category: other}  # 1
+  -54: {label: "Growth Chart", category: other}  # 1
+  -1: {label: "Visit type -1", category: other}  # 1
+  203: {label: "eAuth Medication Prescribed", category: other}  # 1
   # --- In the dictionary but never used ---
-  -164: {label: "Medical History/Concomitant Illness", is_office_visit: false}  # 0
-  -163: {label: "Drug Accountability", is_office_visit: false}  # 0
-  -149: {label: "Reschedule Letter", is_office_visit: false}  # 0
-  -126: {label: "Medicare Eobs", is_office_visit: false}  # 0
-  -124: {label: "Bcbs", is_office_visit: false}  # 0
-  -123: {label: "Commercial", is_office_visit: false}  # 0
-  -122: {label: "Receipt Summary", is_office_visit: false}  # 0
-  -121: {label: "Charge Summary", is_office_visit: false}  # 0
-  -119: {label: "Insurance Reports", is_office_visit: false}  # 0
-  -117: {label: "Encounter Forms", is_office_visit: false}  # 0
-  -116: {label: "Refunds", is_office_visit: false}  # 0
-  -115: {label: "DAY File Other", is_office_visit: false}  # 0
-  -114: {label: "Power OF Attorney", is_office_visit: false}  # 0
-  -112: {label: "Disability Form", is_office_visit: false}  # 0
-  -111: {label: "Insurance Card", is_office_visit: false}  # 0
-  -109: {label: "Consent Form", is_office_visit: false}  # 0
-  -103: {label: "Medicare Lifetime BEN Form", is_office_visit: false}  # 0
-  -93: {label: "Hosp-h&p", is_office_visit: false}  # 0
-  -92: {label: "Hosp-discharge Summary", is_office_visit: false}  # 0
-  -91: {label: "Hosp-er", is_office_visit: false}  # 0
-  -90: {label: "Hosp-procedure/op Notes", is_office_visit: false}  # 0
-  -89: {label: "Hosp-progress Notes", is_office_visit: false}  # 0
-  -88: {label: "Hosp-consult Endocrinology", is_office_visit: false}  # 0
-  -87: {label: "Hosp-consult Other", is_office_visit: false}  # 0
-  -86: {label: "Hosp-pathology", is_office_visit: false}  # 0
-  -85: {label: "Hosp-other", is_office_visit: false}  # 0
-  -75: {label: "Release Work/school", is_office_visit: false}  # 0
-  -68: {label: "Bone Density Results", is_office_visit: false}  # 0
-  -66: {label: "OLD Outside Labs", is_office_visit: false}  # 0
-  -65: {label: "OLD X-ray Report", is_office_visit: false}  # 0
-  -56: {label: "Sleep Study", is_office_visit: false}  # 0
-  -55: {label: "GI Photos", is_office_visit: false}  # 0
-  -51: {label: "BGM Documents", is_office_visit: false}  # 0
-  -49: {label: "Hospital Charges", is_office_visit: false}  # 0
-  -48: {label: "Drug Study Payments", is_office_visit: false}  # 0
-  -47: {label: "Pump Results", is_office_visit: false}  # 0
-  -45: {label: "Body Composition", is_office_visit: false}  # 0
-  -44: {label: "Pump Documents", is_office_visit: false}  # 0
-  -43: {label: "Collections", is_office_visit: false}  # 0
-  -42: {label: "Patient Discharge Letter", is_office_visit: false}  # 0
-  -41: {label: "Cgms Logs", is_office_visit: false}  # 0
-  -40: {label: "Medicare Bonus Payments", is_office_visit: false}  # 0
-  -35: {label: "IV Boniva Documents", is_office_visit: false}  # 0
-  -34: {label: "Pulmonary Function Results", is_office_visit: false}  # 0
-  -32: {label: "Nerve Conduction Results", is_office_visit: false}  # 0
-  -31: {label: "Nerve Conduction Order", is_office_visit: false}  # 0
-  -30: {label: "Patientlink Pre-registration", is_office_visit: false}  # 0
-  -26: {label: "Nerve Conduction Documents", is_office_visit: false}  # 0
-  -24: {label: "Drivers License", is_office_visit: false}  # 0
-  -23: {label: "Financial Agreement", is_office_visit: false}  # 0
-  -22: {label: "Fast Call Reports", is_office_visit: false}  # 0
-  2: {label: "Complete H&P", is_office_visit: false}  # 0
-  3: {label: "Comprehensive Visit", is_office_visit: false}  # 0
-  4: {label: "Moderate Visit", is_office_visit: false}  # 0
-  5: {label: "Brief Visit", is_office_visit: false}  # 0
-  7: {label: "Visit Addendum", is_office_visit: false}  # 0
-  9: {label: "Clinic Note", is_office_visit: false}  # 0
-  10: {label: "Annotation / Chart Check", is_office_visit: false}  # 0
-  12: {label: "Composite Record", is_office_visit: false}  # 0
-  13: {label: "Transcription", is_office_visit: false}  # 0
-  15: {label: "Vital Signs", is_office_visit: false}  # 0
-  20: {label: "Medication Order", is_office_visit: false}  # 0
-  21: {label: "Rx Order", is_office_visit: false}  # 0
-  22: {label: "Laboratory / Imaging Order", is_office_visit: false}  # 0
-  71: {label: "Medication Auto-Inactivation", is_office_visit: false}  # 0
-  80: {label: "AI Result", is_office_visit: false}  # 0
-  81: {label: "QMR", is_office_visit: false}  # 0
-  82: {label: "Illiad", is_office_visit: false}  # 0
-  83: {label: "DXPlain", is_office_visit: false}  # 0
-  84: {label: "Medas", is_office_visit: false}  # 0
-  96: {label: "External Interface", is_office_visit: false}  # 0
-  97: {label: "Summary Review", is_office_visit: false}  # 0
-  99: {label: "Emergency Visit", is_office_visit: false}  # 0
-  100: {label: "Phone Interaction", is_office_visit: false}  # 0
-  101: {label: "Business Meeting", is_office_visit: false}  # 0
-  102: {label: "Break", is_office_visit: false}  # 0
-  110: {label: "Golf Practice", is_office_visit: false}  # 0
-  111: {label: "Initial History & Physical", is_office_visit: false}  # 0
-  112: {label: "Yearly History & Physical", is_office_visit: false}  # 0
-  113: {label: "Follow-up Visit", is_office_visit: false}  # 0
-  114: {label: "Urgent Illness", is_office_visit: false}  # 0
-  115: {label: "Medication Review", is_office_visit: false}  # 0
-  116: {label: "Occupational Physical Exam", is_office_visit: false}  # 0
-  118: {label: "Progress Note", is_office_visit: false}  # 0
-  121: {label: "Retrospective Data", is_office_visit: false}  # 0
-  125: {label: "Initial Visit", is_office_visit: false}  # 0
-  127: {label: "Scheduled Follow-up Visit", is_office_visit: false}  # 0
-  128: {label: "Unscheduled Follow-up Visit", is_office_visit: false}  # 0
-  129: {label: "Protocol Visit", is_office_visit: false}  # 0
-  130: {label: "Transition of Care", is_office_visit: false}  # 0
-  131: {label: "Transition of Care", is_office_visit: false}  # 0
-  200: {label: "Definitive Diagnosis Pending", is_office_visit: false}  # 0
-  202: {label: "Auto Import", is_office_visit: false}  # 0
-  204: {label: "eAuth Request Submitted", is_office_visit: false}  # 0
-  999: {label: "Blocked", is_office_visit: false}  # 0
+  -164: {label: "Medical History/Concomitant Illness", category: other}  # 0
+  -163: {label: "Drug Accountability", category: other}  # 0
+  -149: {label: "Reschedule Letter", category: other}  # 0
+  -126: {label: "Medicare Eobs", category: other}  # 0
+  -124: {label: "Bcbs", category: other}  # 0
+  -123: {label: "Commercial", category: other}  # 0
+  -122: {label: "Receipt Summary", category: other}  # 0
+  -121: {label: "Charge Summary", category: other}  # 0
+  -119: {label: "Insurance Reports", category: other}  # 0
+  -117: {label: "Encounter Forms", category: other}  # 0
+  -116: {label: "Refunds", category: other}  # 0
+  -115: {label: "DAY File Other", category: other}  # 0
+  -114: {label: "Power OF Attorney", category: other}  # 0
+  -112: {label: "Disability Form", category: other}  # 0
+  -111: {label: "Insurance Card", category: other}  # 0
+  -109: {label: "Consent Form", category: other}  # 0
+  -103: {label: "Medicare Lifetime BEN Form", category: other}  # 0
+  -93: {label: "Hosp-h&p", category: other}  # 0
+  -92: {label: "Hosp-discharge Summary", category: other}  # 0
+  -91: {label: "Hosp-er", category: other}  # 0
+  -90: {label: "Hosp-procedure/op Notes", category: other}  # 0
+  -89: {label: "Hosp-progress Notes", category: other}  # 0
+  -88: {label: "Hosp-consult Endocrinology", category: other}  # 0
+  -87: {label: "Hosp-consult Other", category: other}  # 0
+  -86: {label: "Hosp-pathology", category: other}  # 0
+  -85: {label: "Hosp-other", category: other}  # 0
+  -75: {label: "Release Work/school", category: other}  # 0
+  -68: {label: "Bone Density Results", category: other}  # 0
+  -66: {label: "OLD Outside Labs", category: lab}  # 0
+  -65: {label: "OLD X-ray Report", category: other}  # 0
+  -56: {label: "Sleep Study", category: other}  # 0
+  -55: {label: "GI Photos", category: other}  # 0
+  -51: {label: "BGM Documents", category: other}  # 0
+  -49: {label: "Hospital Charges", category: other}  # 0
+  -48: {label: "Drug Study Payments", category: other}  # 0
+  -47: {label: "Pump Results", category: other}  # 0
+  -45: {label: "Body Composition", category: other}  # 0
+  -44: {label: "Pump Documents", category: other}  # 0
+  -43: {label: "Collections", category: other}  # 0
+  -42: {label: "Patient Discharge Letter", category: other}  # 0
+  -41: {label: "Cgms Logs", category: other}  # 0
+  -40: {label: "Medicare Bonus Payments", category: other}  # 0
+  -35: {label: "IV Boniva Documents", category: other}  # 0
+  -34: {label: "Pulmonary Function Results", category: other}  # 0
+  -32: {label: "Nerve Conduction Results", category: other}  # 0
+  -31: {label: "Nerve Conduction Order", category: other}  # 0
+  -30: {label: "Patientlink Pre-registration", category: other}  # 0
+  -26: {label: "Nerve Conduction Documents", category: other}  # 0
+  -24: {label: "Drivers License", category: other}  # 0
+  -23: {label: "Financial Agreement", category: other}  # 0
+  -22: {label: "Fast Call Reports", category: other}  # 0
+  2: {label: "Complete H&P", category: other}  # 0
+  3: {label: "Comprehensive Visit", category: office}  # 0
+  4: {label: "Moderate Visit", category: office}  # 0
+  5: {label: "Brief Visit", category: office}  # 0
+  7: {label: "Visit Addendum", category: other}  # 0
+  9: {label: "Clinic Note", category: other}  # 0
+  10: {label: "Annotation / Chart Check", category: other}  # 0
+  12: {label: "Composite Record", category: other}  # 0
+  13: {label: "Transcription", category: other}  # 0
+  15: {label: "Vital Signs", category: other}  # 0
+  20: {label: "Medication Order", category: other}  # 0
+  21: {label: "Rx Order", category: other}  # 0
+  22: {label: "Laboratory / Imaging Order", category: other}  # 0
+  71: {label: "Medication Auto-Inactivation", category: other}  # 0
+  80: {label: "AI Result", category: other}  # 0
+  81: {label: "QMR", category: other}  # 0
+  82: {label: "Illiad", category: other}  # 0
+  83: {label: "DXPlain", category: other}  # 0
+  84: {label: "Medas", category: other}  # 0
+  96: {label: "External Interface", category: other}  # 0
+  97: {label: "Summary Review", category: other}  # 0
+  99: {label: "Emergency Visit", category: office}  # 0
+  100: {label: "Phone Interaction", category: phone}  # 0
+  101: {label: "Business Meeting", category: other}  # 0
+  102: {label: "Break", category: other}  # 0
+  110: {label: "Golf Practice", category: other}  # 0
+  111: {label: "Initial History & Physical", category: office}  # 0
+  112: {label: "Yearly History & Physical", category: annual}  # 0
+  113: {label: "Follow-up Visit", category: office}  # 0
+  114: {label: "Urgent Illness", category: office}  # 0
+  115: {label: "Medication Review", category: other}  # 0
+  116: {label: "Occupational Physical Exam", category: annual}  # 0
+  118: {label: "Progress Note", category: other}  # 0
+  121: {label: "Retrospective Data", category: other}  # 0
+  125: {label: "Initial Visit", category: office}  # 0
+  127: {label: "Scheduled Follow-up Visit", category: office}  # 0
+  128: {label: "Unscheduled Follow-up Visit", category: office}  # 0
+  129: {label: "Protocol Visit", category: office}  # 0
+  130: {label: "Transition of Care", category: other}  # 0
+  131: {label: "Transition of Care", category: other}  # 0
+  200: {label: "Definitive Diagnosis Pending", category: other}  # 0
+  202: {label: "Auto Import", category: other}  # 0
+  204: {label: "eAuth Request Submitted", category: other}  # 0
+  999: {label: "Blocked", category: other}  # 0

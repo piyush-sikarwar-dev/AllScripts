@@ -28,4 +28,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             # Everything except static assets may contain PHI: never cache it.
             response.headers["Cache-Control"] = "no-store"
             response.headers["Pragma"] = "no-cache"
+        elif request.url.query.startswith("v="):
+            # Versioned asset (templating.static_url): the URL changes whenever the file does.
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            # Unversioned asset (fonts, images): always check with the server before reuse.
+            response.headers["Cache-Control"] = "no-cache"
         return response

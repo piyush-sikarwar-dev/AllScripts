@@ -211,3 +211,15 @@ def test_source_engine_settings_avoid_extra_round_trips():
     assert engine.pool._pre_ping is False
     assert engine.pool._reset_on_return is not None  # value object exists...
     assert str(engine.pool._reset_on_return).lower().endswith("none")  # ...and means "no reset"
+
+
+def test_sql_comment_with_parameter_name_is_rejected(tmp_path, monkeypatch):
+    from app.db import sql_loader
+
+    (tmp_path / "emr").mkdir()
+    (tmp_path / "emr" / "bad.sql").write_text("-- filters by :year\nSELECT 1", encoding="utf-8")
+    monkeypatch.setattr(sql_loader, "SQL_DIR", tmp_path)
+    sql_loader.load_sql.cache_clear()
+    with pytest.raises(SqlFileError, match="comment"):
+        sql_loader.load_sql("emr/bad.sql")
+    sql_loader.load_sql.cache_clear()

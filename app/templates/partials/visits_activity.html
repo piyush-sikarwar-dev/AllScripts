@@ -1,0 +1,65 @@
+{# Visits tab: activity card (totals + visits per year). Re-sent out of band with every list
+   request, so the stats and the year filter always match the list's visit type. #}
+{% set a = activity %}
+{% set s = visits_state %}
+<section class="card activity" id="visits-activity" aria-labelledby="activity-title"
+  {%- if oob_activity %} hx-swap-oob="true"{% endif %}>
+  <h2 class="visually-hidden" id="activity-title">Visit activity</h2>
+  <input type="hidden" class="vstate" name="year" value="{{ s.year or '' }}">
+  <div class="activity__body">
+    <dl class="activity__stats">
+      <div class="activity__stat">
+        <dt>Total visits</dt>
+        <dd class="activity__value">{{ "{:,}".format(a.total) }}</dd>
+      </div>
+      <div class="activity__stat">
+        <dt>Last visit</dt>
+        <dd class="activity__value">{{ a.last_visit }}</dd>
+      </div>
+      <div class="activity__stat">
+        <dt>Most seen provider</dt>
+        <dd class="activity__text">{{ a.top_provider }}</dd>
+      </div>
+      <div class="activity__stat">
+        <dt>Most frequent diagnosis</dt>
+        <dd class="activity__text">{{ a.top_diagnosis }}</dd>
+      </div>
+    </dl>
+
+    <div class="activity__chart">
+      <div class="activity__chart-head">
+        <p class="activity__label">Visits per year{% if s.year %} · showing {{ s.year }}{% endif %}</p>
+        {% if s.year %}
+        <a class="activity__all" href="{{ url_with('/patients/' ~ key, s.params(year=None, page=1, visit=None)) }}"
+           hx-get="/patients/{{ key }}/visits/list" hx-include=".vstate" hx-vals='{"year": "", "page": "1"}'
+           hx-target="#visit-results" hx-indicator="#visit-results" hx-swap="outerHTML">Show all years</a>
+        {% endif %}
+      </div>
+      {% if a.years %}
+      {# Without JS the buttons submit this form (full page); with HTMX they swap the list. #}
+      <form class="year-bars" method="get" action="/patients/{{ key }}" aria-label="Filter visits by year">
+        <input type="hidden" name="tab" value="visits">
+        {% if s.type != "office" %}<input type="hidden" name="type" value="{{ s.type }}">{% endif %}
+        {% if s.q %}<input type="hidden" name="q" value="{{ s.q }}">{% endif %}
+        {% for b in a.years %}
+        {% set next_year = "" if b.selected else b.year %}
+        <button type="submit" class="year-bar" name="year" value="{{ next_year }}"
+                aria-pressed="{{ 'true' if b.selected else 'false' }}"
+                aria-label="{{ b.year }}: {{ b.count }} visit{{ 's' if b.count != 1 }}{{ ' (selected, choose to show all years)' if b.selected }}"
+                hx-get="/patients/{{ key }}/visits/list" hx-include=".vstate"
+                hx-vals='{"year": "{{ next_year }}", "page": "1"}'
+                hx-target="#visit-results" hx-indicator="#visit-results" hx-swap="outerHTML">
+          <svg width="44" height="70" viewBox="0 0 44 70" aria-hidden="true" focusable="false">
+            {%- if b.height %}<rect class="{{ b.bar_class }}" x="8" y="{{ b.y }}" width="28" height="{{ b.height }}" rx="3"></rect>{% endif -%}
+          </svg>
+          <span class="year-bar__count" aria-hidden="true">{{ b.count }}</span>
+          <span class="year-bar__year" aria-hidden="true">{{ b.year }}</span>
+        </button>
+        {% endfor %}
+      </form>
+      {% else %}
+      <p class="muted">No visits to chart.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>

@@ -49,6 +49,7 @@ def current_user(request: Request, db: Annotated[Session, Depends(get_db)]) -> C
     current = CurrentUser(id=user.id, email=user.email, full_name=user.full_name)
     request.state.user = current
     request.state.csrf_token = csrf_for_session(token)
+    request.state.session_id = sessions.token_hash(token)
     return current
 
 

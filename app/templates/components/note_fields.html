@@ -1,0 +1,27 @@
+{# Notes: formatted and original bodies (Notes tab detail, note print page, PDF release). #}
+{% macro note_formatted(note) -%}
+{% if note.fields %}
+<dl class="note-kv">
+  {% for f in note.fields %}
+  <div class="note-kv__row">
+    <dt class="note-kv__label">{{ f.label }}</dt>
+    <dd class="note-kv__value{% if f.strong %} note-kv__value--strong{% endif %}">{{ f.value }}</dd>
+  </div>
+  {% endfor %}
+</dl>
+{% elif note.formatted_html %}
+{# Sanitised with nh3 (app/documents/render.py); SSNs masked (app/services/note_format.py). #}
+<div class="note-readable note-html">{{ note.formatted_html | safe }}</div>
+{% elif note.formatted_text %}
+<div class="note-readable">{% for p in note.formatted_text %}<p>{{ p }}</p>{% endfor %}</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro note_original(note) -%}
+{% if note.original_html %}
+{# Sanitised with nh3 (app/documents/render.py); SSNs masked (app/services/note_format.py). #}
+<div class="note-original note-original--html note-html">{{ note.original_html | safe }}</div>
+{% elif note.original_text %}
+<pre class="note-original">{{ note.original_text }}</pre>
+{% endif %}
+{%- endmacro %}

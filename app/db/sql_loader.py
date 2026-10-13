@@ -15,6 +15,7 @@ from app.db.readonly import assert_read_only
 SQL_DIR = Path(__file__).resolve().parent.parent / "sql"
 
 _NAME_RE = re.compile(r"^(emr|ntier|dmz|meta)/[a-z0-9_]+\.sql$")
+_COMMENT_PARAM_RE = re.compile(r"(?<![:\w]):[A-Za-z_]\w*")
 
 
 class SqlFileError(RuntimeError):
@@ -30,6 +31,11 @@ def load_sql(name: str, expanding: tuple[str, ...] = ()) -> TextClause:
     if not path.is_file():
         raise SqlFileError(f"missing SQL file: {name}")
     sql = path.read_text(encoding="utf-8")
+    for line in sql.splitlines():
+        comment = line.split("--", 1)[1] if "--" in line else ""
+        if _COMMENT_PARAM_RE.search(comment):
+            # SQLAlchemy text() would turn ":name" inside a comment into a real bind parameter.
+            raise SqlFileError(f"{name}: parameter-like ':name' inside a comment")
     try:
         assert_read_only(sql)
     except Exception as exc:

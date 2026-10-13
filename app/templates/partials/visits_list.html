@@ -1,0 +1,54 @@
+{# Visits tab: list results (rows + pager). Swapped on search / type / year / page changes;
+   the HTMX response also carries the activity card out of band. #}
+{% from "components/empty_state.html" import empty_state %}
+{% set s = visits_state %}
+{% set vp = visit_page %}
+{% set base = "/patients/" ~ key %}
+<div class="visit-list__results" id="visit-results" aria-live="polite">
+  <input type="hidden" class="vstate" name="page" value="{{ vp.pager.page }}">
+  <p class="visit-list__context">{{ vp.context }}</p>
+  {% if vp.rows %}
+  <ul class="visit-list__rows">
+    {% for v in vp.rows %}
+    {% set selected = s.visit == v.id %}
+    <li>
+      <a class="visit-row{% if selected %} visit-row--selected{% endif %}"
+         {%- if selected %} aria-current="true"{% endif %}
+         href="{{ url_with(base, s.params(visit=v.id)) }}"
+         hx-get="{{ base }}/visits/{{ v.id }}" hx-include=".vstate"
+         hx-target="#visit-detail" hx-indicator="#visit-detail" hx-swap="innerHTML">
+        <span class="visit-row__main">
+          <span class="visit-row__title">{{ v.date }} · {{ v.type }}</span>
+          {% if v.diagnoses %}<span class="visit-row__dx">{{ v.diagnoses }}</span>{% endif %}
+        </span>
+        <span class="visit-row__provider">{{ v.provider_short }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if vp.pager.pages > 1 %}
+  <nav class="pager" aria-label="Visit pages">
+    <span>Page {{ vp.pager.page }} of {{ vp.pager.pages }}</span>
+    <span class="pager__buttons">
+      {% for label, n, enabled in [("Previous", vp.pager.page - 1, vp.pager.has_prev), ("Next", vp.pager.page + 1, vp.pager.has_next)] %}
+        {% if enabled %}
+        <a class="btn btn--secondary btn--sm" href="{{ url_with(base, s.params(page=n)) }}"
+           hx-get="{{ base }}/visits/list" hx-include=".vstate" hx-vals='{"page": "{{ n }}"}'
+           hx-target="#visit-results" hx-indicator="#visit-results" hx-swap="outerHTML">{{ label }}</a>
+        {% else %}
+        <span class="btn btn--secondary btn--sm" aria-disabled="true">{{ label }}</span>
+        {% endif %}
+      {% endfor %}
+    </span>
+  </nav>
+  {% endif %}
+  {% elif s.type == "all" and not s.q and not s.year %}
+    {{ empty_state("No visits recorded.") }}
+  {% else %}
+    {% call empty_state("No visits match these filters.") %}
+      <a class="btn btn--secondary" href="{{ url_with(base, {'tab': 'visits', 'type': 'all'}) }}"
+         hx-get="{{ url_with(base ~ '/tab/visits', {'type': 'all'}) }}" hx-target="#chart-tabs" hx-swap="outerHTML">Clear filters</a>
+    {% endcall %}
+  {% endif %}
+</div>
+{% if oob_activity %}{% include "partials/visits_activity.html" %}{% endif %}

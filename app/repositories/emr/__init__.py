@@ -211,3 +211,98 @@ def patient_names(emr_ids: list[int]) -> list[dict[str, Any]]:
 
 def visit_vitals(emr_id: int, contact_id: int) -> list[dict[str, Any]]:
     return run_query(Source.EMR, VISIT_VITALS, {"emr_id": emr_id, "contact_id": contact_id})
+
+
+# --- Visits tab (Option C): one visit = one encounter ---------------------------------------------
+VISITS_LIST = "emr/visits_list.sql"
+VISITS_DIAGNOSES = "emr/visits_diagnoses.sql"
+VISITS_YEAR_COUNTS = "emr/visits_year_counts.sql"
+VISITS_SUMMARY = "emr/visits_summary.sql"
+ENCOUNTER_HEADER = "emr/encounter_header.sql"
+ENCOUNTER_TEXT_NOTES = "emr/encounter_text_notes.sql"
+ENCOUNTER_VITALS = "emr/encounter_vitals.sql"
+
+
+def like_contains(value: str | None) -> str | None:
+    """'diab' → '%diab%' with LIKE wildcards escaped using '!' (ESCAPE '!')."""
+    if not value:
+        return None
+    escaped = value.replace("!", "!!").replace("%", "!%").replace("_", "!_").replace("[", "![")
+    return f"%{escaped}%"
+
+
+def _type_params(visit_type_codes: list[int] | None) -> dict[str, Any]:
+    """None = all entries. An empty category still needs a non-empty IN list (matches nothing)."""
+    if visit_type_codes is None:
+        return {"all_types": 1, "visit_type_codes": [0]}
+    return {"all_types": 0, "visit_type_codes": visit_type_codes or [-999999]}
+
+
+def visits_list(
+    emr_id: int,
+    visit_type_codes: list[int] | None,
+    year: int | None,
+    q: str | None,
+    offset: int,
+    limit: int,
+) -> list[dict[str, Any]]:
+    params = {
+        "emr_id": emr_id,
+        "year": year,
+        "offset": offset,
+        "limit": limit,
+        "q_like": like_contains(q),
+    } | _type_params(visit_type_codes)
+    return run_query(Source.EMR, VISITS_LIST, params, expanding=("visit_type_codes",))
+
+
+def visits_diagnoses(encounter_ids: list[int]) -> list[dict[str, Any]]:
+    if not encounter_ids:
+        return []
+    params = {"encounter_ids": encounter_ids}
+    return run_query(Source.EMR, VISITS_DIAGNOSES, params, expanding=("encounter_ids",))
+
+
+def visits_year_counts(emr_id: int, visit_type_codes: list[int] | None) -> list[dict[str, Any]]:
+    params = {"emr_id": emr_id} | _type_params(visit_type_codes)
+    return run_query(Source.EMR, VISITS_YEAR_COUNTS, params, expanding=("visit_type_codes",))
+
+
+def visits_summary(emr_id: int, visit_type_codes: list[int] | None) -> dict[str, Any]:
+    params = {"emr_id": emr_id} | _type_params(visit_type_codes)
+    return run_query(Source.EMR, VISITS_SUMMARY, params, expanding=("visit_type_codes",))[0]
+
+
+def encounter_header(emr_id: int, encounter_id: int) -> dict[str, Any] | None:
+    rows = run_query(Source.EMR, ENCOUNTER_HEADER, {"emr_id": emr_id, "encounter_id": encounter_id})
+    return rows[0] if rows else None
+
+
+def encounter_text_notes(encounter_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, ENCOUNTER_TEXT_NOTES, {"encounter_id": encounter_id})
+
+
+def encounter_vitals(emr_id: int, encounter_id: int) -> list[dict[str, Any]]:
+    params = {"emr_id": emr_id, "encounter_id": encounter_id}
+    return run_query(Source.EMR, ENCOUNTER_VITALS, params)
+
+
+# --- Notes tab (Option A): note index (metadata only) ------------------------------------------
+NOTES_LIST_DOCS = "emr/notes_list_docs.sql"
+NOTES_DOC_SOURCES = "emr/notes_doc_sources.sql"
+NOTES_LIST_TRANS = "emr/notes_list_trans.sql"
+
+
+def notes_list_docs(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, NOTES_LIST_DOCS, {"emr_id": emr_id})
+
+
+def notes_doc_sources(emr_id: int, sources: list[str]) -> list[dict[str, Any]]:
+    if not sources:
+        return []
+    params = {"emr_id": emr_id, "sources": sources}
+    return run_query(Source.EMR, NOTES_DOC_SOURCES, params, expanding=("sources",))
+
+
+def notes_list_trans(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, NOTES_LIST_TRANS, {"emr_id": emr_id})

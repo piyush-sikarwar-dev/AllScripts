@@ -1,83 +1,63 @@
-{% from "components/badge.html" import source_badge, badge %}
+{# Visits tab: one visit (encounter). Structured view = labelled note rows; Original view = the
+   stored note text (escaped, pre-wrapped) and the sanitised clinical documents. #}
+{% from "components/badge.html" import source_badge %}
+{% from "components/icons.html" import icon %}
 {% from "components/empty_state.html" import empty_state %}
-{% set v = detail.visit %}
-<article class="detail">
-  <div class="detail__head">
-    <div>
-      <h2 class="detail__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>{{ v.date }} · {{ v.type }}</h2>
-      <p class="detail__sub">{{ v.provider }} · {{ v.location }} · {{ "Signed" if v.signed else "Not signed" }}</p>
+{% from "components/note_rows.html" import note_rows %}
+{% set s = visits_state %}
+{% set base = "/patients/" ~ key %}
+<article class="visit-note">
+  <input type="hidden" class="vstate" name="visit" value="{{ detail.id }}">
+  <input type="hidden" class="vstate" name="view" value="{{ detail.view }}">
+  <div class="visit-note__head">
+    <div class="visit-note__heading">
+      <h2 class="visit-note__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>{{ detail.title }}</h2>
+      <p class="visit-note__sub">{{ detail.subline }} {{ source_badge(detail.source) }}</p>
     </div>
-    {{ source_badge(v.source) }}
-  </div>
-
-  <div class="panel-grid">
-    <section class="panel" aria-labelledby="vd-assessment">
-      <h3 class="panel__title" id="vd-assessment">Assessment</h3>
-      {% if detail.assessment %}
-      <dl class="kv">
-        {% for dx in detail.assessment %}<dt class="mono">{{ dx.label }}</dt><dd>{{ dx.value }}</dd>{% endfor %}
-      </dl>
-      {% else %}<p class="muted">No assessment recorded.</p>{% endif %}
-    </section>
-    <section class="panel" aria-labelledby="vd-vitals">
-      <h3 class="panel__title" id="vd-vitals">Vitals</h3>
-      {% if detail.vitals %}
-      <dl class="kv">
-        {% for item in detail.vitals %}<dt>{{ item.label }}</dt><dd>{{ item.value }}</dd>{% endfor %}
-      </dl>
-      {% for reading in detail.more_vitals %}
-      <p class="panel__subtitle">Also recorded{% if reading.time != "—" %} at {{ reading.time }}{% endif %}</p>
-      <dl class="kv">
-        {% for item in reading["values"] %}<dt>{{ item.label }}</dt><dd>{{ item.value }}</dd>{% endfor %}
-      </dl>
+    {# Without JS the toggle submits this form (full page); with HTMX it swaps the detail only. #}
+    <form class="segmented--toggle" method="get" action="{{ base }}" aria-label="Note view">
+      <input type="hidden" name="tab" value="visits">
+      <input type="hidden" name="visit" value="{{ detail.id }}">
+      {% for name, value in s.params(view=None, visit=None, tab=None).items() if value and name != "page" %}
+      <input type="hidden" name="{{ name }}" value="{{ value }}">
       {% endfor %}
-      {% else %}<p class="muted">No vitals recorded.</p>{% endif %}
-    </section>
-    {% if detail.plan %}
-    <section class="panel" aria-labelledby="vd-plan">
-      <h3 class="panel__title" id="vd-plan">Plan</h3>
-      <ul class="plain-list">{% for line in detail.plan %}<li>{{ line }}</li>{% endfor %}</ul>
-    </section>
-    {% endif %}
+      {% for value, label in [("structured", "Structured"), ("original", "Original")] %}
+      <button type="submit" class="segmented--toggle__item" name="view" value="{{ value }}"
+              aria-pressed="{{ 'true' if detail.view == value else 'false' }}"
+              hx-get="{{ base }}/visits/{{ detail.id }}" hx-include=".vstate" hx-vals='{"view": "{{ value }}"}'
+              hx-target="#visit-detail" hx-indicator="#visit-detail" hx-swap="innerHTML">{{ label }}</button>
+      {% endfor %}
+    </form>
   </div>
 
-  <section aria-labelledby="vd-note">
-    <h3 class="section-title" id="vd-note">Visit note</h3>
-    {% if detail.documents %}
-      {% for doc in detail.documents %}
-      <div class="note-doc">
-        <p class="note-doc__title">{{ doc.title }}{% if doc.meta %} <span class="muted">· {{ doc.meta }}</span>{% endif %}</p>
+  {% if detail.view == "original" %}
+    {% if detail.original %}
+    <div class="visit-note__original">
+      {% for block in detail.original %}
+      <section class="original-block">
+        <h3 class="original-block__title">{{ block.title }}</h3>
+        {% if block.text is not none %}
+        <pre class="original-block__text">{{ block.text }}</pre>
+        {% else %}
         {# Sanitised with nh3 in app/documents/render.py before it reaches the template. #}
-        <div class="note-html">{{ doc.html | safe }}</div>
-      </div>
+        <div class="note-html">{{ block.html | safe }}</div>
+        {% endif %}
+      </section>
       {% endfor %}
-    {% elif detail.note_text %}
-      <div class="note-text">{{ detail.note_text }}</div>
+    </div>
     {% else %}
-      {{ empty_state("Visit note not available in the archive.", compact=True) }}
+      {{ empty_state("No original note text is stored for this visit.", compact=True) }}
     {% endif %}
-    {% if detail.documents and detail.note_text %}
-      <h4 class="panel__title">Additional notes</h4>
-      <div class="note-text">{{ detail.note_text }}</div>
-    {% endif %}
-  </section>
-
-  {% if detail.other_documents %}
-  <section aria-labelledby="vd-docs">
-    <h3 class="section-title" id="vd-docs">Other documents for this visit</h3>
-    <ul class="plain-list">
-      {% for d in detail.other_documents %}
-      <li><a href="{{ url_with('/patients/' ~ key, {'tab': 'notes', 'note': d.kind ~ '-' ~ d.id}) }}">{{ d.title }}</a>
-        {% if d.meta %}<span class="muted"> · {{ d.meta }}</span>{% endif %}</li>
-      {% endfor %}
-    </ul>
-  </section>
+  {% elif detail.rows %}
+  {{ note_rows(detail.rows, base) }}
+  {% else %}
+    {{ empty_state("Visit note not available in the archive.", compact=True) }}
   {% endif %}
 
-  {% if detail.addenda %}
-  <section aria-labelledby="vd-addenda">
-    <h3 class="section-title" id="vd-addenda">Addenda</h3>
-    {% for a in detail.addenda %}<div class="note-text">{{ a }}</div>{% endfor %}
-  </section>
-  {% endif %}
+  <div class="visit-note__actions">
+    {% with encounter_id = detail.id, in_export = detail.in_export, oob = False %}
+      {% include "partials/visit_export_toggle.html" %}
+    {% endwith %}
+    <a class="btn btn--secondary" href="{{ base }}/visits/{{ detail.id }}/print" target="_blank" rel="noopener">{{ icon("print") }}Print visit</a>
+  </div>
 </article>

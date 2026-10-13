@@ -1,0 +1,53 @@
+{# Notes tab: filter card (type tiles + date range). Re-sent out of band with every list request,
+   so the tile counts follow the search and the dates (they ignore the selected type). Without JS
+   the buttons submit this form (full page); hidden values come first so a clicked button wins. #}
+{% set s = notes_state %}
+{% set f = note_filters %}
+<form class="card note-filters" id="note-filters" method="get" action="/patients/{{ key }}"
+      aria-label="Note filters"{% if oob %} hx-swap-oob="true"{% endif %}>
+  <input type="hidden" name="tab" value="notes">
+  <input type="hidden" class="nstate" name="cat" value="{{ s.cat }}">
+  <input type="hidden" class="nstate" name="range" value="{{ s.range }}">
+  {% if s.q %}<input type="hidden" name="q" value="{{ s.q }}">{% endif %}
+  {% if s.sort != "new" %}<input type="hidden" name="sort" value="{{ s.sort }}">{% endif %}
+
+  <div class="note-filters__types">
+    <p class="note-filters__label" id="note-types-label">Notes by type · click to filter</p>
+    <div class="type-tiles" role="group" aria-labelledby="note-types-label">
+      {% for t in f.tiles %}
+      <button type="submit" class="type-tile{% if t.selected %} type-tile--on{% endif %}" name="cat" value="{{ t.key }}"
+              aria-pressed="{{ 'true' if t.selected else 'false' }}"
+              hx-get="/patients/{{ key }}/notes/list" hx-include=".nstate" hx-vals='{"cat": "{{ t.key }}", "page": "1"}'
+              hx-target="#note-results" hx-indicator="#note-results" hx-swap="outerHTML">
+        <span class="type-tile__count">{{ "{:,}".format(t.count) }}</span>
+        <span class="type-tile__name">{{ t.label }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="note-filters__dates">
+    <p class="note-filters__label" id="note-dates-label">Date range</p>
+    <div class="date-range" role="group" aria-labelledby="note-dates-label">
+      <label class="visually-hidden" for="note-from">From date</label>
+      <input class="input date-range__input nstate" type="date" id="note-from" name="from" value="{{ f.date_from.isoformat() }}"
+             hx-get="/patients/{{ key }}/notes/list" hx-include=".nstate" hx-vals='{"range": "custom", "page": "1"}'
+             hx-trigger="change" hx-target="#note-results" hx-indicator="#note-results" hx-swap="outerHTML">
+      <span class="date-range__to" aria-hidden="true">to</span>
+      <label class="visually-hidden" for="note-to">To date</label>
+      <input class="input date-range__input nstate" type="date" id="note-to" name="to" value="{{ f.date_to.isoformat() }}"
+             hx-get="/patients/{{ key }}/notes/list" hx-include=".nstate" hx-vals='{"range": "custom", "page": "1"}'
+             hx-trigger="change" hx-target="#note-results" hx-indicator="#note-results" hx-swap="outerHTML">
+      <noscript><button type="submit" class="btn btn--secondary btn--sm" name="range" value="custom">Apply dates</button></noscript>
+    </div>
+    <div class="chips">
+      {% for c in f.chips %}
+      <button type="submit" class="chip{% if c.selected %} chip--on{% endif %}" name="range" value="{{ c.key }}"
+              aria-pressed="{{ 'true' if c.selected else 'false' }}"
+              hx-get="/patients/{{ key }}/notes/list" hx-include=".nstate"
+              hx-vals='{"range": "{{ c.key }}", "from": "", "to": "", "page": "1"}'
+              hx-target="#note-results" hx-indicator="#note-results" hx-swap="outerHTML">{{ c.label }}</button>
+      {% endfor %}
+    </div>
+  </div>
+</form>

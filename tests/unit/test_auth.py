@@ -226,14 +226,15 @@ def test_require_csrf_dependency():
 def test_chart_views_are_audited(client):
     client.get(f"/patients/{FIRST}?tab=labs")
     client.get(f"/patients/{FIRST}/tab/meds", headers=HTMX)
-    visit = PATIENTS[0].visits[0]["contact_id"]
-    client.get(f"/patients/{FIRST}/visits/EMR/{visit}", headers=HTMX)
+    visit = PATIENTS[0].visits[0]["encounter_id"]
+    client.get(f"/patients/{FIRST}/visits/{visit}", headers=HTMX)
     rows = [a for a in audit_rows() if a.patient_key == FIRST]
     assert [(a.action, a.detail.get("tab")) for a in rows] == [
         ("view_patient", "labs"),
         ("view_tab", "meds"),
-        ("view_tab", "visits"),
+        ("view_visit", None),
     ]
+    assert rows[-1].detail == {"encounter_id": visit, "view": "structured"}
     user_id = get_user().id
     assert all(a.user_id == user_id and a.request_id and a.ip for a in rows)
 

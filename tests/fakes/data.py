@@ -98,6 +98,7 @@ class FakePatient:
     labs: list[dict] = field(default_factory=list)
     vitals: list[dict] = field(default_factory=list)
     documents: list[dict] = field(default_factory=list)
+    clinical_notes: list[dict] = field(default_factory=list)  # Notes tab
 
 
 def _letter(i: int) -> str:
@@ -408,10 +409,152 @@ def _build_patient(i: int, rng: random.Random, ids: dict[str, int]) -> FakePatie
     return p
 
 
+# --- Notes tab: ~40 synthetic clinical notes per patient (own seed and id range, so the data above
+# stays exactly as it was). Bodies are shaped like the real documents, all values invented.
+
+RX_DRUGS = [
+    ("MetFORMIN HCl ER 500MG", "Tablet ER 24HR", "2 (two) Tablet ER 24HR daily", 270, 90, 3),
+    ("Glimepiride 4MG", "Tablet", "2 (two) Tablet daily", 180, 90, 3),
+    ("Insulin Detemir 100UNIT/ML", "Solution Pen-injector", "10 units twice daily", 1, 30, 11),
+    ("Telmisartan 80MG", "Tablet", "1 (one) Tablet daily", 30, 30, 11),
+    ("Synthroid 50MCG", "Tablet", "1 (one) Tablet daily", 90, 90, 1),
+    ("Victoza 18MG/3ML", "Solution Pen-injector", "1.8 mg daily", 9, 30, 5),
+    ("Atorvastatin Calcium 20MG", "Tablet", "1 (one) Tablet at bedtime", 90, 90, 0),
+]
+RX_DX = [
+    ("Type 2 diabetes mellitus with hyperglycemia", "250.02", "E11.65"),
+    ("Hypothyroidism, unspecified", "244.9", "E03.9"),
+    ("Essential hypertension", "401.9", "I10"),
+]
+LAB_TITLES = ["* Lab Results by Date Range", "Laboratory Requisitions", "Lab Report", "A1C"]
+VISIT_TITLES = [
+    "* History & Physical Note with Caregiver",
+    "Encounter History & Physical Note",
+    "Follow-up visit note",
+]
+LETTER_TITLES = [
+    "DEC Letter to Referring Provider",
+    "Incoming Fax",
+    "Entire Chart Receipt",
+    "MEDICAL NECESSITY LETTER",
+    "Patient Education",
+]
+APP_SOURCES = ["Clinical Module", "Input Manager"]
+SAMPLE_PHARMACY = "Sample Community Pharmacy #12"
+
+
+def _rx_body(p: FakePatient, drug: tuple, dx: tuple, written: datetime, prescriber: str) -> str:
+    name, form, sig, qty, days, refills = drug
+    return (
+        f"<p>Main Clinic<br>100 Sample Street, Anytown, ST 00000<br>Phone: (555) 010-0100</p>"
+        f"<p>Date: {written:%m/%d/%Y}<br>Patient: {p.first_name} {p.last_name}<br>"
+        f"Phone: {p.phone} Gender: {p.sex} DOB: {p.dob:%m/%d/%Y}<br>Address: {p.address}</p>"
+        f"<p>Pharmacy: {SAMPLE_PHARMACY}<br>Address: 1 Example Road, Anytown, ST 00000<br>"
+        f"Phone: (555) 010-0200 Fax: (555) 010-0201</p><p>RX</p>"
+        f"<p>Medication: {name} {form}<br>Date Written: {written:%m/%d/%Y}<br>"
+        f"Dispense: {qty} (sample) {form.split()[0]}, Days Supply: {days} (sample)<br>"
+        f"Substitution Permissible<br>SIG: {sig}<br>Notes for Pharmacist: Sample instructions.<br>"
+        f"Refill(s) x{refills} (sample) x {qty} {form.split()[0]}<br>Associated Diagnosis<br>"
+        f"{dx[0]} ({dx[1]} | {dx[2]})</p><p>---------------------------------------</p>"
+        f"<p>{prescriber}<br>NPI: 0000000000<br>DEA: XX0000000</p>"
+    )
+
+
+def _note_body(kind: str, title: str, when: datetime, who: str) -> str:
+    if kind == "lab":
+        return (
+            f"<h3>{title}</h3><p>Collected: {when:%m/%d/%Y}</p><table><tr><th>Test</th>"
+            "<th>Result</th><th>Range</th></tr><tr><td>Hemoglobin A1c</td><td>7.2 %</td>"
+            "<td>4.0-5.6</td></tr><tr><td>Glucose</td><td>132 mg/dL</td><td>70-99</td></tr>"
+            "</table><p>SSN: 000-12-3456</p>"
+        )
+    if kind == "visit":
+        return (
+            f"<h3>History of Present Illness ({who}; {when:%m/%d/%Y})</h3><p>Sample patient seen "
+            "for follow-up. Placeholder narrative generated for interface review only.</p>"
+            "<h3>Assessment &amp; Plan</h3><p>Continue current medications.</p>"
+            '<script>alert(1)</script><p onclick="x()">Return in 3 months.</p>'
+        )
+    return (
+        f"<p>Dear Dr. Example,</p><p>{title}: placeholder letter text generated for interface "
+        f"review only.</p><p>Sincerely,<br>{who}</p>"
+    )
+
+
+def add_clinical_notes(p: FakePatient, seed: int) -> None:
+    rng = random.Random(seed + p.emr_id)
+    next_doc = 700000 + (p.emr_id - 1000) * 100
+    encounters = [v["encounter_id"] for v in p.visits]
+    for n in range(rng.randint(36, 44)):
+        roll = rng.random()
+        kind = (
+            "rx" if roll < 0.45 else "visit" if roll < 0.65 else "lab" if roll < 0.85 else "letter"
+        )
+        when = _rand_dt(rng, EMR_START, EMR_END)
+        who = rng.choice(PROVIDERS)
+        note = {
+            "kind": "document",
+            "id": next_doc + n,
+            "date": when,
+            "who": who,
+            "app_source": rng.choice(APP_SOURCES),
+            "map_sources": [],
+            "source": "EMR",
+            "encounter_id": rng.choice(encounters) if encounters and rng.random() < 0.5 else None,
+        }
+        if kind == "rx":
+            drug, dx = rng.choice(RX_DRUGS), rng.choice(RX_DX)
+            name, _form, sig, qty, days, refills = drug
+            note |= {
+                "title": f"{name}, {sig}, #{qty}, {days} days starting {when:%m/%d/%Y}, "
+                f"Ref. x{refills}.",
+                "map_sources": ["IMREMED_CODE"],
+                # every 12th printout is unreadable, to exercise the formatting fallback
+                "html": "<p>Unreadable printout</p>"
+                if n % 12 == 5
+                else _rx_body(p, drug, dx, when, who),
+            }
+        elif kind == "lab":
+            title = rng.choice(LAB_TITLES)
+            note |= {
+                "title": title,
+                "html": _note_body("lab", title, when, who),
+                "map_sources": ["IMREQUISITION_CODE"] if "Requisition" in title else [],
+            }
+        elif kind == "visit":
+            title = rng.choice(VISIT_TITLES)
+            note |= {"title": title, "html": _note_body("visit", title, when, who)}
+        else:
+            title = rng.choice(LETTER_TITLES)
+            note |= {"title": title, "html": _note_body("letter", title, when, who)}
+        p.clinical_notes.append(note)
+    if encounters:  # one dictation (RTF text) per patient with visits
+        when = _rand_dt(rng, EMR_START, EMR_END)
+        p.clinical_notes.append(
+            {
+                "kind": "transcription",
+                "id": 900000 + p.emr_id,
+                "date": when,
+                "title": "Dictation",
+                "who": rng.choice(PROVIDERS),
+                "app_source": "Transcription",
+                "map_sources": [],
+                "source": "EMR",
+                "encounter_id": encounters[0],
+                "html": None,
+                "text": "Chief Complaint: Sample follow-up.\nAssessment: Stable.\nPlan: Continue.",
+            }
+        )
+
+
 def build_patients(count: int = 30, seed: int = 20100827) -> list[FakePatient]:
     rng = random.Random(seed)
     ids = dict.fromkeys(("contact", "note", "hx", "med", "lab", "vital", "doc"), 0)
-    return [_build_patient(i, rng, ids) for i in range(count)]
+    patients = [_build_patient(i, rng, ids) for i in range(count)]
+    for i, p in enumerate(patients):
+        if i != 29:  # the patient with no clinical data stays empty
+            add_clinical_notes(p, seed)
+    return patients
 
 
 PATIENTS: list[FakePatient] = build_patients()

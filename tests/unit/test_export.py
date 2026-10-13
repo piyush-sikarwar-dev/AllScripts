@@ -165,3 +165,21 @@ def test_export_embeds_scanned_pages_when_store_available(client, tmp_path, monk
 def test_release_log_date_filter_validation(client):
     r = client.get("/release-log", params={"from": "99/99/9999"})
     assert r.status_code == 200 and "Enter the date as MM/DD/YYYY." in r.text
+
+
+@needs_pdf
+def test_export_selected_note_formatted_then_original(client):
+    from tests.unit.test_notes_tab import _ref, _rx_ok
+
+    note = _ref(_rx_ok())
+    r = _export(client, sections=[], note_ids=[note])
+    assert r.status_code == 200, r.text[:300]
+    pages = [p.extract_text() for p in PdfReader(io.BytesIO(r.content)).pages]
+    text = "\n".join(pages)
+    assert "Selected notes" in text and "Selected notes (1)" in pages[0]
+    assert "DIRECTIONS (SIG)" in text.upper() and "Original:" in text
+    original_page = next(i for i, p in enumerate(pages) if "Original:" in p)
+    formatted_page = next(i for i, p in enumerate(pages) if "DIRECTIONS (SIG)" in p.upper())
+    assert original_page > formatted_page  # the original starts on a new page
+    with new_session() as db:
+        assert db.scalar(select(ReleaseLog)).sections == ["selected_notes"]

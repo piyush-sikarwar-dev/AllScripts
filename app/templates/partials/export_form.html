@@ -10,6 +10,26 @@
     {% endfor %}
     {% if req.errors.get("sections") %}<p class="field__error">{{ req.errors.sections }}</p>{% endif %}
   </fieldset>
+  {% if visit_choices %}
+  <fieldset class="checks">
+    <legend class="field__label">Visits added to export</legend>
+    {% for vid, label in visit_choices %}
+    <label class="check"><input type="checkbox" name="visit_ids" value="{{ vid }}"
+      {%- if vid in req.visit_ids %} checked{% endif %}> {{ label }}</label>
+    {% endfor %}
+    <p class="muted">When any of these are ticked, the Visits section holds only the ticked visits.</p>
+  </fieldset>
+  {% endif %}
+  {% if note_choices %}
+  <fieldset class="checks">
+    <legend class="field__label">Notes added to export</legend>
+    {% for nid, label in note_choices %}
+    <label class="check"><input type="checkbox" name="note_ids" value="{{ nid }}"
+      {%- if nid in req.note_ids %} checked{% endif %}> {{ label }}</label>
+    {% endfor %}
+    <p class="muted">Each ticked note is printed formatted, followed by its original.</p>
+  </fieldset>
+  {% endif %}
   <div class="toolbar">
     <div class="field field--narrow">
       <label class="field__label" for="exp-from">From (optional)</label>

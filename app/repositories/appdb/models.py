@@ -14,9 +14,11 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
@@ -97,3 +99,22 @@ class PatientCrosswalk(Base):
     match_method: Mapped[str] = mapped_column(String(32))
     confidence: Mapped[float | None] = mapped_column(Float)
     built_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ExportSelection(Base):
+    """Visits picked with "Add to export" for the next PDF; removed with the session."""
+
+    __tablename__ = "export_selection"
+    __table_args__ = (
+        UniqueConstraint(
+            "session_id", "patient_key", "item_type", "item_id", name="uq_export_selection_item"
+        ),
+        Index("ix_export_selection_session_patient", "session_id", "patient_key"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[str] = mapped_column(ForeignKey("sessions.id", ondelete="CASCADE"))
+    patient_key: Mapped[str] = mapped_column(String(32))
+    item_type: Mapped[str] = mapped_column(String(16))
+    item_id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer(), "sqlite"))
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

@@ -9,17 +9,21 @@
     }
   });
 
-  // Visit list: mark the clicked row as selected once its detail has loaded.
+  // Visit / note lists: mark the clicked row as selected once its detail has loaded.
+  var ROW_CLASSES = ["visit-row", "note-row"];
   document.addEventListener("htmx:afterRequest", function (evt) {
     var row = evt.detail.elt;
-    if (!evt.detail.successful || !row.classList || !row.classList.contains("visit-row")) {
+    var kind = row.classList && ROW_CLASSES.filter(function (c) {
+      return row.classList.contains(c);
+    })[0];
+    if (!evt.detail.successful || !kind) {
       return;
     }
-    document.querySelectorAll(".visit-row--selected").forEach(function (el) {
-      el.classList.remove("visit-row--selected");
+    document.querySelectorAll("." + kind + "--selected").forEach(function (el) {
+      el.classList.remove(kind + "--selected");
       el.removeAttribute("aria-current");
     });
-    row.classList.add("visit-row--selected");
+    row.classList.add(kind + "--selected");
     row.setAttribute("aria-current", "true");
   });
 
@@ -100,6 +104,18 @@
     }
     focusMarked();
     recordView(path);
+  });
+
+  // "Add to export" changes what the Visits tab shows: forget its remembered copy.
+  document.addEventListener("htmx:afterRequest", function (evt) {
+    var cfg = evt.detail.requestConfig;
+    if (cfg && cfg.verb === "post" && /\/export-selection\//.test(cfg.path)) {
+      tabCache.forEach(function (_entry, path) {
+        if (/\/tab\/visits$/.test(path)) {
+          tabCache.delete(path);
+        }
+      });
+    }
   });
 
   document.addEventListener("htmx:afterRequest", function (evt) {

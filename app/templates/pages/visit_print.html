@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{# Printable visit (structured view), opened from "Print visit". No sidebar; the print dialog
+   opens automatically (static/js/print-auto.js). Page numbers come from @page in app.css. #}
+{% from "components/note_rows.html" import note_rows %}
+{% block title %}Print visit · {{ header.name }}{% endblock %}
+{% block head %}<script src="{{ static_url('/static/js/print-auto.js') }}" defer></script>{% endblock %}
+{% block body %}
+<main class="print-visit">
+  <header class="print-visit__patient">
+    <p class="print-visit__name">{{ header.name }}</p>
+    <p class="meta-line">
+      <span><span class="meta-line__label">DOB</span> {{ header.dob }}</span>
+      <span><span class="meta-line__label">Chart ID</span> <span class="mono">{{ header.chart_id }}</span></span>
+    </p>
+  </header>
+  <h1 class="print-visit__title">{{ detail.title }}</h1>
+  <p class="visit-note__sub">{{ detail.subline }} · Source: {{ detail.source }}</p>
+  {% if detail.rows %}
+  {{ note_rows(detail.rows, "/patients/" ~ key, link_documents=False) }}
+  {% else %}
+  <p class="muted">Visit note not available in the archive.</p>
+  {% endif %}
+  <p class="print-visit__footer">Printed by {{ user.full_name }} · {{ printed_at }}</p>
+  <p class="print-visit__screen-note no-print">The print dialog opens automatically. <button type="button" class="btn btn--secondary btn--sm" data-action="print">Print again</button></p>
+</main>
+{% endblock %}

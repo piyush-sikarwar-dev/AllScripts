@@ -1,50 +1,45 @@
-{% from "components/table.html" import pager_nav, count_text %}
+{# Visits tab (Option C): activity strip + visit list + structured note.
+   Shared state lives in inputs with class "vstate" (search, type, year, page, visit, view); every
+   HTMX request includes them and overrides one value with hx-vals. Full-page URLs work without JS. #}
 {% from "components/empty_state.html" import empty_state %}
-{% set vl = visit_list %}
-{% set base = "/patients/" ~ key %}
-<div class="split">
-  <section class="card table-card split__list" aria-labelledby="visits-title">
-    <div class="table-card__head">
-      <h2 class="table-card__title" id="visits-title">Visits</h2>
-      <p class="table-card__count">{{ count_text(vl.pager, "visits") }}</p>
-    </div>
-    <div class="table-card__tools">
-      <nav class="segmented" aria-label="Visit filter">
-        {% for value, label in [("office", "Office visits"), ("all", "All entries")] %}
-        <a class="segmented__item{% if vl.filter == value %} segmented__item--active{% endif %}"
-           {%- if vl.filter == value %} aria-current="true"{% endif %}
-           href="{{ url_with(base, {'tab': 'visits', 'filter': value}) }}"
-           hx-get="{{ url_with(base ~ '/tab/visits', {'filter': value}) }}" hx-target="#chart-tabs" hx-swap="outerHTML">{{ label }}</a>
-        {% endfor %}
-      </nav>
-    </div>
-    {% if vl.visits %}
-    <ul class="visit-rows">
-      {% for v in vl.visits %}
-      {% set selected = vl.selected and vl.selected.visit.id == v.id %}
-      <li>
-        <a class="visit-row{% if selected %} visit-row--selected{% endif %}"
-           {%- if selected %} aria-current="true"{% endif %}
-           href="{{ url_with(base, {'tab': 'visits', 'filter': vl.filter, 'page': vl.pager.page, 'visit': v.id}) }}"
-           hx-get="{{ url_with(base ~ '/visits/' ~ v.source ~ '/' ~ v.id, {'filter': vl.filter, 'page': vl.pager.page}) }}"
-           hx-target="#visit-detail" hx-swap="innerHTML">
-          <span class="visit-row__title">{{ v.date }} · {{ v.type }}</span>
-          <span class="visit-row__sub">{{ v.provider }}{% if v.diagnoses %} · {{ v.diagnoses }}{% endif %}</span>
-        </a>
-      </li>
-      {% endfor %}
-    </ul>
-    {{ pager_nav(vl.pager, base, base ~ "/tab/visits", "#chart-tabs", dict(state, tab="visits")) }}
-    {% else %}
-      {{ empty_state("No visits recorded." if vl.filter == "all" else "No office visits recorded. Choose “All entries” to see other chart entries.") }}
-    {% endif %}
-  </section>
+{% set s = visits_state %}
+<div class="visits">
+  {% include "partials/visits_activity.html" %}
 
-  <section class="card split__detail" id="visit-detail" aria-label="Visit detail" aria-live="polite">
-    {% if vl.selected %}
-      {% with detail = vl.selected, partial = False %}{% include "partials/visit_detail.html" %}{% endwith %}
-    {% else %}
-      {{ empty_state("Select a visit to see its details.") }}
-    {% endif %}
-  </section>
+  <div class="visits__cols">
+    <section class="card visit-list" aria-labelledby="visits-title">
+      <div class="visit-list__head">
+        <h2 class="visit-list__title" id="visits-title">Visits</h2>
+      </div>
+      <form class="visit-list__filters" id="visit-filters" role="search" method="get" action="/patients/{{ key }}"
+            hx-get="/patients/{{ key }}/visits/list" hx-include=".vstate" hx-vals='{"page": "1"}'
+            hx-target="#visit-results" hx-indicator="#visit-results" hx-swap="outerHTML"
+            hx-trigger="input changed delay:300ms from:#visit-q, search from:#visit-q, change from:#visit-type, submit">
+        <input type="hidden" name="tab" value="visits">
+        <div class="visit-list__search">
+          <label class="visually-hidden" for="visit-q">Search visits</label>
+          <input class="input vstate" type="search" id="visit-q" name="q" value="{{ s.q }}" maxlength="100"
+                 placeholder="Search diagnosis or provider" autocomplete="off">
+        </div>
+        <div class="visit-list__type">
+          <label class="visually-hidden" for="visit-type">Visit type</label>
+          <select class="select vstate" id="visit-type" name="type">
+            {% for value, label in visit_types %}
+            <option value="{{ value }}"{% if value == s.type %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <noscript><button type="submit" class="btn btn--secondary">Apply</button></noscript>
+      </form>
+      {% include "partials/visits_list.html" %}
+    </section>
+
+    <section class="card visit-detail" id="visit-detail" aria-label="Visit detail" aria-live="polite">
+      {% if detail %}
+        {% with partial = False %}{% include "partials/visit_detail.html" %}{% endwith %}
+      {% else %}
+        {{ empty_state("Select a visit to see its note.") if visit_page.rows else empty_state("No visit selected.") }}
+      {% endif %}
+    </section>
+  </div>
 </div>

@@ -1,0 +1,13 @@
+{# "Add to export" toggle for one visit. A plain POST form (CSRF field) enhanced with HTMX; the
+   HTMX response also refreshes the chart header's export button count (out of band). #}
+<form class="visit-export" id="visit-export-{{ encounter_id }}" method="post"
+      action="/patients/{{ key }}/export-selection/visits/{{ encounter_id }}"
+      hx-post="/patients/{{ key }}/export-selection/visits/{{ encounter_id }}"
+      hx-target="this" hx-swap="outerHTML">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button type="submit" class="btn btn--accent-outline{% if in_export %} btn--accent-outline-on{% endif %}"
+          aria-pressed="{{ 'true' if in_export else 'false' }}">
+    {%- if in_export %}Added to export ✓{% else %}Add to export{% endif -%}
+  </button>
+</form>
+{% if oob %}{% include "partials/export_button.html" %}{% endif %}

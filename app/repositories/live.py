@@ -6,6 +6,7 @@ phase wires them, which renders a friendly page.
 """
 
 import logging
+import re
 import time
 from datetime import date, datetime
 from typing import Any
@@ -13,6 +14,7 @@ from typing import Any
 from app.documents.render import DocumentFormatError, render_document, rtf_to_text
 from app.formatting import date_us, person_name, sort_key, to_clinic_time
 from app.lookups import get_lookups
+from app.lookups.note_categories import note_categories
 from app.repositories import emr, ntier
 from app.repositories.appdb.crosswalk import links_for_emr_ids
 from app.repositories.base import parallel
@@ -542,3 +544,195 @@ def document_pages(emr_id: int, document_id: int) -> dict[str, Any] | None:
         ],
         "source": "EMR",
     }
+
+
+# --- Visits tab (Option C): one visit = one encounter ---------------------------------------------
+VISITS_PAGE_SIZE = 25
+
+
+def _visit_codes(category: str | None) -> list[int] | None:
+    return None if category is None else get_lookups().visit_codes(category)
+
+
+def _encounter_summary(r: dict[str, Any]) -> dict[str, Any]:
+    vt = get_lookups().visit_type(r["visit_type_code"])
+    first = (r["provider_first"] or "").strip()
+    last = (r["provider_last"] or "").strip()
+    short = f"{first[:1]}. {last}" if first and last else (last or first or "—")
+    return {
+        "encounter_id": r["encounter_id"],
+        "date": r["visit_date"],
+        "visit_type": vt.label,
+        "category": vt.category,
+        "signed": bool(r["signed"]),
+        "provider": _provider(r["provider_last"], r["provider_first"], r["provider_title"]),
+        "provider_short": short,
+        "location": (r["location"] or "").strip() or None,
+        "source": "EMR",
+    }
+
+
+def _diagnoses_by_encounter(encounter_ids: list[int]) -> dict[int, list[tuple[str, str]]]:
+    grouped: dict[int, list[tuple[int, str, str]]] = {}
+    for d in emr.visits_diagnoses(encounter_ids):
+        title = (d["title"] or "").strip()
+        if title:
+            grouped.setdefault(d["encounter_id"], []).append(
+                (d["sort_order"] or 0, (d["code"] or "").strip(), title)
+            )
+    return {
+        enc: [(code, title) for _o, code, title in sorted(items, key=lambda x: x[0])]
+        for enc, items in grouped.items()
+    }
+
+
+@cached
+def visits_page(
+    emr_id: int, category: str | None, year: int | None, q: str | None, page: int
+) -> dict[str, Any]:
+    """One page (25) of visits, newest first, with each visit's diagnoses."""
+    rows = emr.visits_list(
+        emr_id, _visit_codes(category), year, q, (page - 1) * VISITS_PAGE_SIZE, VISITS_PAGE_SIZE
+    )
+    dx = _diagnoses_by_encounter([r["encounter_id"] for r in rows])
+    return {
+        "total": int(rows[0]["total_count"]) if rows else 0,
+        "rows": [
+            _encounter_summary(r) | {"diagnoses": dx.get(r["encounter_id"], [])} for r in rows
+        ],
+    }
+
+
+@cached
+def visits_activity(emr_id: int, category: str | None) -> dict[str, Any]:
+    """Per-year counts + summary (total, last visit, top provider, top diagnosis)."""
+    codes = _visit_codes(category)
+    years, summary = parallel(
+        lambda: emr.visits_year_counts(emr_id, codes), lambda: emr.visits_summary(emr_id, codes)
+    )
+    provider = None
+    if summary["provider_count"]:
+        provider = _provider(summary["provider_last"], summary["provider_first"],
+                             summary["provider_title"])  # fmt: skip
+    diagnosis = (summary["dx_title"] or "").strip() or None
+    return {
+        "years": {int(y["visit_year"]): int(y["visits"]) for y in years if y["visit_year"]},
+        "total": int(summary["total"] or 0),
+        "last_visit": summary["last_visit"],
+        "top_provider": provider,
+        "top_provider_count": int(summary["provider_count"] or 0),
+        "top_diagnosis": diagnosis,
+        "top_diagnosis_code": (summary["dx_code"] or "").strip() or None,
+        "top_diagnosis_count": int(summary["dx_count"] or 0),
+    }
+
+
+def _plan_title(p: dict[str, Any]) -> str:
+    title = p["lab_title"] or p["procedure_title"] or p["medication_title"] or ""
+    return title.strip() or "—"
+
+
+@cached
+def encounter(emr_id: int, encounter_id: int) -> dict[str, Any] | None:
+    """Full visit detail for the Visits tab (ownership-checked)."""
+    header = emr.encounter_header(emr_id, encounter_id)
+    if header is None:
+        return None
+    lk = get_lookups()
+    dx, plan, addenda, docs, text_notes, vitals_rows = parallel(
+        lambda: _diagnoses_by_encounter([encounter_id]).get(encounter_id, []),
+        lambda: emr.visit_plan(encounter_id),
+        lambda: emr.visit_addenda(encounter_id),
+        lambda: emr.visit_documents(emr_id, encounter_id),
+        lambda: emr.encounter_text_notes(encounter_id),
+        lambda: emr.encounter_vitals(emr_id, encounter_id),
+    )
+    labels = {"LABORATORY": "Lab order", "PROCEDURE": "Procedure", "MEDICATION": "Medication"}
+    docs = sorted(docs, key=lambda d: sort_key(d["created"]))
+    note_ids = [d["document_id"] for d in docs if lk.is_visit_note_title(d["title"])]
+    bodies = dict(zip(note_ids, parallel(*(lambda i=i: _document_html(emr_id, i)
+                                           for i in note_ids)), strict=True))  # fmt: skip
+    note_documents, other_documents = [], []
+    for d in docs:
+        meta = {"id": d["document_id"], "title": (d["title"] or "").strip() or "Untitled document",
+                "author": (d["author"] or "").strip(), "created": d["created"]}  # fmt: skip
+        html = bodies.get(d["document_id"])
+        if html:
+            note_documents.append(meta | {"html": html})
+        else:
+            other_documents.append(meta)
+    return _encounter_summary(header) | {
+        "assessment": dx,
+        "plan": [
+            f"{labels[p['source']]}: {_plan_title(p)}"
+            for p in sorted(plan, key=lambda p: p["sort_order"] or 0)
+            if p["source"] in labels
+        ],
+        "addenda": [
+            f"{date_us(a['added'])} · {person_name(a['provider_last'], a['provider_first'])}: "
+            f"{(a['note_text'] or '').strip() or '(no text)'}"
+            for a in sorted(addenda, key=lambda a: sort_key(a["added"]))
+        ],
+        "note_documents": note_documents,
+        "other_documents": other_documents,
+        "text_notes": [
+            n["note_text"]
+            for n in sorted(text_notes, key=lambda n: (sort_key(n["contact_start"]), n["note_id"]))
+            if (n["note_text"] or "").strip()
+        ],
+        "vitals": sorted(
+            (_vital(v) for v in vitals_rows), key=lambda v: (sort_key(v["date"]), v["id"])
+        ),
+    }
+
+
+# --- Notes tab (Option A): note index ------------------------------------------------------------
+
+
+def _app_source(author: Any) -> str | None:
+    """'Clinical Module (17.3.1.6)' → 'Clinical Module' (AUTHOR holds the program, not a person)."""
+    text = re.sub(r"\s*\([^)]*\)\s*$", "", (author or "").strip())
+    return text or None
+
+
+@cached
+def note_index(emr_id: int) -> list[dict[str, Any]]:
+    """Every note of the patient (documents + dictations), metadata only, with its map sources
+    (for classification), clinician and encounter. Classification happens in the service."""
+    sources = note_categories().map_sources()
+    docs, doc_sources, dictations = parallel(
+        lambda: emr.notes_list_docs(emr_id),
+        lambda: emr.notes_doc_sources(emr_id, sources),
+        lambda: emr.notes_list_trans(emr_id),
+    )
+    by_doc: dict[int, set[str]] = {}
+    for s in doc_sources:
+        by_doc.setdefault(s["document_id"], set()).add(s["source"])
+    items = []
+    for d in docs:
+        who = _provider(d["provider_last"], d["provider_first"], d["provider_title"])
+        items.append({
+            "kind": "document",
+            "id": d["document_id"],
+            "date": d["created"],
+            "title": (d["title"] or "").strip() or "Untitled document",
+            "app_source": _app_source(d["app_source"]),
+            "who": None if who == "—" else who,
+            "encounter_id": d["encounter_id"],
+            "map_sources": sorted(by_doc.get(d["document_id"], ())),
+            "source": "EMR",
+        })  # fmt: skip
+    for t in dictations:
+        who = _provider(t["provider_last"], t["provider_first"], t["provider_title"])
+        items.append({
+            "kind": "transcription",
+            "id": t["transcription_id"],
+            "date": t["dictated"] or t["encounter_date"] or t["transcribed"],
+            "title": "Dictation",
+            "app_source": "Transcription",
+            "who": None if who == "—" else who,
+            "encounter_id": t["encounter_id"],
+            "map_sources": [],
+            "source": "EMR",
+        })  # fmt: skip
+    return items

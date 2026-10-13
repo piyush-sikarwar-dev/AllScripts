@@ -1,19 +1,55 @@
-{% from "components/badge.html" import source_badge %}
+{# Notes tab: one note. Formatted = label/value rows (or the readable sanitised document);
+   Original = the stored document as kept (sanitised HTML, or escaped pre-wrapped text). #}
 {% from "components/empty_state.html" import empty_state %}
-<article class="detail">
-  <div class="detail__head">
-    <div>
-      <h2 class="detail__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>{{ note.title }}</h2>
-      <p class="detail__sub">{{ note.meta }}</p>
+{% from "components/banner.html" import warning_banner %}
+{% from "components/note_fields.html" import note_formatted, note_original %}
+{% from "components/icons.html" import icon %}
+{% set s = notes_state %}
+{% set base = "/patients/" ~ key %}
+<article class="note-view">
+  <input type="hidden" class="nstate" name="note" value="{{ note.ref }}">
+  <input type="hidden" class="nstate" name="view" value="{{ note.view }}">
+  <div class="note-view__head">
+    <div class="note-view__heading">
+      <span class="badge-type badge-type--{{ note.category }}">{{ note.badge }}</span>
+      <h2 class="note-view__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>{{ note.title }}</h2>
+      <p class="note-view__meta">{{ note.meta }}</p>
     </div>
-    {{ source_badge(note.source) }}
+    {% if note.has_content %}
+    {# Without JS the toggle submits this form (full page); with HTMX it swaps the note only. #}
+    <form class="segmented--toggle" method="get" action="{{ base }}" aria-label="Note view">
+      <input type="hidden" name="tab" value="notes">
+      {% for name, value in s.params(view=None, tab=None).items() if value and name != "page" %}
+      <input type="hidden" name="{{ name }}" value="{{ value }}">
+      {% endfor %}
+      {% for value, label in [("formatted", "Formatted"), ("original", "Original")] %}
+      <button type="submit" class="segmented--toggle__item" name="view" value="{{ value }}"
+              aria-pressed="{{ 'true' if note.view == value else 'false' }}"
+              hx-get="{{ base }}/notes/{{ note.ref }}" hx-include=".nstate" hx-vals='{"view": "{{ value }}"}'
+              hx-target="#note-detail" hx-indicator="#note-detail" hx-swap="innerHTML">{{ label }}</button>
+      {% endfor %}
+    </form>
+    {% endif %}
   </div>
-  {% if note.html %}
-    {# Sanitised with nh3 in app/documents/render.py before it reaches the template. #}
-    <div class="note-html">{{ note.html | safe }}</div>
-  {% elif note.text %}
-    <div class="note-text">{{ note.text }}</div>
-  {% else %}
+
+  {% if not note.has_content %}
     {{ empty_state("This note's content is not available in the archive.", compact=True) }}
+  {% elif note.view == "original" %}
+    {% if note.format_failed %}{{ warning_banner("Couldn't format this note — showing the original.") }}{% endif %}
+    {{ note_original(note) }}
+  {% else %}
+    {{ note_formatted(note) }}
   {% endif %}
+
+  <div class="note-view__actions">
+    {% with note_ref = note.ref, in_export = note.in_export, oob = False %}
+      {% include "partials/note_export_toggle.html" %}
+    {% endwith %}
+    <a class="btn btn--secondary" href="{{ base }}/notes/{{ note.ref }}/print" target="_blank" rel="noopener">{{ icon("print") }}Print note</a>
+    {% if note.encounter_id %}
+    <a class="btn btn--secondary" href="{{ url_with(base, {'tab': 'visits', 'type': 'all', 'visit': note.encounter_id}) }}"
+       hx-get="{{ url_with(base ~ '/tab/visits', {'type': 'all', 'visit': note.encounter_id}) }}"
+       hx-target="#chart-tabs" hx-swap="outerHTML">Open in Visits</a>
+    {% endif %}
+  </div>
 </article>

@@ -5,6 +5,7 @@
   <title>Medical records release {{ cover.release_code }}</title>
 </head>
 <body>
+{% from "components/note_fields.html" import note_formatted, note_original %}
 {% set h = header %}
 <section class="cover">
   <p class="cover__clinic">{{ cover.clinic_name }}</p>
@@ -87,6 +88,25 @@
   </div>
 {% else %}
   <p class="empty">No visits in the selected period.</p>
+{% endfor %}
+{% endif %}
+
+{% if selected_notes %}
+<h1 class="section">Selected notes</h1>
+{% for n in selected_notes %}
+  <div class="visit">
+    <p class="visit__title">{{ n.badge }} · {{ n.title }}</p>
+    <p class="muted">{{ n.meta }}</p>
+    {% if not n.has_content %}
+    <p class="empty">This note's content is not available in the archive.</p>
+    {% else %}
+      {% if n.view == "formatted" %}{{ note_formatted(n) }}{% endif %}
+      <div class="note-original-page">
+        <h2>Original: {{ n.title }}</h2>
+        {{ note_original(n) }}
+      </div>
+    {% endif %}
+  </div>
 {% endfor %}
 {% endif %}
 
