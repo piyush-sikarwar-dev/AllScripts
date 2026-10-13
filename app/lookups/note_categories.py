@@ -9,8 +9,8 @@ from pydantic import BaseModel, field_validator, model_validator
 
 from app.lookups import CONFIG_DIR, LookupConfigError
 
-NoteCategory = Literal["rx", "lab", "visit", "letter"]
-NOTE_CATEGORIES: tuple[str, ...] = ("rx", "visit", "lab", "letter")  # tile order
+NoteCategory = Literal["rx", "lab", "visit", "message", "letter"]
+NOTE_CATEGORIES: tuple[str, ...] = ("rx", "visit", "lab", "message", "letter")  # tile order
 
 
 class CategoryRule(BaseModel):
@@ -20,6 +20,7 @@ class CategoryRule(BaseModel):
     title_regex: list[str] = []
     title_exclude: list[str] = []
     transcription: bool = False
+    kinds: list[str] = []
     default: bool = False
 
     @field_validator("title_regex", "title_exclude")
@@ -47,8 +48,14 @@ class NoteCategories(BaseModel):
     def map_sources(self) -> list[str]:
         return sorted({s for r in self.categories.values() for s in r.map_sources})
 
-    def classify(self, title: str | None, sources: set[str], transcription: bool = False) -> str:
-        """First match wins: map sources (all categories, in file order), then title rules."""
+    def classify(
+        self, title: str | None, sources: set[str], transcription: bool = False, kind: str = ""
+    ) -> str:
+        """First match wins: note kind, then map sources (all categories, in file order), then
+        title rules."""
+        for key, rule in self.categories.items():
+            if kind and kind in rule.kinds:
+                return key
         for key, rule in self.categories.items():
             if transcription and rule.transcription:
                 return key

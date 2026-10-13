@@ -118,7 +118,9 @@ def notes(emr_id: int) -> list[dict]:
 def note_index(emr_id: int) -> list[dict]:
     """Notes tab index: the synthetic clinical notes + the older fake notes (as documents)."""
     p = PATIENTS_BY_ID[emr_id]
-    rows = [{k: v for k, v in n.items() if k not in ("html", "text")} for n in p.clinical_notes]
+    rows = [{k: v for k, v in n.items() if k not in ("html", "text", "message_fields",
+                                                     "attachment_name")}
+            for n in p.clinical_notes]  # fmt: skip
     rows += [
         {"kind": "document", "id": n["id"], "date": n["date"], "title": n["title"],
          "who": n["author"], "app_source": None, "map_sources": [], "source": n["source"],
@@ -295,3 +297,16 @@ def history_changes(emr_id: int, hx_id: int) -> list[dict]:
 
 def appointments(emr_id: int, ntier_id: int | None) -> list[dict]:
     return [dict(a) for a in PATIENTS_BY_ID[emr_id].appointments]
+
+
+def portal_attachment(emr_id: int, portal_id: int) -> dict | None:
+    from tests.fakes.data import FAKE_PDF
+
+    for n in PATIENTS_BY_ID[emr_id].clinical_notes:
+        if n["kind"] == "portal" and n["id"] == portal_id and n.get("attachment"):
+            return {
+                "content": FAKE_PDF,
+                "attachment_name": n["attachment"],
+                "attachment_type": ".pdf",
+            }
+    return None

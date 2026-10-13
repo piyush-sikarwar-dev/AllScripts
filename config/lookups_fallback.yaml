@@ -20,6 +20,12 @@ hx_med_activity: {0: "—", 1: Active, 2: Inactive, 3: Resolved, 8: Erroneous En
 # Read 2026-10-13: acuity 0 = 256,773 rows, 9 = 2,918, 2 = 2; significance 0 = 249,272, 9 = 10,407.
 hx_acuity: {0: "—", 1: Acute, 2: Chronic, 9: Undefined}
 hx_significance: {0: "—", 1: Major, 2: Minor, 3: Moderate, 4: Reported, 5: Not Reported, 6: HIV-Related, 9: Undefined}
+# Chart messages (MSGTYPE dictionary, hpsystem.DICTIONARIES_MASTER, read 2026-10-13). Saved to the
+# chart: 3 Patient Message (94,149), 5 Refill (34,040).
+msg_type: {0: Lab, 1: Chart message, 2: Mail message, 3: Patient message, 4: Action item, 5: Refill request, 6: Transcription, 7: Chart review, 8: Scanned document, 10: Web, 11: Report, 12: Procedure result}
+# Patient-portal message direction (WEBMESSAGE.MSG_TYPE; no dictionary: inferred from the data,
+# type 1 carries patient attachments and is addressed to a provider, type 2 has an originating provider).
+portal_direction: {1: Portal message from patient, 2: Portal message to patient}
 # HXDIAGNOSIS_ATTRIBUTES.SEVERITY_CODE (SEVERITY): 0 = 74,967 rows, 5 = 4 (not in the dictionary).
 hx_attr_severity: {0: Information, 1: Warning, 2: Alert}
 # Measurement units (UNIT dictionary): vitals temperature / weight / height.

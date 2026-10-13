@@ -46,6 +46,9 @@
       {% include "partials/note_export_toggle.html" %}
     {% endwith %}
     <a class="btn btn--secondary" href="{{ base }}/notes/{{ note.ref }}/print" target="_blank" rel="noopener">{{ icon("print") }}Print note</a>
+    {% if note.attachment_name %}
+    <a class="btn btn--secondary" href="{{ base }}/notes/{{ note.ref }}/attachment">{{ icon("download") }}Attachment (PDF)</a>
+    {% endif %}
     {% if note.encounter_id %}
     <a class="btn btn--secondary" href="{{ url_with(base, {'tab': 'visits', 'type': 'all', 'visit': note.encounter_id}) }}"
        hx-get="{{ url_with(base ~ '/tab/visits', {'type': 'all', 'visit': note.encounter_id}) }}"

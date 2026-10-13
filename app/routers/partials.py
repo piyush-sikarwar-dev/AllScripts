@@ -32,6 +32,7 @@ from app.services.history_service import print_rows as history_print_rows
 from app.services.notes_service import (
     note_detail,
     notes_view,
+    portal_attachment,
     selected_note_refs,
     toggle_note_export,
 )
@@ -319,6 +320,23 @@ async def note_panel(
         {"key": ref.patient_key, "note": note, "notes_state": state, "partial": True},
         headers={"HX-Push-Url": url_with(f"/patients/{ref.patient_key}", state.params())},
     )
+
+
+@router.get("/patients/{key}/notes/{note_ref}/attachment")
+async def note_attachment(
+    request: Request, background: BackgroundTasks, key: str, note_ref: str
+) -> Response:
+    """PDF attached to a patient-portal message: always a download, generic file name."""
+    ref = await _resolve(key)
+    try:
+        pdf = await portal_attachment(ref, note_ref)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    audit(request, background, "view_document", patient_key=ref.patient_key,
+          detail={"kind": "portal_attachment", "note": note_ref})  # fmt: skip
+    filename = f"portal-message-{note_ref.rpartition('-')[2]}.pdf"
+    disposition = f'attachment; filename="{filename}"'
+    return Response(pdf, media_type="application/pdf", headers={"Content-Disposition": disposition})
 
 
 @router.get("/patients/{key}/notes/{note_ref}/print", response_class=HTMLResponse)

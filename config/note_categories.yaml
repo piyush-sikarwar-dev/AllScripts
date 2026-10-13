@@ -4,6 +4,7 @@
 #   title_regex  Python regexes tried on the document title
 #   title_exclude titles that never get this type (e.g. fax cover pages)
 #   transcription: true  dictations (HPSITE.TRANSCRIPTION) get this type
+#   kinds        note kinds that always get this type (message = MESSAGE_SAVED, portal = WEBMESSAGE*)
 #   default: true        everything else
 # Discovery 2026-10-13 (EMR, counts only): 479,438 documents; map sources IMREMED_CODE 171,767
 # (prescription printouts; 170,020 titles carry "#<qty>"), IMREQUISITION_CODE/_C 48,283 (lab
@@ -48,6 +49,13 @@ categories:
       - '(?i)plan summary'
     title_exclude: ['(?i)^\W*cover page']
     transcription: true
+  message:
+    label: Messages
+    badge: Message
+    # Phone / patient messages and refill requests saved to the chart (MESSAGE_SAVED: 94,149
+    # "Patient Message" + 34,040 "Refill", 2010-2021) and patient-portal messages (WEBMESSAGE_SAVED
+    # 2,206 + WEBMESSAGE 3,234, 202 in both). The live inbox (MESSAGE) is workflow, not chart.
+    kinds: [message, portal]
   letter:
     label: Letters & other
     badge: Letter/other

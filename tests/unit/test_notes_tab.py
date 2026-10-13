@@ -125,8 +125,14 @@ def test_counts_ignore_type_but_respect_dates_and_search():
         _m("visit", date(2019, 1, 1), "metformin"),
     ]
     lo, hi = date(2020, 1, 1), date(2021, 12, 31)
-    assert counts_by_category(notes, lo, hi, "") == {"all": 3, "rx": 2, "visit": 0, "lab": 1,
-                                                    "letter": 0}  # fmt: skip
+    assert counts_by_category(notes, lo, hi, "") == {
+        "all": 3,
+        "rx": 2,
+        "visit": 0,
+        "lab": 1,
+        "message": 0,
+        "letter": 0,
+    }
     assert counts_by_category(notes, lo, hi, "METFORMIN")["all"] == 1
     state = NotesState(cat="rx", sort="old")
     assert [m.title for m in filtered(notes, state, lo, hi)] == ["metformin", "glimepiride"]
@@ -179,7 +185,7 @@ def test_list_partial_oob_filters_follow_search(client):
     assert 'id="note-filters"' in r.text and 'hx-swap-oob="true"' in r.text
     assert "No notes match these filters." in r.text and "Clear filters" in r.text
     counts = re.findall(r'type-tile__count">([\d,]+)<', r.text)
-    assert counts == ["0"] * 5  # tile counts follow the search
+    assert counts == ["0"] * 6  # tile counts follow the search (All + 5 types)
     assert "q=zzzz-nothing" in r.headers["HX-Push-Url"]
 
 

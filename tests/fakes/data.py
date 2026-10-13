@@ -713,6 +713,73 @@ def add_appointments(p: FakePatient, seed: int) -> None:
     p.appointments = appts
 
 
+# --- Notes tab: chart messages and portal messages (own seed / id range) ------------------------
+
+MESSAGE_SUBJECTS = [
+    ("Patient message", "Question about lab results"),
+    ("Patient message", "Requests call back about dosage"),
+    ("Refill request", "Refill request: Metformin ER 500 mg"),
+]
+PORTAL_SUBJECTS = [
+    ("Portal message from patient", "Blood sugar log attached"),
+    ("Portal message to patient", "Your recent lab results"),
+]
+FAKE_PDF = b"%PDF-1.4 placeholder attachment generated for interface review only %%EOF"
+
+
+def add_messages(p: FakePatient, seed: int) -> None:
+    rng = random.Random(seed * 17 + p.emr_id)
+    encounters = [v["encounter_id"] for v in p.visits]
+    base = 950000 + (p.emr_id - 1000) * 20
+    for n in range(rng.randint(2, 5)):
+        kind_label, subject = rng.choice(MESSAGE_SUBJECTS)
+        who = rng.choice(PROVIDERS)
+        p.clinical_notes.append(
+            {
+                "kind": "message",
+                "id": base + n,
+                "date": _rand_dt(rng, EMR_START, EMR_END),
+                "title": subject,
+                "who": who,
+                "app_source": kind_label,
+                "map_sources": [],
+                "source": "EMR",
+                "encounter_id": rng.choice(encounters) if encounters else None,
+                "html": None,
+                "text": "Patient called. Placeholder message text (interface review only).",
+                "message_fields": [
+                    ("Type", kind_label),
+                    ("From", who),
+                    ("To", rng.choice(PROVIDERS)),
+                    ("Call-back phone", p.phone),
+                    ("Subject", subject),
+                ],
+            }
+        )
+    for n in range(rng.randint(0, 2)):
+        direction, subject = PORTAL_SUBJECTS[n % 2]
+        attachment = "sugar-log.pdf" if n == 0 else None
+        p.clinical_notes.append(
+            {
+                "kind": "portal",
+                "id": base + 10 + n,
+                "date": _rand_dt(rng, EMR_START, EMR_END),
+                "title": subject,
+                "who": rng.choice(PROVIDERS),
+                "app_source": direction,
+                "map_sources": [],
+                "source": "EMR",
+                "encounter_id": None,
+                "html": None,
+                "attachment": attachment,
+                "attachment_name": attachment,
+                "text": "Placeholder portal message generated for interface review only.",
+                "message_fields": [("Type", direction), ("Subject", subject)]
+                + ([("Attachment", attachment)] if attachment else []),
+            }
+        )
+
+
 def build_patients(count: int = 30, seed: int = 20100827) -> list[FakePatient]:
     rng = random.Random(seed)
     ids = dict.fromkeys(("contact", "note", "hx", "med", "lab", "vital", "doc"), 0)
@@ -722,6 +789,7 @@ def build_patients(count: int = 30, seed: int = 20100827) -> list[FakePatient]:
             add_clinical_notes(p, seed)
             add_history_entries(p, seed)
             add_appointments(p, seed)
+            add_messages(p, seed)
     return patients
 
 

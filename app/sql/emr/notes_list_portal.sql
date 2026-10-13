@@ -1,0 +1,35 @@
+-- Notes tab index: patient-portal messages. Saved copies (WEBMESSAGE_SAVED) plus those only in
+-- the portal mailbox (WEBMESSAGE, not saved). Metadata only; the attachment bytes are not read.
+SELECT
+    s.WEBMSG_ID AS portal_id,
+    s.TAG_SYSTEMDATE AS sent,
+    s.MSG_TYPE AS msg_type,
+    s.SUBJECT AS subject,
+    e.IMREENC_CODE AS encounter_id,
+    p.PROV_LASTNAME AS prov_last,
+    p.PROV_FIRSTNAME AS prov_first,
+    p.PROV_TITLE AS prov_title,
+    s.ATTACHMENT_NAME AS attachment_name
+FROM HPSITE.WEBMESSAGE_SAVED AS s
+LEFT JOIN HPSITE.ENCOUNTER AS e
+    ON e.IMREENC_CODE = s.IMREENC_CODE
+   AND e.IMREDEMEC_CODE = s.IMREDEM_CODE
+LEFT JOIN HPSITE.PROVIDERS AS p
+    ON p.IMREPROV_CODE = COALESCE(NULLIF(s.ORIG_PROVCODE, 0), s.IMREPROV_CODE)
+WHERE s.IMREDEM_CODE = :emr_id
+UNION ALL
+SELECT
+    w.WEBMSG_ID,
+    w.TAG_SYSTEMDATE,
+    w.MSG_TYPE,
+    w.SUBJECT,
+    NULL,
+    p.PROV_LASTNAME,
+    p.PROV_FIRSTNAME,
+    p.PROV_TITLE,
+    w.ATTACHMENT_NAME
+FROM HPSITE.WEBMESSAGE AS w
+LEFT JOIN HPSITE.PROVIDERS AS p
+    ON p.IMREPROV_CODE = COALESCE(NULLIF(w.ORIG_PROVCODE, 0), w.IMREPROV_CODE)
+WHERE w.IMREDEM_CODE = :emr_id
+  AND NOT EXISTS (SELECT 1 FROM HPSITE.WEBMESSAGE_SAVED AS s2 WHERE s2.WEBMSG_ID = w.WEBMSG_ID)

@@ -46,9 +46,10 @@ RANGES: list[tuple[str, str]] = [("12m", "Last 12 months"), ("3y", "Last 3 years
 RANGE_KEYS = frozenset(k for k, _ in RANGES) | {"custom"}
 SORTS: list[tuple[str, str]] = [("new", "Newest first"), ("old", "Oldest first")]
 VIEWS = ("formatted", "original")
-NOTE_KINDS = ("document", "transcription")
+NOTE_KINDS = ("document", "transcription", "message", "portal")
 # export_selection.item_type per note kind (column is 16 characters wide)
-EXPORT_TYPES = {"document": "note_doc", "transcription": "note_trans"}
+EXPORT_TYPES = {"document": "note_doc", "transcription": "note_trans", "message": "note_msg",
+                "portal": "note_portal"}  # fmt: skip
 
 
 # --- URL state -----------------------------------------------------------------------------------
@@ -175,12 +176,18 @@ def _meta(n: dict) -> NoteMeta:
     if n.get("source") == "Pre-2010":  # legacy chart notes (FEATURE_LEGACY_DMZ) are visit notes
         category = "visit"
     else:
-        category = cats.classify(n["title"], set(n["map_sources"]), n["kind"] == "transcription")
+        category = cats.classify(
+            n["title"], set(n["map_sources"]), n["kind"] == "transcription", kind=n["kind"]
+        )
     title, subtitle = n["title"], ""
     if category == "rx":
         title, subtitle = split_rx_title(n["title"])
     elif n["kind"] == "transcription":
         subtitle = "Dictation"
+    elif n["kind"] in ("message", "portal"):
+        subtitle = " · ".join(
+            x for x in (n.get("app_source"), n.get("attachment") and "attachment") if x
+        )
     else:
         subtitle = n.get("app_source") or ""
     who = n.get("who") or n.get("app_source") or "—"
@@ -299,8 +306,15 @@ async def notes_view(ref: PatientRef, state: NotesState) -> NotesView:
 # --- one note ------------------------------------------------------------------------------------
 
 
-def _formatted(meta: NoteMeta, html: str | None, text: str | None) -> dict:
+def _formatted(
+    meta: NoteMeta, html: str | None, text: str | None, message_fields: list | None = None
+) -> dict:
     """Formatted view pieces; format_failed when a prescription printout cannot be parsed."""
+    if message_fields is not None:  # phone / portal messages: header fields + the message text
+        fields = [NoteField(label=label, value=value) for label, value in message_fields]
+        if text:
+            fields.append(NoteField(label="Message", value=text))
+        return {"fields": fields}
     lines = html_to_lines(html) if html else text_to_lines(text or "")
     if meta.category == "rx":
         rx = parse_rx(lines)
@@ -339,7 +353,10 @@ async def note_detail(
     content = await call(source_repository().note, ref.emr_id, meta.kind, meta.id)
     html = redact_ssn(content["html"]) if content and content.get("html") else None
     text = redact_ssn(content["text"]) if content and content.get("text") else None
-    parts = _formatted(meta, html, text) if (html or text) else {}
+    message_fields = content.get("message_fields") if content else None
+    if message_fields is not None:
+        message_fields = [(k, redact_ssn(v)) for k, v in message_fields]
+    parts = _formatted(meta, html, text, message_fields) if (html or text or message_fields) else {}
     view = view if view in VIEWS else "formatted"
     if parts.get("format_failed"):
         view = "original"
@@ -358,6 +375,7 @@ async def note_detail(
         original_text=text,
         encounter_id=meta.encounter_id,
         in_export=in_export,
+        attachment_name=(content or {}).get("attachment_name"),
         **parts,
     )
 
@@ -417,3 +435,16 @@ async def notes_tab(ref: PatientRef, state: NotesState, session_id: str | None) 
             detail = None
     return {"notes_state": view.state, "note_filters": view.filters, "note_page": view.page,
             "note": detail, "note_sorts": SORTS}  # fmt: skip
+
+
+async def portal_attachment(ref: PatientRef, note_ref: str) -> bytes:
+    """The PDF attached to one portal message of this patient (404 for anything else)."""
+    parsed = parse_note_ref(note_ref)
+    if parsed is None or parsed[0] != "portal":
+        raise NotFoundError(f"attachment {note_ref}")
+    find_note(await note_index(ref), note_ref)
+    row = await call(source_repository().portal_attachment, ref.emr_id, parsed[1])
+    content = bytes(row["content"]) if row and row["content"] else b""
+    if not content.startswith(b"%PDF"):  # only PDFs are served (all 597 in the archive are)
+        raise NotFoundError(f"attachment {note_ref}")
+    return content

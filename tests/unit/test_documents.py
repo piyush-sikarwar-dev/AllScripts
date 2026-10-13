@@ -243,6 +243,8 @@ def test_notes_tab_and_note_panel_real_mode(chart_mode, client, monkeypatch):
     monkeypatch.setattr(
         emr, "notes_doc_sources", lambda _id, _s: [{"document_id": 71, "source": "IMREMED_CODE"}]
     )
+    monkeypatch.setattr(emr, "notes_list_messages", lambda _id: [])
+    monkeypatch.setattr(emr, "notes_list_portal", lambda _id: [])
     monkeypatch.setattr(
         emr,
         "notes_list_trans",

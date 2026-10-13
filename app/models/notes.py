@@ -101,7 +101,8 @@ class NoteDetail(BaseModel):
     original_text: str | None = None  # shown escaped, pre-wrapped
     encounter_id: int | None = None
     in_export: bool = False
+    attachment_name: str | None = None  # portal message with a downloadable attachment
 
     @property
     def has_content(self) -> bool:
-        return bool(self.original_html or self.original_text)
+        return bool(self.original_html or self.original_text or self.fields)

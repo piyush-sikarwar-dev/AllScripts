@@ -455,6 +455,10 @@ def notes(emr_id: int) -> list[dict[str, Any]]:
     return items
 
 
+def _message_text(body: Any) -> str | None:
+    return (body or "").replace("\r\n", "\n").strip() or None
+
+
 @cached
 def note(emr_id: int, kind: str, note_id: int) -> dict[str, Any] | None:
     """One note's content: sanitised HTML for documents, plain text for dictations."""
@@ -470,6 +474,40 @@ def note(emr_id: int, kind: str, note_id: int) -> dict[str, Any] | None:
                 "title": (row["title"] or "").strip() or "Untitled document",
                 "author": (row["author"] or "").strip() or None,
                 "html": html, "text": None, "source": "EMR"}  # fmt: skip
+    if kind == "message":
+        row = emr.note_message(emr_id, note_id)
+        if row is None:
+            return None
+        lk = get_lookups()
+        sender = _provider(row["from_last"], row["from_first"], row["from_title"])
+        recipient = _provider(row["to_last"], row["to_first"], row["to_title"])
+        to = recipient if recipient != "—" else (row["to_addressees"] or "").strip() or None
+        fields = [("Type", lk.label("msg_type", row["msg_type"])),
+                  ("From", None if sender == "—" else sender), ("To", to),
+                  ("Call-back phone", (row["phone"] or "").strip() or None),
+                  ("Subject", (row["subject"] or "").strip() or None)]  # fmt: skip
+        return {"kind": kind, "id": note_id, "date": row["sent"],
+                "title": (row["subject"] or "").strip() or "(no subject)",
+                "author": None if sender == "—" else sender, "html": None,
+                "text": _message_text(row["body"]),
+                "message_fields": [(k, v) for k, v in fields if v], "source": "EMR"}  # fmt: skip
+    if kind == "portal":
+        row = emr.note_portal(emr_id, note_id)
+        if row is None:
+            return None
+        who = _provider(row["prov_last"], row["prov_first"], row["prov_title"])
+        fields = [("Type", get_lookups().label("portal_direction", row["msg_type"])),
+                  ("Provider", None if who == "—" else who),
+                  ("Subject", (row["subject"] or "").strip() or None),
+                  ("Attachment", (row["attachment_name"] or "").strip() or None)]  # fmt: skip
+        return {"kind": kind, "id": note_id, "date": row["sent"],
+                "title": (row["subject"] or "").strip() or "(no subject)",
+                "author": None if who == "—" else who, "html": None,
+                "text": _message_text(row["body"]),
+                "message_fields": [(k, v) for k, v in fields if v],
+                "attachment_name": ((row["attachment_name"] or "").strip() or "Attachment")
+                if row["has_attachment"] else None,
+                "source": "EMR"}  # fmt: skip
     if kind == "transcription":
         row = emr.transcription_text(emr_id, note_id)
         if row is None:
@@ -700,10 +738,12 @@ def note_index(emr_id: int) -> list[dict[str, Any]]:
     """Every note of the patient (documents + dictations), metadata only, with its map sources
     (for classification), clinician and encounter. Classification happens in the service."""
     sources = note_categories().map_sources()
-    docs, doc_sources, dictations = parallel(
+    docs, doc_sources, dictations, messages, portal = parallel(
         lambda: emr.notes_list_docs(emr_id),
         lambda: emr.notes_doc_sources(emr_id, sources),
         lambda: emr.notes_list_trans(emr_id),
+        lambda: emr.notes_list_messages(emr_id),
+        lambda: emr.notes_list_portal(emr_id),
     )
     by_doc: dict[int, set[str]] = {}
     for s in doc_sources:
@@ -733,6 +773,34 @@ def note_index(emr_id: int) -> list[dict[str, Any]]:
             "who": None if who == "—" else who,
             "encounter_id": t["encounter_id"],
             "map_sources": [],
+            "source": "EMR",
+        })  # fmt: skip
+    lk = get_lookups()
+    for m in messages:
+        who = _provider(m["from_last"], m["from_first"], m["from_title"])
+        items.append({
+            "kind": "message",
+            "id": m["message_id"],
+            "date": m["sent"],
+            "title": (m["subject"] or "").strip() or "(no subject)",
+            "app_source": lk.label("msg_type", m["msg_type"]),
+            "who": None if who == "—" else who,
+            "encounter_id": m["encounter_id"],
+            "map_sources": [],
+            "source": "EMR",
+        })  # fmt: skip
+    for w in portal:
+        who = _provider(w["prov_last"], w["prov_first"], w["prov_title"])
+        items.append({
+            "kind": "portal",
+            "id": w["portal_id"],
+            "date": w["sent"],
+            "title": (w["subject"] or "").strip() or "(no subject)",
+            "app_source": lk.label("portal_direction", w["msg_type"]),
+            "who": None if who == "—" else who,
+            "encounter_id": w["encounter_id"],
+            "map_sources": [],
+            "attachment": (w["attachment_name"] or "").strip() or None,
             "source": "EMR",
         })  # fmt: skip
     return items
@@ -891,3 +959,8 @@ def appointments(emr_id: int, ntier_id: int | None) -> list[dict[str, Any]]:
             "sources": ["PM"],
         })  # fmt: skip
     return items
+
+
+def portal_attachment(emr_id: int, portal_id: int) -> dict[str, Any] | None:
+    """Attachment bytes of one portal message of this patient (not cached: can be large)."""
+    return emr.note_portal_attachment(emr_id, portal_id)

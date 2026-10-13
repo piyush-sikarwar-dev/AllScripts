@@ -332,3 +332,35 @@ APPOINTMENTS = "emr/appointments.sql"
 
 def appointments(emr_id: int) -> list[dict[str, Any]]:
     return run_query(Source.EMR, APPOINTMENTS, {"emr_id": emr_id})
+
+
+# --- Notes tab: messages saved to the chart and patient-portal messages -------------------------
+NOTES_LIST_MESSAGES = "emr/notes_list_messages.sql"
+NOTES_LIST_PORTAL = "emr/notes_list_portal.sql"
+NOTE_MESSAGE = "emr/note_message.sql"
+NOTE_PORTAL = "emr/note_portal.sql"
+NOTE_PORTAL_ATTACHMENT = "emr/note_portal_attachment.sql"
+
+
+def notes_list_messages(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, NOTES_LIST_MESSAGES, {"emr_id": emr_id})
+
+
+def notes_list_portal(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, NOTES_LIST_PORTAL, {"emr_id": emr_id})
+
+
+def note_message(emr_id: int, message_id: int) -> dict[str, Any] | None:
+    rows = run_query(Source.EMR, NOTE_MESSAGE, {"emr_id": emr_id, "message_id": message_id})
+    return rows[0] if rows else None
+
+
+def note_portal(emr_id: int, portal_id: int) -> dict[str, Any] | None:
+    rows = run_query(Source.EMR, NOTE_PORTAL, {"emr_id": emr_id, "portal_id": portal_id})
+    return rows[0] if rows else None
+
+
+def note_portal_attachment(emr_id: int, portal_id: int) -> dict[str, Any] | None:
+    params = {"emr_id": emr_id, "portal_id": portal_id}
+    rows = run_query(Source.EMR, NOTE_PORTAL_ATTACHMENT, params)
+    return rows[0] if rows else None
