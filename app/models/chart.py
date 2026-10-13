@@ -168,7 +168,7 @@ class VitalRow(BaseModel):
 
 
 class DocumentRow(BaseModel):
-    kind: str  # "scan" | "document"
+    kind: str  # "scan" | "document" | "attachment"
     id: int
     date: str
     type: str
@@ -189,3 +189,5 @@ class DocumentViewer(BaseModel):
     image_url: str | None = None  # scanned page (served as PNG)
     unavailable: str | None = None  # why the page image cannot be shown
     note: NoteDetail | None = None  # clinical documents render like notes
+    download_url: str | None = None  # chart attachment PDF (always a download)
+    text: str | None = None  # chart attachment stored as RTF text

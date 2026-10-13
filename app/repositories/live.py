@@ -532,8 +532,10 @@ def patient_names(emr_ids: list[int]) -> dict[int, str]:
 def documents(emr_id: int) -> list[dict[str, Any]]:
     """Documents tab: scanned documents (+ page counts) and clinical documents."""
     lk = get_lookups()
-    scans, clinical = parallel(
-        lambda: emr.scan_documents(emr_id), lambda: emr.patient_documents(emr_id)
+    scans, clinical, attachments = parallel(
+        lambda: emr.scan_documents(emr_id),
+        lambda: emr.patient_documents(emr_id),
+        lambda: emr.chart_attachments(emr_id),
     )
     items = [
         {
@@ -560,6 +562,21 @@ def documents(emr_id: int) -> list[dict[str, Any]]:
         }
         for d in clinical
     ]
+    for a in attachments:
+        who = _provider(a["provider_last"], a["provider_first"], a["provider_title"])
+        file_format = (a["file_format"] or "").strip().lower() or ("rtf" if a["has_text"] else None)
+        items.append({
+            "kind": "attachment",
+            "id": a["attachment_id"],
+            "date": a["attached"],
+            "type": lk.label("chart_attachment_type", a["content_type"])
+            if a["content_type"] is not None else "Chart attachment",
+            "title": (a["subject"] or "").strip() or None,
+            "pages": None,
+            "format": file_format,
+            "author": None if who == "—" else who,
+            "source": "EMR",
+        })  # fmt: skip
     return items
 
 
@@ -964,3 +981,15 @@ def appointments(emr_id: int, ntier_id: int | None) -> list[dict[str, Any]]:
 def portal_attachment(emr_id: int, portal_id: int) -> dict[str, Any] | None:
     """Attachment bytes of one portal message of this patient (not cached: can be large)."""
     return emr.note_portal_attachment(emr_id, portal_id)
+
+
+def attachment_file(emr_id: int, attachment_id: int) -> dict[str, Any] | None:
+    """File bytes of one chart attachment of this patient (not cached: can be large)."""
+    return emr.chart_attachment_file(emr_id, attachment_id)
+
+
+@cached
+def attachment_text(emr_id: int, attachment_id: int) -> str | None:
+    """Plain text of an RTF-only chart attachment of this patient."""
+    rtf = emr.chart_attachment_text(emr_id, attachment_id)
+    return rtf_to_text(rtf) if rtf else None

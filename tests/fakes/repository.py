@@ -163,7 +163,7 @@ def vitals(emr_id: int) -> list[dict]:
 
 def documents(emr_id: int) -> list[dict]:
     return [
-        d | {"kind": "scan" if d["kind"] == "scan" else "document"}
+        d | {"kind": d["kind"] if d["kind"] in ("scan", "attachment") else "document"}
         for d in PATIENTS_BY_ID[emr_id].documents
     ]
 
@@ -310,3 +310,37 @@ def portal_attachment(emr_id: int, portal_id: int) -> dict | None:
                 "attachment_type": ".pdf",
             }
     return None
+
+
+def _fake_image(fmt: str) -> bytes:
+    """A small 2-page TIFF or a 1-page JPEG, generated on request (no files in the repo)."""
+    import io
+
+    from PIL import Image
+
+    pages = [Image.new("L", (120, 160), color=shade) for shade in (230, 200)]
+    out = io.BytesIO()
+    if fmt == "tif":
+        pages[0].save(out, format="TIFF", save_all=True, append_images=pages[1:])
+    else:
+        pages[0].convert("RGB").save(out, format="JPEG")
+    return out.getvalue()
+
+
+def attachment_file(emr_id: int, attachment_id: int) -> dict | None:
+    from tests.fakes.data import FAKE_PDF
+
+    doc = next((d for d in PATIENTS_BY_ID[emr_id].documents
+                if d["kind"] == "attachment" and d["id"] == attachment_id), None)  # fmt: skip
+    if doc is None or doc["format"] == "rtf":
+        return None
+    content = FAKE_PDF if doc["format"] == "pdf" else _fake_image(doc["format"])
+    return {"content": content, "file_format": doc["format"]}
+
+
+def attachment_text(emr_id: int, attachment_id: int) -> str | None:
+    doc = next((d for d in PATIENTS_BY_ID[emr_id].documents
+                if d["kind"] == "attachment" and d["id"] == attachment_id), None)  # fmt: skip
+    if doc is None or doc["format"] != "rtf":
+        return None
+    return "Dear Dr. Example, placeholder letter text generated for interface review only."

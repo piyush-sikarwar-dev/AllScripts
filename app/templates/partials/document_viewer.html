@@ -1,13 +1,14 @@
 {% from "components/badge.html" import source_badge %}
 {% from "components/banner.html" import warning_banner %}
 {% from "components/empty_state.html" import empty_state %}
+{% from "components/icons.html" import icon %}
 {% set base = "/patients/" ~ key %}
 {% set v = viewer %}
 <article class="detail">
   <div class="detail__head">
     <div>
       <h2 class="detail__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>{{ v.title }}</h2>
-      <p class="detail__sub">{{ v.meta }}{% if v.kind == "scan" and v.pages %} · {{ v.pages }} page{{ "s" if v.pages != 1 }}{% endif %}</p>
+      <p class="detail__sub">{{ v.meta }}{% if v.kind != "document" and v.pages %} · {{ v.pages }} page{{ "s" if v.pages != 1 }}{% endif %}</p>
     </div>
     {{ source_badge(v.source) }}
   </div>
@@ -21,6 +22,13 @@
     {% else %}
       {{ empty_state("This document's content is not available in the archive.", compact=True) }}
     {% endif %}
+  {% elif v.kind == "attachment" and v.download_url %}
+    <div class="attachment-file">
+      <p>This chart attachment is a PDF file. It opens as a download (it is not shown inside the page).</p>
+      <a class="btn btn--primary" href="{{ v.download_url }}">{{ icon("download") }}Download PDF</a>
+    </div>
+  {% elif v.kind == "attachment" and v.text %}
+    <div class="note-text">{{ v.text }}</div>
   {% else %}
     {% if v.unavailable %}
       {{ warning_banner(v.unavailable) }}
@@ -36,8 +44,8 @@
         {% for label, n, enabled in [("Previous", v.page - 1, v.page > 1), ("Next", v.page + 1, v.page < v.pages)] %}
           {% if enabled %}
           <a class="btn btn--secondary btn--sm"
-             href="{{ url_with(base, {'tab': 'docs', 'type': doc_type, 'page': list_page, 'doc': 'scan-' ~ v.id, 'docpage': n}) }}"
-             hx-get="{{ url_with(base ~ '/documents/scan/' ~ v.id, {'type': doc_type, 'page': list_page, 'docpage': n}) }}"
+             href="{{ url_with(base, {'tab': 'docs', 'type': doc_type, 'page': list_page, 'doc': v.kind ~ '-' ~ v.id, 'docpage': n}) }}"
+             hx-get="{{ url_with(base ~ '/documents/' ~ v.kind ~ '/' ~ v.id, {'type': doc_type, 'page': list_page, 'docpage': n}) }}"
              hx-target="#doc-viewer" hx-swap="innerHTML">{{ label }}</a>
           {% else %}
           <span class="btn btn--secondary btn--sm" aria-disabled="true">{{ label }}</span>

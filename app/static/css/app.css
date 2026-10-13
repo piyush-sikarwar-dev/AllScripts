@@ -273,6 +273,8 @@ a:hover { color: var(--accent-hover); }
   text-align: center; }
 .scan-page__img { max-width: 100%; height: auto; background: #FFFFFF; border: 1px solid var(--border); }
 .pager--viewer { border-top: 0; padding: 0; }
+.attachment-file { display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
+  background: var(--panel); border-radius: var(--r-ctl); padding: 16px; }
 
 /* ---------- Visits tab (Option C: activity strip + structured note) ----------
    Scoped to .visits / .activity / .visit-list / .visit-note so the Dashboard, Notes and Documents

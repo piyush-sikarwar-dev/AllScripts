@@ -364,3 +364,25 @@ def note_portal_attachment(emr_id: int, portal_id: int) -> dict[str, Any] | None
     params = {"emr_id": emr_id, "portal_id": portal_id}
     rows = run_query(Source.EMR, NOTE_PORTAL_ATTACHMENT, params)
     return rows[0] if rows else None
+
+
+# --- Documents tab: chart attachments -------------------------------------------------------------
+CHART_ATTACHMENTS = "emr/chart_attachments.sql"
+CHART_ATTACHMENT_FILE = "emr/chart_attachment_file.sql"
+CHART_ATTACHMENT_TEXT = "emr/chart_attachment_text.sql"
+
+
+def chart_attachments(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, CHART_ATTACHMENTS, {"emr_id": emr_id})
+
+
+def chart_attachment_file(emr_id: int, attachment_id: int) -> dict[str, Any] | None:
+    params = {"emr_id": emr_id, "attachment_id": attachment_id}
+    rows = run_query(Source.EMR, CHART_ATTACHMENT_FILE, params)
+    return rows[0] if rows else None
+
+
+def chart_attachment_text(emr_id: int, attachment_id: int) -> str | None:
+    params = {"emr_id": emr_id, "attachment_id": attachment_id}
+    rows = run_query(Source.EMR, CHART_ATTACHMENT_TEXT, params)
+    return rows[0]["note_text"] if rows else None

@@ -1,7 +1,7 @@
 """Documents tab: scanned documents (+ page viewer) and clinical documents."""
 
 from app.crosswalk import PatientRef
-from app.documents.images import cached_png
+from app.documents.images import cached_png, frame_count
 from app.documents.render import DocumentFormatError
 from app.documents.store import DocumentUnavailableError, get_store
 from app.formatting import date_us, or_dash, sort_key
@@ -11,7 +11,12 @@ from app.repositories import source_repository
 from app.services import NotFoundError, call
 from app.services.notes import note_detail
 
-DOC_KINDS = ("scan", "document")
+DOC_KINDS = ("scan", "document", "attachment")
+# Chart attachments (NOTES_RAWDATA.NOTE_SUBFORMAT): images are shown page by page as PNG, PDFs
+# are offered as a download, RTF-only attachments are shown as text.
+IMAGE_FORMATS = frozenset({"tif", "tiff", "jpg", "jpeg", "png", "gif", "bmp"})
+VIEWABLE_FORMATS = IMAGE_FORMATS | {"pdf", "rtf"}
+_frame_counts: dict[int, int] = {}  # attachment id → pages (small, memory only)
 
 
 def scan_store_configured() -> bool:
@@ -49,7 +54,9 @@ async def documents_tab(
                 title=or_dash(d["title"]),
                 pages=or_dash(d["pages"]),
                 source=d["source"],
-                viewable=d["kind"] == "document" or (store and bool(d["pages"])),
+                viewable=d["kind"] == "document"
+                or (d["kind"] == "attachment" and d.get("format") in VIEWABLE_FORMATS)
+                or bool(store and d["pages"]),
             )
             for d in page_rows
         ],
@@ -59,7 +66,81 @@ async def documents_tab(
     )
 
 
+async def _attachment(ref: PatientRef, attachment_id: int) -> dict:
+    """List entry of one chart attachment of this patient (404 otherwise)."""
+    rows = await call(source_repository().documents, ref.emr_id)
+    found = next((d for d in rows if d["kind"] == "attachment" and d["id"] == attachment_id), None)
+    if found is None:
+        raise NotFoundError(f"attachment {attachment_id}")
+    return found
+
+
+async def _attachment_bytes(ref: PatientRef, attachment_id: int) -> bytes:
+    row = await call(source_repository().attachment_file, ref.emr_id, attachment_id)
+    if not row or not row["content"]:
+        raise NotFoundError(f"attachment {attachment_id}")
+    return bytes(row["content"])
+
+
+async def attachment_viewer(ref: PatientRef, attachment_id: int, page: int) -> DocumentViewer:
+    item = await _attachment(ref, attachment_id)
+    fmt = item.get("format") or ""
+    meta = " · ".join(p for p in (date_us(item["date"]), item["type"], item.get("author"))
+                      if p and p != "—")  # fmt: skip
+    viewer = DocumentViewer(kind="attachment", id=attachment_id,
+                            title=or_dash(item["title"] or item["type"]), meta=meta,
+                            source=item["source"])  # fmt: skip
+    base = f"/patients/{ref.patient_key}/documents/attachment/{attachment_id}"
+    if fmt in IMAGE_FORMATS:
+        pages = _frame_counts.get(attachment_id)
+        if pages is None:
+            try:
+                pages = frame_count(await _attachment_bytes(ref, attachment_id))
+            except (NotFoundError, DocumentFormatError):
+                viewer.unavailable = "This attachment's image could not be read."
+                return viewer
+            if len(_frame_counts) > 500:
+                _frame_counts.clear()
+            _frame_counts[attachment_id] = pages
+        viewer.pages = pages
+        viewer.page = min(max(page, 1), pages)
+        viewer.image_url = f"{base}/pages/{viewer.page}"
+    elif fmt == "pdf":
+        viewer.download_url = f"{base}/file"
+    elif fmt == "rtf":
+        viewer.text = await call(source_repository().attachment_text, ref.emr_id, attachment_id)
+        if not viewer.text:
+            viewer.unavailable = "This attachment's text is not available in the archive."
+    else:
+        label = fmt.upper() if fmt else "unknown"
+        viewer.unavailable = f"This attachment is a {label} file, which can't be shown here."
+    return viewer
+
+
+async def attachment_png(ref: PatientRef, attachment_id: int, page: int) -> bytes:
+    """PNG of one page of an image attachment of this patient."""
+    item = await _attachment(ref, attachment_id)
+    if item.get("format") not in IMAGE_FORMATS or page < 1:
+        raise NotFoundError(f"attachment {attachment_id} page {page}")
+    data = await _attachment_bytes(ref, attachment_id)
+    try:
+        return await call(cached_png, ("attachment", attachment_id, page), lambda: data, page - 1)
+    except DocumentFormatError as exc:
+        raise NotFoundError(f"attachment {attachment_id} page {page}") from exc
+
+
+async def attachment_pdf(ref: PatientRef, attachment_id: int) -> bytes:
+    """The PDF of a chart attachment of this patient (PDF bytes only)."""
+    item = await _attachment(ref, attachment_id)
+    data = await _attachment_bytes(ref, attachment_id) if item.get("format") == "pdf" else b""
+    if not data.startswith(b"%PDF"):
+        raise NotFoundError(f"attachment {attachment_id}")
+    return data
+
+
 async def document_viewer(ref: PatientRef, kind: str, doc_id: int, page: int) -> DocumentViewer:
+    if kind == "attachment":
+        return await attachment_viewer(ref, doc_id, page)
     if kind == "document":
         note = await note_detail(ref, "document", doc_id)
         return DocumentViewer(

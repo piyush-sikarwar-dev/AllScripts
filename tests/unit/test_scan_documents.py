@@ -93,6 +93,7 @@ def _scan(doc_id, status=4, pages=2, type_="OUTSIDE LABS"):
 def docs_sql(monkeypatch):
     monkeypatch.setattr(emr, "scan_documents", lambda _id: [_scan(500), _scan(501, status=10)])
     monkeypatch.setattr(emr, "patient_documents", lambda _id: [])
+    monkeypatch.setattr(emr, "chart_attachments", lambda _id: [])
     monkeypatch.setattr(
         emr,
         "scan_document_pages",

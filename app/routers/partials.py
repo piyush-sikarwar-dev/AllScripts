@@ -20,7 +20,13 @@ from app.models.visits import EncounterDetail
 from app.repositories.appdb import utcnow
 from app.services import NotFoundError
 from app.services.chart_header import get_header
-from app.services.documents import DOC_KINDS, document_viewer, page_png
+from app.services.documents import (
+    DOC_KINDS,
+    attachment_pdf,
+    attachment_png,
+    document_viewer,
+    page_png,
+)
 from app.services.history_service import CHANGES_SHOWN as HISTORY_CHANGES_SHOWN
 from app.services.history_service import SECTION_LABELS as HISTORY_SECTION_LABELS
 from app.services.history_service import change_history as history_change_lines
@@ -565,3 +571,34 @@ async def document_page_image(
     audit(request, background, "view_document", patient_key=ref.patient_key,
           detail={"kind": "scan", "id": doc_id, "page": page_no, "image": True})  # fmt: skip
     return Response(content=png, media_type="image/png")
+
+
+@router.get("/patients/{key}/documents/attachment/{attachment_id}/pages/{page_no}")
+async def attachment_page_image(
+    request: Request, background: BackgroundTasks, key: str, attachment_id: int, page_no: int
+) -> Response:
+    """One page of an image chart attachment (TIFF / JPEG / PNG …) as PNG."""
+    ref = await _resolve(key)
+    try:
+        png = await attachment_png(ref, attachment_id, page_no)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    detail = {"kind": "attachment", "id": attachment_id, "page": page_no, "image": True}
+    audit(request, background, "view_document", patient_key=ref.patient_key, detail=detail)
+    return Response(content=png, media_type="image/png")
+
+
+@router.get("/patients/{key}/documents/attachment/{attachment_id}/file")
+async def attachment_file(
+    request: Request, background: BackgroundTasks, key: str, attachment_id: int
+) -> Response:
+    """A PDF chart attachment: always a download with a generic file name."""
+    ref = await _resolve(key)
+    try:
+        pdf = await attachment_pdf(ref, attachment_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    audit(request, background, "view_document", patient_key=ref.patient_key,
+          detail={"kind": "attachment", "id": attachment_id, "file": True})  # fmt: skip
+    disposition = f'attachment; filename="chart-attachment-{attachment_id}.pdf"'
+    return Response(pdf, media_type="application/pdf", headers={"Content-Disposition": disposition})

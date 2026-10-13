@@ -780,6 +780,37 @@ def add_messages(p: FakePatient, seed: int) -> None:
         )
 
 
+# --- Documents tab: chart attachments (own seed / id range). Files are generated on request. -----
+
+ATTACHMENT_KINDS = [
+    ("tif", "Historical summary", "Outside records (sample)"),
+    ("pdf", "Patient demographic information", "Registration form (sample)"),
+    ("jpg", "Photo image", "Photo (sample)"),
+    ("rtf", "Letter received on patient's behalf", "Letter (sample)"),
+]
+
+
+def add_attachments(p: FakePatient, seed: int) -> None:
+    rng = random.Random(seed * 19 + p.emr_id)
+    base = 970000 + (p.emr_id - 1000) * 10
+    for n, (fmt, doc_type, title) in enumerate(ATTACHMENT_KINDS):
+        if n and rng.random() < 0.3:
+            continue
+        p.documents.append(
+            {
+                "id": base + n,
+                "date": _rand_dt(rng, EMR_START, EMR_END),
+                "type": doc_type,
+                "title": title,
+                "pages": None,
+                "kind": "attachment",
+                "format": fmt,
+                "author": rng.choice(PROVIDERS),
+                "source": "EMR",
+            }
+        )
+
+
 def build_patients(count: int = 30, seed: int = 20100827) -> list[FakePatient]:
     rng = random.Random(seed)
     ids = dict.fromkeys(("contact", "note", "hx", "med", "lab", "vital", "doc"), 0)
@@ -790,6 +821,7 @@ def build_patients(count: int = 30, seed: int = 20100827) -> list[FakePatient]:
             add_history_entries(p, seed)
             add_appointments(p, seed)
             add_messages(p, seed)
+            add_attachments(p, seed)
     return patients
 
 
