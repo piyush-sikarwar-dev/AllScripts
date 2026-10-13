@@ -121,9 +121,9 @@ def pdf_filename(header: ChartHeader, now: datetime) -> str:
 
 
 async def _visits(ref: PatientRef, req: ExportRequest) -> list:
-    rows = await call(source_repository().visits, ref.emr_id)
+    rows = await call(source_repository().visits, ref.emr_id, True)
     rows = [v for v in rows if v["is_office_visit"] and _in_range(v["start"], req)]
-    rows.sort(key=lambda v: sort_key(v["start"]), reverse=True)
+    rows.sort(key=lambda v: (sort_key(v["start"]), v["contact_id"]), reverse=True)
     sem = asyncio.Semaphore(VISIT_CONCURRENCY)
 
     async def one(contact_id: int):

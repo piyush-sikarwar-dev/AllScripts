@@ -172,6 +172,10 @@ class Lookups:
         """Whether a status code counts as active (config/statuses.yaml)."""
         return _key(code) in self.active.get(kind, frozenset())
 
+    def history_codes(self, group: str) -> list[int]:
+        """HX_DIAGNOSIS.CATEGORY_CODE values configured for a group (e.g. "allergy")."""
+        return sorted(c for c, v in self.history.items() if v.group == group and isinstance(c, int))
+
     def office_visit_codes(self) -> list[int]:
         """Visit-type codes configured as real visits (config/visit_types.yaml)."""
         return sorted(

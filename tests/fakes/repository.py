@@ -88,8 +88,9 @@ def patient_names(emr_ids: list[int]) -> dict[int, str]:
     }
 
 
-def visits(emr_id: int) -> list[dict]:
-    return list(PATIENTS_BY_ID[emr_id].visits)
+def visits(emr_id: int, office_only: bool = False) -> list[dict]:
+    rows = list(PATIENTS_BY_ID[emr_id].visits)
+    return [v for v in rows if v["is_office_visit"]] if office_only else rows
 
 
 def last_visit(emr_id: int) -> dict | None:
@@ -105,7 +106,8 @@ def visit(emr_id: int, contact_id: int) -> dict | None:
 
 
 def visit_vitals(emr_id: int, contact_id: int) -> list[dict]:
-    return [v for v in PATIENTS_BY_ID[emr_id].vitals if v["contact_id"] == contact_id]
+    rows = [v for v in PATIENTS_BY_ID[emr_id].vitals if v["contact_id"] == contact_id]
+    return sorted(rows, key=lambda v: (v["date"], v["id"]))
 
 
 def notes(emr_id: int) -> list[dict]:

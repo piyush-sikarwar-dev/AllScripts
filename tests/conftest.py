@@ -23,6 +23,16 @@ def anyio_backend():
 
 
 @pytest.fixture(autouse=True)
+def empty_source_cache():
+    """Each test starts with an empty per-patient cache (tests reuse patient ids)."""
+    from app.repositories import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
+@pytest.fixture(autouse=True)
 def app_db():
     """Fresh app-database tables for every test."""
     import app.repositories.appdb.models  # noqa: F401

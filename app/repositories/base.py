@@ -5,13 +5,26 @@ Logs the SQL file name, row count and duration only — never parameter values (
 
 import logging
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from app.db.source import Source, get_engine
 from app.db.sql_loader import load_sql
 
 log = logging.getLogger("app.sql")
+
+# Independent queries of one screen run side by side (docs/PERFORMANCE_PLAN.md #2). Each query
+# still runs on its own pooled connection exactly as before; only the waiting overlaps.
+_executor = ThreadPoolExecutor(max_workers=16, thread_name_prefix="sql")
+
+
+def parallel(*calls: Callable[[], Any]) -> list[Any]:
+    """Run zero-argument callables concurrently; results in the same order; errors re-raised."""
+    if len(calls) <= 1:
+        return [call() for call in calls]
+    futures = [_executor.submit(call) for call in calls]
+    return [future.result() for future in futures]
 
 
 def run_query(

@@ -142,7 +142,7 @@ class ChartSql(FakeSql):
         self.calls.append((sql_name, dict(params or {})))
         onset = datetime(2015, 6, 1, tzinfo=UTC)
         canned = {
-            emr.PATIENT_HEADER: [
+            emr.PATIENT_HEADER_FULL: [
                 {
                     "emr_id": 11,
                     "last_name": "Sample",
@@ -159,10 +159,10 @@ class ChartSql(FakeSql):
                     "state": "ST",
                     "zip": "00000",
                     "phone": "(555) 010-0000",
+                    "primary_insurance": "Sample Health Plan",
+                    "mrn": "M11",
                 }
             ],
-            emr.PRIMARY_INSURANCE: [{"carrier_name": "Sample Health Plan", "rank": 0}],
-            emr.MRNS: [{"emr_id": 11, "mrn": "M11"}],
             emr.HISTORY_ITEMS: [
                 {
                     "hx_id": 1,

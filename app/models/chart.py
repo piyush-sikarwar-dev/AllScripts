@@ -76,11 +76,17 @@ class RenderedDocument(BaseModel):
     html: str
 
 
+class VitalReading(BaseModel):
+    time: str
+    values: list[LabeledValue]
+
+
 class VisitDetail(BaseModel):
     visit: VisitSummary
     assessment: list[LabeledValue]
     plan: list[str]
-    vitals: list[LabeledValue]
+    vitals: list[LabeledValue]  # first reading of the visit
+    more_vitals: list[VitalReading] = []  # any further readings, in time order
     addenda: list[str]
     note_text: str | None
     documents: list[RenderedDocument] = []

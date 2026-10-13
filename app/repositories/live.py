@@ -15,6 +15,8 @@ from app.formatting import date_us, person_name, sort_key, to_clinic_time
 from app.lookups import get_lookups
 from app.repositories import emr, ntier
 from app.repositories.appdb.crosswalk import links_for_emr_ids
+from app.repositories.base import parallel
+from app.repositories.cache import cached
 
 log = logging.getLogger("app.repositories")
 
@@ -32,12 +34,14 @@ def totals() -> dict[str, int]:
     now = time.monotonic()
     if _totals_cache and _totals_cache[0] > now:
         return _totals_cache[1]
-    value = {
-        "patients": emr.table_row_count("HPSITE", "DEMOGRAPHICS"),
-        "encounters": emr.table_row_count("HPSITE", "ENCOUNTER"),
-        "lab_results": emr.table_row_count("HPSITE", "LAB_RESULT"),
-        "scanned_documents": emr.table_row_count("HPSITE", "SCAN_DOCUMENT"),
+    tables = {
+        "patients": "DEMOGRAPHICS",
+        "encounters": "ENCOUNTER",
+        "lab_results": "LAB_RESULT",
+        "scanned_documents": "SCAN_DOCUMENT",
     }
+    counts = parallel(*(lambda t=t: emr.table_row_count("HPSITE", t) for t in tables.values()))
+    value = dict(zip(tables, counts, strict=True))
     _totals_cache = (now + TOTALS_TTL_SECONDS, value)
     return value
 
@@ -61,8 +65,9 @@ def search_patients(
     )
     total = int(rows[0]["total_count"]) if rows else 0
     ids = [int(r["emr_id"]) for r in rows]
-    links = links_for_emr_ids(ids)
-    mrns = emr.mrns(ids)
+    links, mrns, last = parallel(
+        lambda: links_for_emr_ids(ids), lambda: emr.mrns(ids), lambda: emr.last_visits(ids)
+    )
     result = []
     for r in rows:
         emr_id = int(r["emr_id"])
@@ -80,6 +85,7 @@ def search_patients(
                 "deceased": bool(r["deceased"]),
                 "ntier_id": ntier_id,
                 "dmz_id": dmz_id,
+                "last_visit": last.get(emr_id),
             }
         )
     return result, total
@@ -89,12 +95,15 @@ def last_visits(emr_ids: list[int]) -> dict[int, Any]:
     return emr.last_visits(emr_ids)
 
 
+@cached
 def get_patient(emr_id: int) -> dict[str, Any] | None:
     """Chart header data (shape matches tests/fakes/repository.get_patient)."""
-    header = emr.patient_header(emr_id)
+    header, links = parallel(
+        lambda: emr.patient_header_full(emr_id), lambda: links_for_emr_ids([emr_id])
+    )
     if header is None:
         return None
-    ntier_id, dmz_id = links_for_emr_ids([emr_id]).get(emr_id, (None, None))
+    ntier_id, dmz_id = links.get(emr_id, (None, None))
     pm = ntier.pm_account(ntier_id) if ntier_id is not None else None
     return {
         "emr_id": emr_id,
@@ -104,33 +113,31 @@ def get_patient(emr_id: int) -> dict[str, Any] | None:
         "dob": header["dob"],
         "dob_mask": header["dob_mask"],
         "sex": header["sex_code"],
-        "chart_id": emr.mrns([emr_id]).get(emr_id),
+        "chart_id": header["mrn"],
         "deceased": bool(header["deceased"]),
         "phone": header["phone"],
         "address": header["address"],
         "city": header["city"],
         "state": header["state"],
         "zip": header["zip"],
-        "primary_insurance": emr.primary_insurance(emr_id),
+        "primary_insurance": header["primary_insurance"],
         "pm_account": ((pm or {}).get("account_number") or "").strip() or None,
         "ntier_id": ntier_id,
         "dmz_id": dmz_id,
     }
 
 
+@cached
 def history(emr_id: int) -> list[dict[str, Any]]:
     """HX_DIAGNOSIS latest revisions, grouped via config/history_categories.yaml."""
     lk = get_lookups()
-    rows = emr.history_items(emr_id)
-    allergy_codes = sorted(
-        {
-            r["category_code"]
-            for r in rows
-            if lk.history_category(r["category_code"]).group == "allergy"
-        }
+    allergy_codes = lk.history_codes("allergy")
+    rows, attributes = parallel(
+        lambda: emr.history_items(emr_id),
+        lambda: emr.history_attributes(emr_id, allergy_codes),
     )
     reactions: dict[int, list[tuple[int, str]]] = {}
-    for a in emr.history_attributes(emr_id, allergy_codes):
+    for a in attributes:
         if a["title"]:
             reactions.setdefault(a["hx_id"], []).append((a["sort_order"] or 0, a["title"].strip()))
     items = []
@@ -170,11 +177,15 @@ def _is_current(end_date: Any) -> bool:
     return end_date is None or end_date >= date.today()
 
 
+@cached
 def medications(emr_id: int) -> list[dict[str, Any]]:
     """Prescriptions (MEDICATIONS) + medication history (HX_MEDICATION), latest revisions."""
     lk = get_lookups()
+    prescriptions, med_history = parallel(
+        lambda: emr.medications(emr_id), lambda: emr.hx_medications(emr_id)
+    )
     items = []
-    for r in emr.medications(emr_id):
+    for r in prescriptions:
         if lk.is_erroneous("medications", r["status_code"]):
             continue
         items.append(
@@ -192,7 +203,7 @@ def medications(emr_id: int) -> list[dict[str, Any]]:
                 "source": "EMR",
             }
         )
-    for r in emr.hx_medications(emr_id):
+    for r in med_history:
         if lk.is_erroneous("hx_medication", r["activity_code"]):
             continue
         items.append(
@@ -221,6 +232,7 @@ def _provider(last: Any, first: Any, title: Any = None) -> str:
     return provider
 
 
+@cached
 def last_visit(emr_id: int) -> dict[str, Any] | None:
     """Newest real visit (visit types configured as office visits)."""
     r = emr.last_visit_detail(emr_id, get_lookups().office_visit_codes())
@@ -244,6 +256,7 @@ def _day(value: Any) -> date | None:
     return value
 
 
+@cached
 def labs(emr_id: int) -> list[dict[str, Any]]:
     """LAB_RESULT rows; canceled / erroneous results hidden (config/statuses.yaml)."""
     lk = get_lookups()
@@ -280,33 +293,35 @@ def _number(value: Any) -> str | None:
         return str(value).strip() or None
 
 
-def vitals(emr_id: int) -> list[dict[str, Any]]:
-    """VITALS_DATA rows (erroneous readings excluded in SQL)."""
+def _vital(r: dict[str, Any]) -> dict[str, Any]:
     lk = get_lookups()
 
     def unit(code: Any) -> str:
         return "" if code is None else lk.label("unit", code).replace("Unknown (code 0)", "")
 
-    return [
-        {
-            "id": r["vital_id"],
-            "contact_id": r["contact_id"],
-            "date": r["taken"],
-            "systolic": _number(r["systolic"]),
-            "diastolic": _number(r["diastolic"]),
-            "pulse": _number(r["pulse"]),
-            "temp": _number(r["temperature"]),
-            "temp_unit": unit(r["temperature_unit"]),
-            "weight": _number(r["weight"]),
-            "weight_unit": unit(r["weight_unit"]),
-            "height": _number(r["height"]),
-            "height_unit": unit(r["height_unit"]),
-            "spo2": _number(r["spo2"]),
-            "pain": _number(r["pain"]),
-            "source": "EMR",
-        }
-        for r in emr.vitals(emr_id)
-    ]
+    return {
+        "id": r["vital_id"],
+        "contact_id": r["contact_id"],
+        "date": r["taken"],
+        "systolic": _number(r["systolic"]),
+        "diastolic": _number(r["diastolic"]),
+        "pulse": _number(r["pulse"]),
+        "temp": _number(r["temperature"]),
+        "temp_unit": unit(r["temperature_unit"]),
+        "weight": _number(r["weight"]),
+        "weight_unit": unit(r["weight_unit"]),
+        "height": _number(r["height"]),
+        "height_unit": unit(r["height_unit"]),
+        "spo2": _number(r["spo2"]),
+        "pain": _number(r["pain"]),
+        "source": "EMR",
+    }
+
+
+@cached
+def vitals(emr_id: int) -> list[dict[str, Any]]:
+    """VITALS_DATA rows (erroneous readings excluded in SQL)."""
+    return [_vital(r) for r in emr.vitals(emr_id)]
 
 
 def _visit_summary(r: dict[str, Any]) -> dict[str, Any]:
@@ -325,9 +340,17 @@ def _visit_summary(r: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def visits(emr_id: int) -> list[dict[str, Any]]:
-    """Every non-cancelled contact; the service filters to real visits by default."""
-    return [_visit_summary(r) for r in emr.visits(emr_id)]
+@cached
+def visits(emr_id: int, office_only: bool = False) -> list[dict[str, Any]]:
+    """Non-cancelled contacts. office_only=True asks the database for real visits only (same rows
+    the service would keep after filtering); all entries otherwise."""
+    lk = get_lookups()
+    if office_only and not lk.visit_default_office:
+        rows = emr.visits_of_types(emr_id, lk.office_visit_codes())
+    else:
+        rows = emr.visits(emr_id)
+    summaries = [_visit_summary(r) for r in rows]
+    return [v for v in summaries if v["is_office_visit"]] if office_only else summaries
 
 
 def _document_html(emr_id: int, document_id: int) -> str | None:
@@ -341,6 +364,7 @@ def _document_html(emr_id: int, document_id: int) -> str | None:
         return None
 
 
+@cached
 def visit(emr_id: int, contact_id: int) -> dict[str, Any] | None:
     """Visit detail: assessment, plan, addenda and the visit note (documents first, then text)."""
     r = emr.visit_one(emr_id, contact_id)
@@ -349,10 +373,17 @@ def visit(emr_id: int, contact_id: int) -> dict[str, Any] | None:
     lk = get_lookups()
     detail = _visit_summary(r)
     enc = r["encounter_id"]
-    assessment = sorted(emr.visit_assessment(enc), key=lambda a: a["sort_order"] or 0)
+    assessment, plan, addenda, docs, text_notes = parallel(
+        lambda: emr.visit_assessment(enc),
+        lambda: emr.visit_plan(enc),
+        lambda: emr.visit_addenda(enc),
+        lambda: emr.visit_documents(emr_id, enc),
+        lambda: emr.visit_text_notes(contact_id),
+    )
+    assessment = sorted(assessment, key=lambda a: a["sort_order"] or 0)
     detail["assessment"] = [((a["title"] or "").strip() or "Untitled", (a["code"] or "").strip())
                             for a in assessment]  # fmt: skip
-    plan = sorted(emr.visit_plan(enc), key=lambda p: p["sort_order"] or 0)
+    plan = sorted(plan, key=lambda p: p["sort_order"] or 0)
     labels = {"LABORATORY": "Lab order", "PROCEDURE": "Procedure", "MEDICATION": "Medication"}
     detail["plan"] = [
         f"{labels.get(p['source'], 'Plan item')}: "
@@ -363,31 +394,40 @@ def visit(emr_id: int, contact_id: int) -> dict[str, Any] | None:
     detail["addenda"] = [
         f"{date_us(a['added'])} · {person_name(a['provider_last'], a['provider_first'])}: "
         f"{(a['note_text'] or '').strip() or '(no text)'}"
-        for a in sorted(emr.visit_addenda(enc), key=lambda a: sort_key(a["added"]))
+        for a in sorted(addenda, key=lambda a: sort_key(a["added"]))
     ]
-    docs = sorted(emr.visit_documents(emr_id, enc), key=lambda d: sort_key(d["created"]))
+    docs = sorted(docs, key=lambda d: sort_key(d["created"]))
+    note_ids = [d["document_id"] for d in docs if lk.is_visit_note_title(d["title"])]
+    bodies = dict(zip(note_ids, parallel(*(lambda i=i: _document_html(emr_id, i)
+                                           for i in note_ids)), strict=True))  # fmt: skip
     detail["note_documents"] = []
     detail["other_documents"] = []
     for d in docs:
         meta = {"id": d["document_id"], "title": (d["title"] or "").strip() or "Untitled document",
                 "author": (d["author"] or "").strip(), "created": d["created"]}  # fmt: skip
-        if lk.is_visit_note_title(d["title"]):
-            html = _document_html(emr_id, d["document_id"])
-            if html:
-                detail["note_documents"].append(meta | {"html": html})
-                continue
-        detail["other_documents"].append(meta)
-    texts = [(n["note_text"] or "").strip() for n in emr.visit_text_notes(contact_id)]
+        html = bodies.get(d["document_id"])
+        if html:
+            detail["note_documents"].append(meta | {"html": html})
+        else:
+            detail["other_documents"].append(meta)
+    texts = [(n["note_text"] or "").strip() for n in text_notes]
     detail["note_text"] = "\n\n".join(t for t in texts if t) or None
     return detail
 
 
+@cached
 def visit_vitals(emr_id: int, contact_id: int) -> list[dict[str, Any]]:
-    return [v for v in vitals(emr_id) if v["contact_id"] == contact_id]
+    """Readings of one visit only (indexed query), in time order."""
+    rows = [_vital(r) for r in emr.visit_vitals(emr_id, contact_id)]
+    return sorted(rows, key=lambda v: (sort_key(v["date"]), v["id"]))
 
 
+@cached
 def notes(emr_id: int) -> list[dict[str, Any]]:
     """Notes tab: clinical documents + dictations (metadata only)."""
+    documents_rows, transcription_rows = parallel(
+        lambda: emr.patient_documents(emr_id), lambda: emr.transcriptions(emr_id)
+    )
     items = [
         {
             "kind": "document",
@@ -397,7 +437,7 @@ def notes(emr_id: int) -> list[dict[str, Any]]:
             "author": (d["author"] or "").strip() or None,
             "source": "EMR",
         }
-        for d in emr.patient_documents(emr_id)
+        for d in documents_rows
     ]
     items += [
         {
@@ -408,11 +448,12 @@ def notes(emr_id: int) -> list[dict[str, Any]]:
             "author": _provider(t["provider_last"], t["provider_first"], t["provider_title"]),
             "source": "EMR",
         }
-        for t in emr.transcriptions(emr_id)
+        for t in transcription_rows
     ]
     return items
 
 
+@cached
 def note(emr_id: int, kind: str, note_id: int) -> dict[str, Any] | None:
     """One note's content: sanitised HTML for documents, plain text for dictations."""
     if kind == "document":
@@ -447,9 +488,13 @@ def patient_names(emr_ids: list[int]) -> dict[int, str]:
     }
 
 
+@cached
 def documents(emr_id: int) -> list[dict[str, Any]]:
     """Documents tab: scanned documents (+ page counts) and clinical documents."""
     lk = get_lookups()
+    scans, clinical = parallel(
+        lambda: emr.scan_documents(emr_id), lambda: emr.patient_documents(emr_id)
+    )
     items = [
         {
             "kind": "scan",
@@ -460,7 +505,7 @@ def documents(emr_id: int) -> list[dict[str, Any]]:
             "pages": int(d["pages"] or 0),
             "source": "EMR",
         }
-        for d in emr.scan_documents(emr_id)
+        for d in scans
         if not lk.is_erroneous("scan_document", d["status_code"])
     ]
     items += [
@@ -473,11 +518,12 @@ def documents(emr_id: int) -> list[dict[str, Any]]:
             "pages": None,
             "source": "EMR",
         }
-        for d in emr.patient_documents(emr_id)
+        for d in clinical
     ]
     return items
 
 
+@cached
 def document_pages(emr_id: int, document_id: int) -> dict[str, Any] | None:
     """One scanned document (ownership-checked) with its pages in order."""
     rows = emr.scan_document_pages(emr_id, document_id)

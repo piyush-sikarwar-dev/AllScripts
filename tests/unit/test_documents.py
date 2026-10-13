@@ -104,6 +104,11 @@ def visit_sql(monkeypatch):
     ]
     monkeypatch.setattr(emr, "visits", lambda _id: rows)
     monkeypatch.setattr(
+        emr,
+        "visits_of_types",
+        lambda _id, codes: [r for r in rows if r["visit_type_code"] in codes],
+    )
+    monkeypatch.setattr(
         emr, "visit_one", lambda _e, c: next((r for r in rows if r["contact_id"] == c), None)
     )
     monkeypatch.setattr(
@@ -146,6 +151,7 @@ def visit_sql(monkeypatch):
         ),
     )
     monkeypatch.setattr(emr, "vitals", lambda _id: [])
+    monkeypatch.setattr(emr, "visit_vitals", lambda _id, _contact: [])
     return rows
 
 
@@ -214,3 +220,55 @@ def test_notes_tab_and_note_panel_real_mode(chart_mode, client, monkeypatch):
     assert r.status_code == 200 and "Dictated words" in r.text
     assert "note=transcription-9" in r.headers["HX-Push-Url"]
     assert client.get("/patients/EMR:11/notes/bogus/9").status_code == 404
+
+
+def test_office_visits_query_matches_filtering_all_entries(visit_sql):
+    """Perf #3: asking the database for real visits gives exactly the filtered full list."""
+    every = live.visits(11)
+    office = live.visits(11, office_only=True)
+    assert office == [v for v in every if v["is_office_visit"]]
+    assert [v["visit_type"] for v in office] == ["Office Visit"]
+
+
+def test_office_visits_fall_back_when_unknown_types_count_as_visits(visit_sql, monkeypatch):
+    """If config makes unknown types count as visits, the DB filter can't be used: load all."""
+    from app.lookups import get_lookups
+
+    monkeypatch.setattr(get_lookups(), "visit_default_office", True)
+    called = []
+    monkeypatch.setattr(emr, "visits_of_types", lambda *_a: called.append(1) or [])
+    live.visits(11, office_only=True)
+    assert called == []
+
+
+def _reading(vital_id, hour, systolic):
+    return {
+        "vital_id": vital_id,
+        "contact_id": 1,
+        "taken": datetime(2019, 5, 1, hour, tzinfo=UTC),
+        "systolic": systolic,
+        "diastolic": 80,
+        "pulse": 70,
+        "temperature": None,
+        "temperature_unit": None,
+        "weight": None,
+        "weight_unit": None,
+        "height": None,
+        "height_unit": None,
+        "spo2": None,
+        "pain": None,
+    }
+
+
+def test_visit_with_several_vitals_readings_shows_all(visit_sql, chart_mode, client, monkeypatch):
+    """Perf #4: one visit's readings only — and every reading of that visit, in time order."""
+    monkeypatch.setattr(
+        emr, "visit_vitals", lambda _id, _c: [_reading(9, 15, 150), _reading(8, 14, 140)]
+    )
+    calls = []
+    monkeypatch.setattr(emr, "vitals", lambda _id: calls.append(1) or [])
+    r = client.get("/patients/EMR:11/visits/EMR/1", headers={"HX-Request": "true"})
+    assert r.status_code == 200
+    assert calls == []  # the patient's full vitals list is no longer loaded for one visit
+    assert r.text.index("140/80") < r.text.index("150/80")  # earliest first
+    assert "Also recorded at" in r.text

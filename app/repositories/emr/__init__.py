@@ -9,8 +9,7 @@ from app.repositories.base import run_query, run_scalar
 PATIENT_SEARCH = "emr/patient_search.sql"
 LAST_VISITS = "emr/last_visit_for_patients.sql"
 MRNS = "emr/mrn_for_patients.sql"
-PATIENT_HEADER = "emr/patient_header.sql"
-PRIMARY_INSURANCE = "emr/primary_insurance.sql"
+PATIENT_HEADER_FULL = "emr/patient_header_full.sql"
 HISTORY_ITEMS = "emr/history_items.sql"
 HISTORY_ATTRIBUTES = "emr/history_attributes.sql"
 MEDICATIONS = "emr/medications.sql"
@@ -18,7 +17,9 @@ HX_MEDICATIONS = "emr/hx_medications.sql"
 LAST_VISIT_DETAIL = "emr/last_visit_detail.sql"
 LAB_RESULTS = "emr/lab_results.sql"
 VITALS = "emr/vitals.sql"
+VISIT_VITALS = "emr/visit_vitals.sql"
 VISITS = "emr/visits.sql"
+VISITS_OF_TYPES = "emr/visits_of_types.sql"
 VISIT_ONE = "emr/visit_one.sql"
 VISIT_ASSESSMENT = "emr/visit_assessment.sql"
 VISIT_PLAN = "emr/visit_plan.sql"
@@ -87,14 +88,10 @@ def table_row_count(schema: str, table: str) -> int:
     return int(count or 0)
 
 
-def patient_header(emr_id: int) -> dict[str, Any] | None:
-    rows = run_query(Source.EMR, PATIENT_HEADER, {"emr_id": emr_id})
+def patient_header_full(emr_id: int) -> dict[str, Any] | None:
+    """Demographics + address + primary insurance + MRN in one query."""
+    rows = run_query(Source.EMR, PATIENT_HEADER_FULL, {"emr_id": emr_id})
     return rows[0] if rows else None
-
-
-def primary_insurance(emr_id: int) -> str | None:
-    rows = run_query(Source.EMR, PRIMARY_INSURANCE, {"emr_id": emr_id})
-    return rows[0]["carrier_name"] if rows else None
 
 
 def history_items(emr_id: int) -> list[dict[str, Any]]:
@@ -142,6 +139,13 @@ def vitals(emr_id: int) -> list[dict[str, Any]]:
 
 def visits(emr_id: int) -> list[dict[str, Any]]:
     return run_query(Source.EMR, VISITS, {"emr_id": emr_id})
+
+
+def visits_of_types(emr_id: int, visit_types: list[int]) -> list[dict[str, Any]]:
+    if not visit_types:
+        return []
+    params = {"emr_id": emr_id, "visit_types": visit_types}
+    return run_query(Source.EMR, VISITS_OF_TYPES, params, expanding=("visit_types",))
 
 
 def visit_one(emr_id: int, contact_id: int) -> dict[str, Any] | None:
@@ -203,3 +207,7 @@ def patient_names(emr_ids: list[int]) -> list[dict[str, Any]]:
     if not emr_ids:
         return []
     return run_query(Source.EMR, PATIENT_NAMES, {"emr_ids": emr_ids}, expanding=("emr_ids",))
+
+
+def visit_vitals(emr_id: int, contact_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, VISIT_VITALS, {"emr_id": emr_id, "contact_id": contact_id})

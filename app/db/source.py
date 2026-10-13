@@ -8,11 +8,13 @@ One instance, one read-only login, one engine per database. Every engine:
 """
 
 import struct
+import time
 from datetime import UTC, datetime, timedelta, timezone
 from enum import StrEnum
 
 from sqlalchemy import Engine, create_engine, event
 from sqlalchemy.engine import URL
+from sqlalchemy.exc import DisconnectionError
 
 from app.config import Settings, get_settings
 from app.db.readonly import install_read_only_guard
@@ -88,12 +90,18 @@ def build_engine(source: Source, settings: Settings | None = None) -> Engine:
         "mssql+pyodbc",
         query={"odbc_connect": odbc_connection_string(settings, database_name(source, settings))},
     )
+    # Performance (docs/PERFORMANCE_PLAN.md #1): every network round trip to SQL Server costs
+    # ~50 ms from a workstation. Reads run in autocommit mode, so no transaction is ever open and
+    # the pool does not need a ROLLBACK when a connection is returned; connections are pinged only
+    # after they sat idle (instead of before every query). Results are unchanged.
     engine = create_engine(
         url,
-        pool_size=5,
-        max_overflow=5,
-        pool_pre_ping=True,
+        pool_size=10,  # parallel queries per screen (perf #2) x a few concurrent users
+        max_overflow=10,
+        pool_pre_ping=False,
+        pool_reset_on_return=None,
         pool_recycle=1800,
+        isolation_level="AUTOCOMMIT",
         connect_args={"timeout": settings.sql_login_timeout},
     )
     query_timeout = settings.sql_query_timeout
@@ -103,8 +111,37 @@ def build_engine(source: Source, settings: Settings | None = None) -> Engine:
         dbapi_conn.add_output_converter(SQL_DATETIMEOFFSET, handle_datetimeoffset)
         dbapi_conn.timeout = query_timeout
 
+    install_idle_ping(engine)
     install_read_only_guard(engine)
     return engine
+
+
+IDLE_PING_SECONDS = 60
+
+
+def install_idle_ping(engine: Engine, idle_seconds: float = IDLE_PING_SECONDS) -> None:
+    """Check a pooled connection only if it has been idle a while (networks drop idle links).
+
+    A failed check raises DisconnectionError, which makes the pool discard that connection and
+    hand out a fresh one — the same recovery pool_pre_ping gives, without a round trip per query.
+    """
+
+    @event.listens_for(engine, "checkin")
+    def _checkin(_dbapi_conn, record):
+        record.info["last_used"] = time.monotonic()
+
+    @event.listens_for(engine, "checkout")
+    def _checkout(dbapi_conn, record, _proxy):
+        last_used = record.info.get("last_used")
+        if last_used is None or time.monotonic() - last_used < idle_seconds:
+            return
+        try:
+            cursor = dbapi_conn.cursor()
+            cursor.execute("SELECT 1")
+            cursor.fetchall()
+            cursor.close()
+        except Exception as exc:
+            raise DisconnectionError("stale pooled connection") from exc
 
 
 _engines: dict[Source, Engine] = {}

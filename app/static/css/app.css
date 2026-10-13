@@ -244,6 +244,7 @@ a:hover { color: var(--accent-hover); }
 .panel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .panel { background: var(--panel); border-radius: var(--r-ctl); padding: 12px 14px; }
 .panel__title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.panel__subtitle { font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 14px; }
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; }

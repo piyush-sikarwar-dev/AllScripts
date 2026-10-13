@@ -88,7 +88,10 @@ async def search_patients(search: PatientSearch, page: int | None) -> PatientPag
         offset=(page - 1) * PAGE_SIZE,
         limit=PAGE_SIZE,
     )
-    last_visits = await call(repo.last_visits, [r["emr_id"] for r in rows]) if rows else {}
+    if rows and "last_visit" in rows[0]:  # fetched together with the page (perf #2)
+        last_visits = {r["emr_id"]: r["last_visit"] for r in rows}
+    else:
+        last_visits = await call(repo.last_visits, [r["emr_id"] for r in rows]) if rows else {}
     return PatientPage(
         search=search,
         rows=[

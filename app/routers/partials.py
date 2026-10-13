@@ -10,7 +10,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, R
 from fastapi.responses import HTMLResponse, Response
 
 from app.audit import audit
-from app.auth import current_user
+from app.auth import current_user, require_csrf
 from app.crosswalk import PatientRef, resolve
 from app.services import NotFoundError
 from app.services.documents import DOC_KINDS, document_viewer, page_png
@@ -50,6 +50,20 @@ async def patient_rows(
         {"results": results, "partial": True},
         headers={"HX-Push-Url": push},
     )
+
+
+@router.post("/patients/{key}/tab/{name}/seen", dependencies=[Depends(require_csrf)])
+async def chart_tab_seen(
+    request: Request, background: BackgroundTasks, key: str, name: str
+) -> Response:
+    """A tab the browser re-showed from its page memory (perf #7): record the view in the audit
+    log exactly like a loaded tab. No data is returned."""
+    if name not in TAB_NAMES:
+        raise HTTPException(status_code=404)
+    ref = await _resolve(key)
+    audit(request, background, "view_tab", patient_key=ref.patient_key,
+          detail={"tab": name, "from_page_memory": True})  # fmt: skip
+    return Response(status_code=204)
 
 
 @router.get("/patients/{key}/tab/{name}", response_class=HTMLResponse)

@@ -63,6 +63,9 @@
     {% if d.vitals %}
     <h3>Vitals</h3>
     <p>{% for item in d.vitals %}{{ item.label }} {{ item.value }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+    {% for reading in d.more_vitals %}
+    <p>{% if reading.time != "—" %}{{ reading.time }}: {% endif %}{% for item in reading["values"] %}{{ item.label }} {{ item.value }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+    {% endfor %}
     {% endif %}
     <h3>Visit note</h3>
     {% if d.documents %}

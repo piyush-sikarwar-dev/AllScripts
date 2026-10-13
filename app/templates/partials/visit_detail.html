@@ -25,6 +25,12 @@
       <dl class="kv">
         {% for item in detail.vitals %}<dt>{{ item.label }}</dt><dd>{{ item.value }}</dd>{% endfor %}
       </dl>
+      {% for reading in detail.more_vitals %}
+      <p class="panel__subtitle">Also recorded{% if reading.time != "—" %} at {{ reading.time }}{% endif %}</p>
+      <dl class="kv">
+        {% for item in reading["values"] %}<dt>{{ item.label }}</dt><dd>{{ item.value }}</dd>{% endfor %}
+      </dl>
+      {% endfor %}
       {% else %}<p class="muted">No vitals recorded.</p>{% endif %}
     </section>
     {% if detail.plan %}

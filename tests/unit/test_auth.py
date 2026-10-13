@@ -320,3 +320,24 @@ def test_cli_rejects_short_password(monkeypatch, capsys):
     monkeypatch.setattr(cli.getpass, "getpass", lambda _prompt: "short")
     assert cli.main(["create-user", "--email", "x@example.invalid", "--name", "X"]) == 1
     assert "at least 12 characters" in capsys.readouterr().out
+
+
+# --- perf #7: tabs re-shown from page memory are still audited -----------------------------------
+
+
+def test_tab_seen_records_audit_row(client):
+    token = page_csrf(client)
+    r = client.post(f"/patients/{FIRST}/tab/labs/seen", headers={"X-CSRF-Token": token})
+    assert r.status_code == 204 and r.content == b""
+    row = audit_rows()[-1]
+    assert (row.action, row.patient_key) == ("view_tab", FIRST)
+    assert row.detail == {"tab": "labs", "from_page_memory": True}
+
+
+def test_tab_seen_requires_csrf_session_and_valid_tab(client, anon_client):
+    assert client.post(f"/patients/{FIRST}/tab/labs/seen").status_code == 403
+    token = page_csrf(client)
+    bad = client.post(f"/patients/{FIRST}/tab/secrets/seen", headers={"X-CSRF-Token": token})
+    assert bad.status_code == 404
+    other = client.post("/patients/EMR:999999/tab/labs/seen", headers={"X-CSRF-Token": token})
+    assert other.status_code == 404

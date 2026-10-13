@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     scan_unc_prefix: str = r"\\amhs-db1\hmscan"
     scan_store: str = "file"  # "file" (SCAN_ROOT mount) | "s3" (stub)
 
+    # Per-patient source-data cache (memory only; the archive never changes). 0 disables it.
+    source_cache_ttl_seconds: int = 600
+    source_cache_max_items: int = 500
+
     # PDF export: folder with the Pango/GTK DLLs on Windows dev machines (e.g. MSYS2 ucrt64in).
     # Not needed in Docker / Linux.
     weasyprint_dll_directories: str = ""

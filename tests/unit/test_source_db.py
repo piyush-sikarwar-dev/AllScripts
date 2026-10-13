@@ -80,7 +80,7 @@ def test_not_configured_without_host():
 
 def test_build_engine_does_not_connect():
     engine = build_engine(Source.EMR, _settings())  # no driver / network needed
-    assert engine.pool.size() == 5
+    assert engine.pool.size() == 10
     assert engine.dialect.name == "mssql"
 
 
@@ -182,3 +182,32 @@ def test_datetime_sanity():
     # Converter output compares correctly with UTC instants.
     a = handle_datetimeoffset(_pack(2020, 1, 1, 7, 0, 0, 0, -5, 0))
     assert a == datetime(2020, 1, 1, 12, 0, tzinfo=UTC)
+
+
+def test_idle_ping_replaces_a_dead_pooled_connection():
+    """Perf #1: no ping per query, but a stale connection is still detected and replaced."""
+    import time as _time
+
+    from sqlalchemy import event
+    from sqlalchemy.pool import QueuePool
+
+    from app.db.source import install_idle_ping
+
+    engine = create_engine("sqlite://", poolclass=QueuePool, pool_size=1, max_overflow=0)
+    install_idle_ping(engine, idle_seconds=0)
+    connects = []
+    event.listen(engine, "connect", lambda dbapi_conn, _rec: connects.append(dbapi_conn))
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT 1")).scalar() == 1
+    connects[0].close()  # the network dropped the pooled connection
+    _time.sleep(0.01)
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT 1")).scalar() == 1
+    assert len(connects) == 2  # replaced transparently
+
+
+def test_source_engine_settings_avoid_extra_round_trips():
+    engine = build_engine(Source.EMR, _settings())
+    assert engine.pool._pre_ping is False
+    assert engine.pool._reset_on_return is not None  # value object exists...
+    assert str(engine.pool._reset_on_return).lower().endswith("none")  # ...and means "no reset"
