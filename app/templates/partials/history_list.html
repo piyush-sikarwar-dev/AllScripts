@@ -1,0 +1,46 @@
+{# Problems & allergies: entry list of the selected section. The HTMX response also carries the
+   rail (OOB) and, when the selection changed, the first entry's detail (OOB). #}
+{% from "components/empty_state.html" import empty_state %}
+{% set s = history_state %}
+{% set base = "/patients/" ~ key %}
+{% set label = (history_rail | selectattr("selected") | map(attribute="label") | first) or "Entries" %}
+<section class="card entry-list" id="history-list" aria-labelledby="history-list-title" aria-live="polite">
+  <div class="entry-list__head">
+    <h2 class="entry-list__title" id="history-list-title">{{ label }}</h2>
+    <p class="entry-list__count">{{ history_rows | length }} shown</p>
+  </div>
+  {% if history_rows %}
+  <ul class="entry-list__rows" data-list>
+    {% for e in history_rows %}
+    {% set selected = s.entry == e.id %}
+    <li>
+      <a class="entry-row{% if selected %} entry-row--selected{% endif %}" data-list-row
+         {%- if selected %} aria-current="true"{% endif %}
+         href="{{ url_with(base, s.params(entry=e.id)) }}"
+         hx-get="{{ base }}/history/entries/{{ e.id }}" hx-include=".hstate"
+         hx-target="#history-detail" hx-indicator="#history-detail" hx-swap="innerHTML">
+        <span class="entry-row__main">
+          <span class="entry-row__title">{{ e.title }}</span>
+          <span class="entry-row__meta">{{ e.meta }}</span>
+        </span>
+        <span class="pill pill--{{ e.status }}">{{ e.status_label }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="entry-list__empty">Nothing recorded in this section.</p>
+  {% endif %}
+</section>
+{% if oob %}
+  {% include "partials/history_rail.html" %}
+  {% if oob_detail %}
+  <section class="card entry-detail" id="history-detail" aria-label="Entry details" aria-live="polite" hx-swap-oob="true">
+    {% if history_detail %}
+      {% with entry = history_detail, partial = False %}{% include "partials/history_detail.html" %}{% endwith %}
+    {% else %}
+      {{ empty_state("Select an entry to see its details.") }}
+    {% endif %}
+  </section>
+  {% endif %}
+{% endif %}

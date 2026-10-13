@@ -280,3 +280,14 @@ def encounter(emr_id: int, encounter_id: int) -> dict | None:
         "text_notes": [v["note_text"]] if v["note_text"] else [],
         "vitals": sorted(readings, key=lambda r: (r["date"], r["id"])),
     }
+
+
+# --- Problems & allergies tab (Option B) ---------------------------------------------------------
+
+
+def history_entries(emr_id: int) -> list[dict]:
+    return [dict(e) for e in PATIENTS_BY_ID[emr_id].hx_entries]
+
+
+def history_changes(emr_id: int, hx_id: int) -> list[dict]:
+    return [dict(r) for r in PATIENTS_BY_ID[emr_id].hx_revisions.get(hx_id, [])]

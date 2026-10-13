@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+import re
 from typing import Annotated
 
 import anyio
@@ -10,6 +11,7 @@ from fastapi.responses import HTMLResponse, Response
 
 from app.audit import audit
 from app.auth import CurrentUser, current_user, require_csrf
+from app.config import get_settings
 from app.crosswalk import PatientRef, resolve
 from app.db.app import new_session
 from app.formatting import to_clinic_time
@@ -27,11 +29,14 @@ from app.services.export import (
     pdf_filename,
     render_pdf,
 )
+from app.services.history_service import entry_choices, selected_entry_ids
 from app.services.notes_service import note_choices, selected_note_refs
 from app.services.visits import selected_visit_ids, visit_choices
 from app.templating import is_htmx, render, templates
 
 log = logging.getLogger("app.export")
+DOWNLOAD_COOKIE = "export_download"
+DOWNLOAD_TOKEN = re.compile(r"[A-Za-z0-9]{8,40}")
 
 router = APIRouter(dependencies=[Depends(current_user)])
 
@@ -50,10 +55,12 @@ async def _form(
 ) -> HTMLResponse:
     selected = await selected_visit_ids(request.state.session_id, ref.patient_key)
     notes = await selected_note_refs(request.state.session_id, ref.patient_key)
+    history = await selected_entry_ids(request.state.session_id, ref.patient_key)
     ctx = {"key": ref.patient_key, "header": header, "req": req, "sections": SECTIONS,
            "purposes": PURPOSES, "nav": "patients",
            "visit_choices": await visit_choices(ref, selected),
-           "note_choices": await note_choices(ref, notes)}  # fmt: skip
+           "note_choices": await note_choices(ref, notes),
+           "history_choices": await entry_choices(ref, history)}  # fmt: skip
     if is_htmx(request):
         return render(request, "partials/export_dialog.html", ctx, status_code=status)
     return render(request, "pages/export.html", ctx, status_code=status)
@@ -65,8 +72,11 @@ async def export_form(request: Request, key: str) -> HTMLResponse:
     header = await get_header(ref)
     selected = await selected_visit_ids(request.state.session_id, ref.patient_key)
     notes = await selected_note_refs(request.state.session_id, ref.patient_key)
-    req = ExportRequest(sections=[s for s, _ in SECTIONS], visit_ids=sorted(selected),
-                        note_ids=sorted(notes))  # fmt: skip
+    history = await selected_entry_ids(request.state.session_id, ref.patient_key)
+    # Items added with "Add to export" → release only those by default; else the whole record.
+    sections = [] if selected or notes or history else [s for s, _ in SECTIONS]
+    req = ExportRequest(sections=sections, visit_ids=sorted(selected), note_ids=sorted(notes),
+                        history_ids=sorted(history))  # fmt: skip
     return await _form(request, ref, header, req)
 
 
@@ -76,7 +86,8 @@ async def export_pdf(
 ) -> Response:
     ref = await _resolve(key)
     header = await get_header(ref)
-    req = parse_export_form(await request.form())
+    form = await request.form()
+    req = parse_export_form(form)
     if req.errors:
         return await _form(request, ref, header, req, status=400)
 
@@ -98,7 +109,10 @@ async def export_pdf(
                 db,
                 user_id=user.id,
                 patient_key=ref.patient_key,
-                sections=req.sections + (["selected_notes"] if req.note_ids else []),
+                sections=req.sections
+                + (["selected_visits"] if req.visit_ids and "visits" not in req.sections else [])
+                + (["selected_notes"] if req.note_ids else [])
+                + (["selected_history"] if req.history_ids else []),
                 date_from=req.date_from,
                 date_to=req.date_to,
                 recipient=req.recipient,
@@ -112,10 +126,17 @@ async def export_pdf(
     audit(request, background, "export", patient_key=ref.patient_key,
           detail={"release_code": code, "sections": req.sections, "pages": pages,
                   "selected_visits": len(req.visit_ids),
-                  "selected_notes": len(req.note_ids)})  # fmt: skip
+                  "selected_notes": len(req.note_ids),
+                  "selected_history": len(req.history_ids)})  # fmt: skip
     filename = pdf_filename(header, to_clinic_time(now))
-    return Response(
+    response = Response(
         content=pdf,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+    token = str(form.get("download_token", ""))
+    if DOWNLOAD_TOKEN.fullmatch(token):
+        # Lets the page see that the download has started (app.js); holds no data.
+        response.set_cookie(DOWNLOAD_COOKIE, token, max_age=120, path="/", samesite="lax",
+                            secure=get_settings().cookie_secure, httponly=False)  # fmt: skip
+    return response

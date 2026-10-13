@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{# Printable section of Problems & allergies (all statuses). No sidebar; the print dialog opens
+   automatically (static/js/print-auto.js). Internal "History nnnn" ids are not printed. #}
+{% block title %}Print {{ section_label }} · {{ header.name }}{% endblock %}
+{% block head %}<script src="{{ static_url('/static/js/print-auto.js') }}" defer></script>{% endblock %}
+{% block body %}
+<main class="print-visit">
+  <header class="print-visit__patient">
+    <p class="print-visit__name">{{ header.name }}</p>
+    <p class="meta-line">
+      <span><span class="meta-line__label">DOB</span> {{ header.dob }}</span>
+      <span><span class="meta-line__label">Chart ID</span> <span class="mono">{{ header.chart_id }}</span></span>
+    </p>
+  </header>
+  <h1 class="print-visit__title">{{ section_label }}</h1>
+  {% if rows %}
+  <table class="table print-table">
+    <thead><tr><th scope="col">Title</th><th scope="col">Type</th><th scope="col">Onset</th>
+      <th scope="col">Resolved</th><th scope="col">Status</th><th scope="col">Code</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr><td>{{ r.title }}</td><td>{{ r.type }}</td><td>{{ r.onset }}</td><td>{{ r.resolved }}</td>
+        <td>{{ r.status }}</td><td class="mono">{{ r.code }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Nothing recorded in this section.</p>
+  {% endif %}
+  <p class="print-visit__footer">Printed by {{ user.full_name }} · {{ printed_at }}</p>
+  <p class="print-visit__screen-note no-print">The print dialog opens automatically. <button type="button" class="btn btn--secondary btn--sm" data-action="print">Print again</button></p>
+</main>
+{% endblock %}

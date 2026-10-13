@@ -1,0 +1,58 @@
+{# Problems & allergies: one entry. The change history loads right after the detail (hx-trigger load). #}
+{% from "components/icons.html" import icon %}
+{% set base = "/patients/" ~ key %}
+<article class="entry-view">
+  <input type="hidden" class="hstate" name="entry" value="{{ entry.id }}">
+  <div class="entry-view__head">
+    <div class="entry-view__heading">
+      <p class="entry-view__section">{{ entry.section_label }}</p>
+      <h2 class="entry-view__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>{{ entry.title }}</h2>
+    </div>
+    <span class="pill pill--lg pill--{{ entry.status }}">{{ entry.status_label }}</span>
+  </div>
+  {% if entry.conflict %}
+  <p class="conflict-note" role="note">Conflicts with active allergy entries: this “no known allergies” entry is still marked active.</p>
+  {% endif %}
+
+  <dl class="note-kv">
+    {% for f in entry.fields %}
+    <div class="note-kv__row">
+      <dt class="note-kv__label">{{ f.label }}</dt>
+      <dd class="note-kv__value{% if f.muted %} muted{% endif %}">{{ f.value }}</dd>
+    </div>
+    {% endfor %}
+    <div class="note-kv__row">
+      <dt class="note-kv__label">Code</dt>
+      <dd class="note-kv__value">
+        {%- if entry.code.standard %}{{ entry.code.standard }}{% else %}<span class="muted">No standard code</span>{% endif %}
+        {%- for t in entry.code.tags %} <span class="tag">{{ t }}</span>{% endfor -%}
+      </dd>
+    </div>
+    {% if entry.comment %}
+    <div class="note-kv__row">
+      <dt class="note-kv__label">Comment</dt>
+      <dd class="note-kv__value">{{ entry.comment }}</dd>
+    </div>
+    {% endif %}
+    <div class="note-kv__row">
+      <dt class="note-kv__label">Recorded</dt>
+      <dd class="note-kv__value">{{ entry.recorded }}</dd>
+    </div>
+  </dl>
+
+  <section class="change-history" aria-labelledby="change-history-title">
+    <h3 class="change-history__title" id="change-history-title">Change history</h3>
+    <div id="change-list-{{ entry.id }}" hx-get="{{ base }}/history/entries/{{ entry.id }}/changes"
+         hx-trigger="load" hx-swap="innerHTML">
+      <p class="muted">Loading change history…</p>
+      <noscript><a href="{{ base }}/history/entries/{{ entry.id }}/changes?all=true">Show change history</a></noscript>
+    </div>
+  </section>
+
+  <div class="entry-view__actions">
+    {% with entry_id = entry.id, in_export = entry.in_export, oob = False %}
+      {% include "partials/history_export_toggle.html" %}
+    {% endwith %}
+    <a class="btn btn--secondary" href="{{ base }}/history/print?sec={{ entry.section }}" target="_blank" rel="noopener">{{ icon("print") }}Print section</a>
+  </div>
+</article>

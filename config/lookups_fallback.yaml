@@ -16,6 +16,12 @@ patient_status: {}
 # Problem / allergy / medication-history activity (DXACT dictionary).
 hx_activity: {0: "—", 1: Active, 2: Inactive, 3: Resolved, 8: Erroneous Entry, 9: Undefined}
 hx_med_activity: {0: "—", 1: Active, 2: Inactive, 3: Resolved, 8: Erroneous Entry, 9: Undefined}
+# HX_DIAGNOSIS acuity (DXACU) and significance (DXSIG); 0 = "*" and 9 = Undefined are not shown.
+# Read 2026-10-13: acuity 0 = 256,773 rows, 9 = 2,918, 2 = 2; significance 0 = 249,272, 9 = 10,407.
+hx_acuity: {0: "—", 1: Acute, 2: Chronic, 9: Undefined}
+hx_significance: {0: "—", 1: Major, 2: Minor, 3: Moderate, 4: Reported, 5: Not Reported, 6: HIV-Related, 9: Undefined}
+# HXDIAGNOSIS_ATTRIBUTES.SEVERITY_CODE (SEVERITY): 0 = 74,967 rows, 5 = 4 (not in the dictionary).
+hx_attr_severity: {0: Information, 1: Warning, 2: Alert}
 # Measurement units (UNIT dictionary): vitals temperature / weight / height.
 unit: {0: "", 1: cm, 2: in, 3: "°C", 4: "°F", 5: kg, 6: lb, 7: yr, 8: mo}
 # Lab result completion status (ORDCOMP dictionary).

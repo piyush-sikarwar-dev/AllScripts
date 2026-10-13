@@ -277,12 +277,43 @@ async def test_pdf_visits_are_only_the_selected_encounters(client):
     ref = await resolve(FIRST)
     other_type = next((v for v in PATIENTS[0].visits if not v["is_office_visit"]), None)
     picked = [_office()[-1]] + ([other_type] if other_type else [])
-    req = ExportRequest(sections=["visits"], visit_ids=[v["encounter_id"] for v in picked])
-    details = await _visits(ref, req)
+    ids = [v["encounter_id"] for v in picked]
+    details = await _visits(ref, ExportRequest(sections=[], visit_ids=ids))
     assert sorted(d.visit.id for d in details) == sorted(v["contact_id"] for v in picked)
     # Without a selection: office visits in range, as before.
     everything = await _visits(ref, ExportRequest(sections=["visits"]))
     assert len(everything) == len(_office())
+    # Section ticked as well: the whole section plus the added visits.
+    both = await _visits(ref, ExportRequest(sections=["visits"], visit_ids=ids))
+    expected = {v["contact_id"] for v in _office()} | {v["contact_id"] for v in picked}
+    assert {d.visit.id for d in both} == expected
+
+
+def test_export_dialog_defaults_to_added_items_only(client):
+    r = client.get(f"/patients/{FIRST}/export", headers=HTMX)
+    assert r.text.count('name="sections"') == r.text.count('name="sections" value=') > 0
+    assert len(re.findall(r'name="sections" value="\w+" checked', r.text)) == 7  # nothing added
+    visit = _office()[0]
+    client.post(f"/patients/{FIRST}/export-selection/visits/{visit['encounter_id']}",
+                headers=_csrf(client))  # fmt: skip
+    r = client.get(f"/patients/{FIRST}/export", headers=HTMX)
+    assert re.findall(r'name="sections" value="\w+" checked', r.text) == []
+    assert "Only the items you added are included." in r.text
+    assert "Also include whole sections" in r.text
+
+
+def test_export_with_only_added_visits_is_valid():
+    from app.services.export import parse_export_form
+
+    class Form(dict):
+        def getlist(self, key):
+            value = self.get(key, [])
+            return value if isinstance(value, list) else [value]
+
+    req = parse_export_form(Form(recipient="Example", purpose="Legal", visit_ids=["123"]))
+    assert req.errors == {} and req.visit_ids == [123] and req.sections == []
+    req = parse_export_form(Form(recipient="Example", purpose="Legal"))
+    assert "sections" in req.errors
 
 
 # --- print ---------------------------------------------------------------------------------------

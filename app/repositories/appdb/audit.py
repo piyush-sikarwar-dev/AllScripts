@@ -9,7 +9,8 @@ from app.repositories.appdb.models import AuditLog
 
 ACTIONS = frozenset(
     {"login", "logout", "login_failed", "view_patient", "view_tab", "view_document", "export",
-     "search", "view_visit", "print_visit", "view_note", "print_note"}
+     "search", "view_visit", "print_visit", "view_note", "print_note",
+     "view_history_entry", "print_history"}
 )  # fmt: skip
 
 

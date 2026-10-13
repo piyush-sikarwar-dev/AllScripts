@@ -1,15 +1,16 @@
-"""Problems & allergies tab (HX_DIAGNOSIS grouped by history category)."""
+"""Problems & allergies for the PDF release (HX_DIAGNOSIS grouped like the tab's section rail)."""
 
 from app.crosswalk import PatientRef
 from app.formatting import EMPTY, date_us, partial_date
 from app.models.chart import ProblemGroup, ProblemRow
 from app.repositories import source_repository
 from app.services import call
+from app.services.history_service import code_view
 
-# Display order and labels. Phase 3 maps CATEGORY_CODE → group via config/history_categories.yaml.
+# Same groups and labels as the tab's section rail; allergies are printed first.
 GROUPS: list[tuple[str, str]] = [
-    ("problem", "Problems"),
     ("allergy", "Allergies"),
+    ("problem", "Problems"),
     ("surgical", "Surgical history"),
     ("family", "Family history"),
     ("social", "Social history"),
@@ -18,7 +19,8 @@ GROUPS: list[tuple[str, str]] = [
 
 
 def problem_row(h: dict) -> ProblemRow:
-    code = " ".join(part for part in (h["code_system"], h["code"]) if part) or EMPTY
+    # Only real clinical codes; internal Allscripts references ("History 17354") are not printed.
+    code = code_view(h["code_system"], h["code"], None).standard or EMPTY
     return ProblemRow(
         title=h["title"],
         detail=h["reaction"],

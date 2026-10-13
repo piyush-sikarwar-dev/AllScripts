@@ -1,0 +1,19 @@
+{# Change history of one entry, newest first (max 20 unless "Show all"). #}
+{% if lines %}
+<ol class="change-list">
+  {% for line in (lines if show_all else lines[:limit]) %}
+  <li class="change-line">
+    <span class="change-line__dot" aria-hidden="true"></span>
+    <span class="change-line__date">{{ line.date }}</span>
+    <span class="change-line__text">{{ line.text }}</span>
+  </li>
+  {% endfor %}
+</ol>
+{% if not show_all and lines | length > limit %}
+<a class="change-history__more" href="/patients/{{ key }}/history/entries/{{ entry_id }}/changes?all=true"
+   hx-get="/patients/{{ key }}/history/entries/{{ entry_id }}/changes?all=true"
+   hx-target="#change-list-{{ entry_id }}" hx-swap="innerHTML">Show all {{ lines | length }} changes</a>
+{% endif %}
+{% else %}
+<p class="muted">No earlier changes recorded.</p>
+{% endif %}

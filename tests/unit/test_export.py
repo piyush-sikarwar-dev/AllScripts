@@ -86,7 +86,8 @@ def test_export_validation_errors_rerender_form(client):
     data = {"csrf_token": page_csrf(client), "recipient": "", "purpose": "Legal"}
     r = client.post(f"/patients/{FIRST}/export", data=data)
     assert r.status_code == 400
-    assert "Choose at least one section." in r.text and "Enter who the records" in r.text
+    assert "Choose at least one section or added item." in r.text
+    assert "Enter who the records" in r.text
     with new_session() as db:
         assert db.scalar(select(ReleaseLog)) is None
 
@@ -183,3 +184,12 @@ def test_export_selected_note_formatted_then_original(client):
     assert original_page > formatted_page  # the original starts on a new page
     with new_session() as db:
         assert db.scalar(select(ReleaseLog)).sections == ["selected_notes"]
+
+
+@needs_pdf
+def test_export_sets_download_cookie_for_the_page(client):
+    r = _export(client, sections=["problems"], download_token="abc12345XYZ")
+    assert r.status_code == 200
+    assert r.cookies.get("export_download") == "abc12345XYZ"
+    r = _export(client, sections=["problems"], download_token="bad token;")
+    assert "export_download" not in r.headers.get("set-cookie", "")

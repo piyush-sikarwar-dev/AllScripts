@@ -99,6 +99,8 @@ class FakePatient:
     vitals: list[dict] = field(default_factory=list)
     documents: list[dict] = field(default_factory=list)
     clinical_notes: list[dict] = field(default_factory=list)  # Notes tab
+    hx_entries: list[dict] = field(default_factory=list)  # Problems & allergies tab
+    hx_revisions: dict[int, list[dict]] = field(default_factory=dict)
 
 
 def _letter(i: int) -> str:
@@ -547,6 +549,105 @@ def add_clinical_notes(p: FakePatient, seed: int) -> None:
         )
 
 
+# --- Problems & allergies tab: history entries with revisions (own seed and id range, so the
+# data above stays exactly as it was). Shaped like repositories.live.history_entries output.
+
+HX_PROBLEMS = [
+    ("Type 2 diabetes mellitus", "ICD9", "250.00"),
+    ("Essential hypertension", "ICD9", "401.9"),
+    ("Hyperlipidemia", "HISTORY", "17354"),
+    ("Hypothyroidism", "ICD9", "244.9"),
+    ("Obesity", "HISTORY", "18022"),
+    ("Vitamin D deficiency", "ICD9", "268.9"),
+    ("Osteoarthritis of knee", "HISTORY", "16410"),
+    ("GERD", "ICD9", "530.81"),
+]
+HX_ALLERGIES = [("Exenatide (Bydureon)", "MEDISPAN_NAME", "184586", ["Nausea"]),
+                ("Penicillin", "MEDISPAN_NAME", "100370", ["Hives"]),
+                ("Peanuts", "HISTORY", "20111", ["Rash", "Swelling"])]  # fmt: skip
+HX_SURGICAL = [("Appendectomy", "CPT", "44950"), ("Cholecystectomy", "HISTORY", "15521")]
+HX_FAMILY = [("Diabetes mellitus", ["Mother"]), ("Hypertension", ["Father", "Brother"])]
+HX_SOCIAL = [
+    ("Tobacco use", ["Never Smoker"]),
+    ("Marital status", ["Married"]),
+    ("Alcohol use", ["Occasional alcohol use"]),
+    ("Education", ["College graduate"]),
+]
+
+
+def _hx(hx_id: int, category: int, title: str, system: str | None, code: str | None,
+        onset: datetime | None, mask: int, activity: int, recorded: datetime, who: str,
+        attributes: list[str] | None = None, comments: str | None = None) -> dict:  # fmt: skip
+    return {
+        "id": hx_id, "category_code": category, "code_system": system, "code": code,
+        "imo_code": None, "title": title, "description": None, "activity_code": activity,
+        "significance_code": 0, "acuity_code": 0, "onset": onset, "onset_mask": mask,
+        "resolved": None, "comments": comments, "basis": None, "reason": None,
+        "recorded": recorded, "provider": who, "source": "EMR",
+        "attributes": [{"sort_order": i, "title": t, "value": None, "severity_code": 0}
+                       for i, t in enumerate(attributes or [])],
+    }  # fmt: skip
+
+
+def _revisions(rng: random.Random, entry: dict) -> list[dict]:
+    """1–4 revisions ending in the entry's current state."""
+    keys = ("title", "activity_code", "significance_code", "onset", "onset_mask", "resolved",
+            "comments")  # fmt: skip
+    final = {k: entry[k] for k in keys} | {"reason": None}
+    revs = [dict(final)]
+    for _ in range(rng.randint(0, 3)):
+        prev = dict(revs[0])
+        change = rng.choice(["activity", "onset", "comment"])
+        if change == "activity":
+            prev["activity_code"] = 1 if prev["activity_code"] != 1 else 2
+        elif change == "onset" and prev["onset"]:
+            prev["onset"] = prev["onset"] - timedelta(days=rng.randint(30, 400))
+        else:
+            prev["comments"] = None if prev["comments"] else "Earlier comment (placeholder)."
+        revs.insert(0, prev)
+    start = entry["recorded"] - timedelta(days=200 * len(revs))
+    return [r | {"revision": i + 1, "changed": start + timedelta(days=200 * i),
+                 "provider": entry["provider"]}
+            for i, r in enumerate(revs)]  # fmt: skip
+
+
+def add_history_entries(p: FakePatient, seed: int) -> None:
+    rng = random.Random(seed * 7 + p.emr_id)
+    next_id = 800000 + (p.emr_id - 1000) * 100
+    entries: list[dict] = []
+
+    def add(category: int, title: str, system: str | None, code: str | None, *,
+            attributes: list[str] | None = None, active: bool = True, dated: bool = True,
+            comments: str | None = None) -> dict:  # fmt: skip
+        nonlocal next_id
+        next_id += 1
+        onset = _rand_dt(rng, date(2008, 1, 1), EMR_END) if dated else None
+        mask = rng.choice([3, 3, 2, 1]) if onset else 0
+        recorded = _rand_dt(rng, date(2012, 1, 1), EMR_END)
+        e = _hx(next_id, category, title, system, code, onset, mask, 1 if active else 2, recorded,
+                rng.choice(PROVIDERS), attributes, comments)  # fmt: skip
+        entries.append(e)
+        return e
+
+    for title, system, code in rng.sample(HX_PROBLEMS, k=rng.randint(3, 8)):
+        add(24, title, system, code, active=rng.random() < 0.7, dated=rng.random() < 0.6)
+    allergies = rng.sample(HX_ALLERGIES, k=rng.randint(0, 2))
+    for title, system, code, reactions in allergies:
+        add(21, title, system, code, attributes=reactions, dated=rng.random() < 0.4)
+    if allergies:  # superseded "no known allergies" entry
+        add(21, "No known allergies", "HISTORY", "16950", active=False,
+            comments="Superseded when an allergy was added.")  # fmt: skip
+    for title, system, code in rng.sample(HX_SURGICAL, k=rng.randint(0, 2)):
+        add(20, title, system, code)
+    for title, relations in rng.sample(HX_FAMILY, k=rng.randint(1, 2)):
+        add(23, title, "HISTORY", str(rng.randint(10000, 19999)), attributes=relations, dated=False)
+    for title, values in rng.sample(HX_SOCIAL, k=rng.randint(2, 4)):
+        add(25, title, "HISTORY", str(rng.randint(10000, 19999)), attributes=values, dated=False)
+    for e in entries:
+        p.hx_revisions[e["id"]] = _revisions(rng, e)
+    p.hx_entries = entries
+
+
 def build_patients(count: int = 30, seed: int = 20100827) -> list[FakePatient]:
     rng = random.Random(seed)
     ids = dict.fromkeys(("contact", "note", "hx", "med", "lab", "vital", "doc"), 0)
@@ -554,6 +655,7 @@ def build_patients(count: int = 30, seed: int = 20100827) -> list[FakePatient]:
     for i, p in enumerate(patients):
         if i != 29:  # the patient with no clinical data stays empty
             add_clinical_notes(p, seed)
+            add_history_entries(p, seed)
     return patients
 
 

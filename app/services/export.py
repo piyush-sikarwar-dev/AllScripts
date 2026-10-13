@@ -28,6 +28,7 @@ from app.models.chart import ChartHeader
 from app.repositories import source_repository
 from app.services import NotFoundError, call
 from app.services.chart_header import get_header
+from app.services.history_service import selected_entries_for_pdf
 from app.services.labs import lab_row
 from app.services.meds import med_row, medication_items
 from app.services.notes_service import note_detail, note_index, parse_note_ref
@@ -69,6 +70,8 @@ class ExportRequest:
     visit_ids: list[int] = field(default_factory=list)
     # Notes picked with "Add to export" ("document-123"): printed formatted, then the original.
     note_ids: list[str] = field(default_factory=list)
+    # Problems & allergies entries picked with "Add to export" (HXDIAGNOSIS_ID).
+    history_ids: list[int] = field(default_factory=list)
     errors: dict[str, str] = field(default_factory=dict)
 
 
@@ -82,9 +85,10 @@ def parse_export_form(form: Mapping[str, Any]) -> ExportRequest:
         raw_to=str(form.get("date_to", "")).strip()[:10],
         visit_ids=_ids(form.getlist("visit_ids") if hasattr(form, "getlist") else []),
         note_ids=_note_refs(form.getlist("note_ids") if hasattr(form, "getlist") else []),
+        history_ids=_ids(form.getlist("history_ids") if hasattr(form, "getlist") else []),
     )
-    if not req.sections and not req.note_ids:
-        req.errors["sections"] = "Choose at least one section."
+    if not req.sections and not req.note_ids and not req.visit_ids and not req.history_ids:
+        req.errors["sections"] = "Choose at least one section or added item."
     if not req.recipient:
         req.errors["recipient"] = "Enter who the records are being released to."
     if req.purpose not in PURPOSES:
@@ -139,10 +143,16 @@ def pdf_filename(header: ChartHeader, now: datetime) -> str:
 
 
 async def _visits(ref: PatientRef, req: ExportRequest) -> list:
-    if req.visit_ids:  # visits picked with "Add to export": all their contacts, any type
+    whole_section = "visits" in req.sections
+    if req.visit_ids:  # added visits (any type, any date), plus the whole section if ticked
         wanted = set(req.visit_ids)
         rows = await call(source_repository().visits, ref.emr_id)
-        rows = [v for v in rows if v["encounter_id"] in wanted]
+        rows = [
+            v
+            for v in rows
+            if v["encounter_id"] in wanted
+            or (whole_section and v["is_office_visit"] and _in_range(v["start"], req))
+        ]
     else:
         rows = await call(source_repository().visits, ref.emr_id, True)
         rows = [v for v in rows if v["is_office_visit"] and _in_range(v["start"], req)]
@@ -203,8 +213,11 @@ async def _documents(ref: PatientRef, req: ExportRequest) -> tuple[list[dict], d
 async def gather(ref: PatientRef, req: ExportRequest) -> dict[str, Any]:
     """Everything the PDF template needs, using the same services as the screens."""
     repo = source_repository()
-    ctx: dict[str, Any] = {"header": await get_header(ref), "sections": req.sections}
-    if "visits" in req.sections:
+    sections = list(req.sections)
+    if req.visit_ids and "visits" not in sections:  # added visits print in the Visits section
+        sections.append("visits")
+    ctx: dict[str, Any] = {"header": await get_header(ref), "sections": sections}
+    if "visits" in sections:
         ctx["visits"] = await _visits(ref, req)
     if "problems" in req.sections:
         ctx["problem_groups"] = await problem_groups(ref)
@@ -220,6 +233,8 @@ async def gather(ref: PatientRef, req: ExportRequest) -> dict[str, Any]:
         ctx["vitals"] = [vital_row(v) for v in vit]
     if req.note_ids:
         ctx["selected_notes"] = await _notes(ref, req.note_ids)
+    if req.history_ids:
+        ctx["selected_history"] = await selected_entries_for_pdf(ref, req.history_ids)
     ctx["page_locations"] = {}
     if "documents" in req.sections:
         ctx["documents"], ctx["page_locations"] = await _documents(ref, req)
@@ -278,5 +293,7 @@ def cover_context(req: ExportRequest, released_by: str, code: str, now: datetime
         "purpose": req.purpose,
         "period": period,
         "section_labels": [SECTION_LABELS[s] for s in req.sections]
-        + ([f"Selected notes ({len(req.note_ids)})"] if req.note_ids else []),
+        + ([f"Selected visits ({len(req.visit_ids)})"] if req.visit_ids else [])
+        + ([f"Selected notes ({len(req.note_ids)})"] if req.note_ids else [])
+        + ([f"Selected problems & allergies ({len(req.history_ids)})"] if req.history_ids else []),
     }

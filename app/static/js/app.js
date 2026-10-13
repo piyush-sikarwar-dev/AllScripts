@@ -9,8 +9,66 @@
     }
   });
 
+  // Records release: the PDF is built on the server (large records take a while) and arrives as a
+  // download, so the page never changes. Show progress, block double submits, and tell the user
+  // when the download has started (the server echoes a random token in a short-lived cookie).
+  var EXPORT_COOKIE = "export_download";
+
+  function exportCookie() {
+    var match = document.cookie.match(new RegExp("(?:^|; )" + EXPORT_COOKIE + "=([^;]*)"));
+    return match ? match[1] : "";
+  }
+
+  document.addEventListener("submit", function (evt) {
+    var form = evt.target;
+    if (!form.matches || !form.matches("[data-export-form]")) {
+      return;
+    }
+    var button = form.querySelector("[data-export-submit]");
+    var status = form.querySelector("[data-export-status]");
+    var token = "";
+    for (var i = 0; i < 4; i++) {
+      token += Math.random().toString(36).slice(2, 8);
+    }
+    var field = form.querySelector("input[name='download_token']");
+    if (!field) {
+      field = document.createElement("input");
+      field.type = "hidden";
+      field.name = "download_token";
+      form.appendChild(field);
+    }
+    field.value = token.replace(/[^a-z0-9]/gi, "").slice(0, 32);
+    if (status) {
+      status.textContent = "Creating PDF… Large records can take a few minutes. " +
+        "The download starts by itself — keep this page open.";
+    }
+    window.setTimeout(function () {
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Creating PDF…";
+      }
+    }, 0);
+    var started = Date.now();
+    var timer = window.setInterval(function () {
+      var done = exportCookie() === field.value;
+      if (!done && Date.now() - started < 15 * 60 * 1000) {
+        return;
+      }
+      window.clearInterval(timer);
+      if (button) {
+        button.disabled = false;
+        button.textContent = "Create PDF";
+      }
+      if (status) {
+        status.textContent = done
+          ? "PDF ready — check your downloads."
+          : "Still no download. Check the release log, or try again with fewer sections.";
+      }
+    }, 1000);
+  });
+
   // Visit / note lists: mark the clicked row as selected once its detail has loaded.
-  var ROW_CLASSES = ["visit-row", "note-row"];
+  var ROW_CLASSES = ["visit-row", "note-row", "entry-row"];
   document.addEventListener("htmx:afterRequest", function (evt) {
     var row = evt.detail.elt;
     var kind = row.classList && ROW_CLASSES.filter(function (c) {

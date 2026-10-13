@@ -1,15 +1,11 @@
 {# Records release form: shared by the dialog (HTMX) and the full page (no JS / validation errors).
-   A normal POST: the response is the PDF download. #}
-<form class="stack" method="post" action="/patients/{{ key }}/export">
+   A normal POST: the response is the PDF download. Items added with "Add to export" come first;
+   when there are any, no whole sections are ticked by default (only the added items are released). #}
+<form class="stack" method="post" action="/patients/{{ key }}/export" data-export-form>
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-  <fieldset class="checks">
-    <legend class="field__label">Sections</legend>
-    {% for value, label in sections %}
-    <label class="check"><input type="checkbox" name="sections" value="{{ value }}"
-      {%- if value in req.sections %} checked{% endif %}> {{ label }}</label>
-    {% endfor %}
-    {% if req.errors.get("sections") %}<p class="field__error">{{ req.errors.sections }}</p>{% endif %}
-  </fieldset>
+  {% if visit_choices or note_choices or history_choices %}
+  <p class="muted">Only the items you added are included. Tick sections below to add more of the record.</p>
+  {% endif %}
   {% if visit_choices %}
   <fieldset class="checks">
     <legend class="field__label">Visits added to export</legend>
@@ -17,7 +13,6 @@
     <label class="check"><input type="checkbox" name="visit_ids" value="{{ vid }}"
       {%- if vid in req.visit_ids %} checked{% endif %}> {{ label }}</label>
     {% endfor %}
-    <p class="muted">When any of these are ticked, the Visits section holds only the ticked visits.</p>
   </fieldset>
   {% endif %}
   {% if note_choices %}
@@ -30,6 +25,23 @@
     <p class="muted">Each ticked note is printed formatted, followed by its original.</p>
   </fieldset>
   {% endif %}
+  {% if history_choices %}
+  <fieldset class="checks">
+    <legend class="field__label">Problems &amp; allergies added to export</legend>
+    {% for hid, label in history_choices %}
+    <label class="check"><input type="checkbox" name="history_ids" value="{{ hid }}"
+      {%- if hid in req.history_ids %} checked{% endif %}> {{ label }}</label>
+    {% endfor %}
+  </fieldset>
+  {% endif %}
+  <fieldset class="checks">
+    <legend class="field__label">{% if visit_choices or note_choices or history_choices %}Also include whole sections{% else %}Sections{% endif %}</legend>
+    {% for value, label in sections %}
+    <label class="check"><input type="checkbox" name="sections" value="{{ value }}"
+      {%- if value in req.sections %} checked{% endif %}> {{ label }}</label>
+    {% endfor %}
+    {% if req.errors.get("sections") %}<p class="field__error">{{ req.errors.sections }}</p>{% endif %}
+  </fieldset>
   <div class="toolbar">
     <div class="field field--narrow">
       <label class="field__label" for="exp-from">From (optional)</label>
@@ -58,10 +70,13 @@
       </select>
     </div>
   </div>
-  <p class="muted">The date range applies to visits, lab results, vitals and documents. Problems,
-    allergies and medications are included in full. The release is recorded in the release log.</p>
+  <p class="muted">The date range applies to the Visits, Lab results, Vitals and Documents sections
+    (not to the items you added). Problems, allergies and medications are included in full. The
+    Documents section adds every scanned page and can make a very large PDF. The release is recorded
+    in the release log.</p>
   <div class="toolbar__actions">
-    <button type="submit" class="btn btn--primary">Create PDF</button>
+    <button type="submit" class="btn btn--primary" data-export-submit>Create PDF</button>
     <a class="btn btn--secondary" href="/patients/{{ key }}">Cancel</a>
   </div>
+  <p class="export-status" role="status" aria-live="polite" data-export-status></p>
 </form>

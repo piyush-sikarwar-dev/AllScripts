@@ -202,6 +202,24 @@ class ChartSql(FakeSql):
                 {"hx_id": 3, "title": "Rash", "sort_order": 2},
                 {"hx_id": 3, "title": "Hives", "sort_order": 1},
             ],
+            emr.HISTORY_ENTRY_ATTRIBUTES: [
+                {
+                    "hx_id": 3,
+                    "attribute_id": 2,
+                    "title": "Rash",
+                    "value": None,
+                    "severity_code": 0,
+                    "sort_order": 2,
+                },
+                {
+                    "hx_id": 3,
+                    "attribute_id": 1,
+                    "title": "Hives",
+                    "value": None,
+                    "severity_code": 0,
+                    "sort_order": 1,
+                },
+            ],
             emr.MEDICATIONS: [
                 {
                     "med_id": 7,
@@ -245,9 +263,28 @@ class ChartSql(FakeSql):
                 }
             ],
         }
+        if sql_name == emr.HISTORY_ENTRIES:
+            return [_hx_entry(r) for r in canned[emr.HISTORY_ITEMS]]
         if sql_name in canned:
             return canned[sql_name]
         return super().run_query(source, sql_name, params, expanding=expanding)
+
+
+def _hx_entry(row: dict) -> dict:
+    """history_entries.sql row shape from a history_items.sql row (extra columns empty)."""
+    extra = dict.fromkeys(("description", "comments", "basis", "reason", "imo_code"))
+    return (
+        row
+        | extra
+        | {
+            "significance_code": 0,
+            "acuity_code": 0,
+            "recorded": datetime(2017, 5, 1, tzinfo=UTC),
+            "provider_last": "Example",
+            "provider_first": "Doctor",
+            "provider_title": "DO",
+        }
+    )
 
 
 @pytest.fixture
@@ -402,3 +439,12 @@ def test_real_labs_and_vitals_tabs_render(chart_mode, client, monkeypatch):
     assert r.status_code == 200 and "No vitals recorded." in r.text
     for tab in ("problems", "meds"):
         assert client.get(f"/patients/EMR:11?tab={tab}").status_code == 200
+
+
+def test_real_problems_tab(chart_mode, client):
+    r = client.get("/patients/EMR:11?tab=problems")
+    assert r.status_code == 200
+    # An active allergy exists → the tab opens on Allergies, with reactions in the detail.
+    assert "1 active" in r.text and "Sample allergen" in r.text and "Hives, Rash" in r.text
+    r = client.get("/patients/EMR:11?tab=problems&sec=problems&status=all")
+    assert "ICD-10 Z00.0" in r.text and "Resolved" in r.text and "Old problem" in r.text

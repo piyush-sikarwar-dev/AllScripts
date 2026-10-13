@@ -306,3 +306,21 @@ def notes_doc_sources(emr_id: int, sources: list[str]) -> list[dict[str, Any]]:
 
 def notes_list_trans(emr_id: int) -> list[dict[str, Any]]:
     return run_query(Source.EMR, NOTES_LIST_TRANS, {"emr_id": emr_id})
+
+
+# --- Problems & allergies tab (Option B) --------------------------------------------------------
+HISTORY_ENTRIES = "emr/history_entries.sql"
+HISTORY_ENTRY_ATTRIBUTES = "emr/history_entry_attributes.sql"
+HISTORY_CHANGES = "emr/history_changes.sql"
+
+
+def history_entries(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, HISTORY_ENTRIES, {"emr_id": emr_id})
+
+
+def history_entry_attributes(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, HISTORY_ENTRY_ATTRIBUTES, {"emr_id": emr_id})
+
+
+def history_changes(emr_id: int, hx_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, HISTORY_CHANGES, {"emr_id": emr_id, "hx_id": hx_id})

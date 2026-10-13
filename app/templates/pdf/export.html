@@ -91,6 +91,19 @@
 {% endfor %}
 {% endif %}
 
+{% if selected_history %}
+<h1 class="section">Selected problems &amp; allergies</h1>
+<table>
+  <thead><tr><th>Section</th><th>Title</th><th>Type</th><th>Onset</th><th>Resolved</th><th>Status</th><th>Code</th></tr></thead>
+  <tbody>
+    {% for r in selected_history %}
+    <tr><td>{{ r.section }}</td><td>{{ r.title }}</td><td>{{ r.type }}</td><td>{{ r.onset }}</td>
+      <td>{{ r.resolved }}</td><td>{{ r.status }}</td><td class="mono">{{ r.code }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
 {% if selected_notes %}
 <h1 class="section">Selected notes</h1>
 {% for n in selected_notes %}

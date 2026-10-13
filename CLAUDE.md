@@ -168,7 +168,9 @@ Use a separate engine per database (`Database=` in the connection string), all w
 3. **Latest revision only** for DX, MEDICATIONS, HX_DIAGNOSIS, HX_MEDICATION, NOTES_TEXTDATA:
    `ROW_NUMBER() OVER (PARTITION BY <item id> ORDER BY TAG_REVISION DESC) = 1`.
 4. **`ARCH_*` tables are change history** — never use them for the current chart
-   (exception: `ARCH_SCHEDULE` is the EMR appointment table).
+   (exception: `ARCH_SCHEDULE` is the EMR appointment table). `ARCH_HXDIAGNOSIS` is read **only** for
+   the Problems & allergies "Change history" of one entry (`sql/emr/history_changes.sql`), never for its
+   current state.
 5. **Visit date = `CONTACT.CON_START`.** `ENCOUNTER.ENC_DATACOLLECTIONDATE` is empty in every row.
 6. **Merged patients:** `HPSITE.PATIENT_MERGE_HISTORY` (ORIGINAL_DEM_CODE → CURRENT_DEM_CODE).
    Search must not show merged-away records as separate patients; opening one redirects to the survivor.

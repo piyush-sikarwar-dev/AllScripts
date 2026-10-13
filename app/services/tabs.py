@@ -11,12 +11,12 @@ from app.services.documents import (
     parse_doc_ref,
     scan_store_configured,
 )
+from app.services.history_service import history_view
 from app.services.labs import build_filters, labs_tab
 from app.services.meds import meds_tab
 from app.services.notes_service import notes_tab
 from app.services.notes_service import parse_state as parse_notes_state
 from app.services.overview import overview
-from app.services.problems import problem_groups
 from app.services.visits import parse_state, selected_visit_ids, visits_tab
 from app.services.vitals import vitals_tab
 
@@ -62,7 +62,10 @@ async def tab_context(
         ctx.update(await notes_tab(ref, parse_notes_state(params), session_id))
         state = ctx["notes_state"].params(tab=None)
     elif name == "problems":
-        ctx["groups"] = await problem_groups(ref)
+        view = await history_view(ref, params, session_id)
+        ctx.update(history_state=view.state, history_rail=view.rail, history_rows=view.rows,
+                   history_detail=view.detail)  # fmt: skip
+        state = view.state.params(tab=None)
     elif name == "meds":
         ctx["meds"], ctx["pager"], med_filter = await meds_tab(ref, page, params.get("filter", ""))
         state = {"filter": med_filter}

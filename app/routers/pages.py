@@ -67,6 +67,10 @@ async def chart(
         return RedirectResponse(url_with(f"/patients/{ref.patient_key}", request.query_params),
                                 status_code=303)  # fmt: skip
     audit(request, background, "view_patient", patient_key=ref.patient_key, detail={"tab": tab})
+    if tab == "problems" and ctx.get("history_detail"):
+        entry = ctx["history_detail"]
+        audit(request, background, "view_history_entry", patient_key=ref.patient_key,
+              detail={"entry_id": entry.id, "section": entry.section})  # fmt: skip
     if tab == "notes" and ctx.get("note"):
         audit(request, background, "view_note", patient_key=ref.patient_key,
               detail={"note": ctx["note"].ref, "category": ctx["note"].category,

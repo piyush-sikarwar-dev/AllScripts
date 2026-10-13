@@ -14,12 +14,21 @@ from app.audit import audit
 from app.auth import CurrentUser, current_user, require_csrf
 from app.crosswalk import PatientRef, resolve
 from app.formatting import date_us, time_local, to_clinic_time
+from app.models.history import EntryDetail
 from app.models.notes import NoteDetail
 from app.models.visits import EncounterDetail
 from app.repositories.appdb import utcnow
 from app.services import NotFoundError
 from app.services.chart_header import get_header
 from app.services.documents import DOC_KINDS, document_viewer, page_png
+from app.services.history_service import CHANGES_SHOWN as HISTORY_CHANGES_SHOWN
+from app.services.history_service import SECTION_LABELS as HISTORY_SECTION_LABELS
+from app.services.history_service import change_history as history_change_lines
+from app.services.history_service import entry_detail as history_entry_detail
+from app.services.history_service import history_view, toggle_entry_export
+from app.services.history_service import load_entries as load_history_entries
+from app.services.history_service import parse_state as parse_history_state
+from app.services.history_service import print_rows as history_print_rows
 from app.services.notes_service import (
     note_detail,
     notes_view,
@@ -105,6 +114,9 @@ async def chart_tab(
         _audit_visit(request, background, ref, ctx.get("detail"))
     if name == "docs" and ctx.get("viewer"):
         push_params["doc"] = f"{ctx['viewer'].kind}-{ctx['viewer'].id}"
+    if name == "problems":
+        push_params = ctx["history_state"].params()
+        _audit_entry(request, background, ref, ctx.get("history_detail"))
     if name == "notes":
         push_params = ctx["notes_state"].params()
         _audit_note(request, background, ref, ctx.get("note"))
@@ -353,6 +365,138 @@ async def toggle_note_export_route(request: Request, key: str, note_ref: str) ->
         request,
         "partials/note_export_toggle.html",
         {"key": ref.patient_key, "note_ref": note_ref, "in_export": added,
+         "export_count": count, "oob": True, "partial": True},
+    )  # fmt: skip
+
+
+# --- Problems & allergies tab (Option B) ---------------------------------------------------------
+
+EntryId = Annotated[int, Path(ge=1, le=2_147_483_647)]
+
+
+def _audit_entry(
+    request: Request, background: BackgroundTasks, ref: PatientRef, entry: EntryDetail | None
+) -> None:
+    if entry is not None:
+        audit(request, background, "view_history_entry", patient_key=ref.patient_key,
+              detail={"entry_id": entry.id, "section": entry.section})  # fmt: skip
+
+
+@router.get("/patients/{key}/history/rail", response_class=HTMLResponse)
+async def history_rail_partial(request: Request, key: str) -> HTMLResponse:
+    ref = await _resolve(key)
+    view = await history_view(ref, request.query_params, request.state.session_id)
+    return render(
+        request,
+        "partials/history_rail.html",
+        {"key": ref.patient_key, "history_state": view.state, "history_rail": view.rail,
+         "partial": True},
+    )  # fmt: skip
+
+
+@router.get("/patients/{key}/history/list", response_class=HTMLResponse)
+async def history_list_partial(
+    request: Request, background: BackgroundTasks, key: str
+) -> HTMLResponse:
+    """Entry list of a section, plus the rail (OOB: counts and selection stay in sync) and, when
+    the selection changed, the detail of the first entry (OOB)."""
+    ref = await _resolve(key)
+    view = await history_view(ref, request.query_params, request.state.session_id)
+    detail = {"tab": "problems", "section": view.state.sec, "status": view.state.status}
+    audit(request, background, "view_tab", patient_key=ref.patient_key, detail=detail)
+    if view.selection_changed:
+        _audit_entry(request, background, ref, view.detail)
+    return render(
+        request,
+        "partials/history_list.html",
+        {"key": ref.patient_key, "history_state": view.state, "history_rail": view.rail,
+         "history_rows": view.rows, "history_detail": view.detail, "oob": True,
+         "oob_detail": view.selection_changed, "partial": True},
+        headers={"HX-Push-Url": url_with(f"/patients/{ref.patient_key}", view.state.params())},
+    )  # fmt: skip
+
+
+@router.get("/patients/{key}/history/print", response_class=HTMLResponse)
+async def history_print(
+    request: Request,
+    background: BackgroundTasks,
+    key: str,
+    user: Annotated[CurrentUser, Depends(current_user)],
+    sec: str = "problems",
+) -> HTMLResponse:
+    """Printable table of one section (all statuses)."""
+    if sec not in HISTORY_SECTION_LABELS:
+        raise HTTPException(status_code=404)
+    ref = await _resolve(key)
+    header, entries = await asyncio.gather(get_header(ref), load_history_entries(ref))
+    audit(request, background, "print_history", patient_key=ref.patient_key,
+          detail={"section": sec})  # fmt: skip
+    printed = to_clinic_time(utcnow())
+    return render(
+        request,
+        "pages/history_print.html",
+        {"key": ref.patient_key, "header": header, "user": user,
+         "section_label": HISTORY_SECTION_LABELS[sec], "rows": history_print_rows(entries, sec),
+         "printed_at": f"{date_us(printed)} {time_local(printed)}"},
+    )  # fmt: skip
+
+
+@router.get("/patients/{key}/history/entries/{entry_id}", response_class=HTMLResponse)
+async def history_entry_panel(
+    request: Request, background: BackgroundTasks, key: str, entry_id: EntryId
+) -> HTMLResponse:
+    ref = await _resolve(key)
+    state, _ = parse_history_state(request.query_params, request.state.session_id)
+    try:
+        entry = await history_entry_detail(ref, entry_id, request.state.session_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    _audit_entry(request, background, ref, entry)
+    state = state.model_copy(update={"sec": entry.section, "entry": entry.id})
+    return render(
+        request,
+        "partials/history_detail.html",
+        {"key": ref.patient_key, "entry": entry, "history_state": state, "partial": True},
+        headers={"HX-Push-Url": url_with(f"/patients/{ref.patient_key}", state.params())},
+    )
+
+
+@router.get("/patients/{key}/history/entries/{entry_id}/changes", response_class=HTMLResponse)
+async def history_entry_changes(
+    request: Request, key: str, entry_id: EntryId, all: bool = False
+) -> HTMLResponse:
+    """Change history of one entry (lazy-loaded below the detail)."""
+    ref = await _resolve(key)
+    try:
+        lines = await history_change_lines(ref, entry_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    return render(
+        request,
+        "partials/history_changes.html",
+        {"key": ref.patient_key, "entry_id": entry_id, "lines": lines, "show_all": all,
+         "limit": HISTORY_CHANGES_SHOWN, "partial": True},
+    )  # fmt: skip
+
+
+@router.post(
+    "/patients/{key}/export-selection/history/{entry_id}",
+    response_class=HTMLResponse,
+    dependencies=[Depends(require_csrf)],
+)
+async def toggle_history_export(request: Request, key: str, entry_id: EntryId) -> Response:
+    ref = await _resolve(key)
+    try:
+        added, count = await toggle_entry_export(ref, request.state.session_id, entry_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    if not is_htmx(request):  # plain form post (no JS): back to the entry
+        back = url_with(f"/patients/{ref.patient_key}", {"tab": "problems", "entry": entry_id})
+        return RedirectResponse(back, status_code=303)
+    return render(
+        request,
+        "partials/history_export_toggle.html",
+        {"key": ref.patient_key, "entry_id": entry_id, "in_export": added,
          "export_count": count, "oob": True, "partial": True},
     )  # fmt: skip
 

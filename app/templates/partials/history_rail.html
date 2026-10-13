@@ -1,0 +1,34 @@
+{# Problems & allergies: section rail + status toggle. Re-sent out of band with every list
+   request so counts and selection stay in sync. Without JS the buttons submit this form. #}
+{% set s = history_state %}
+<form class="card section-rail" id="history-rail" method="get" action="/patients/{{ key }}" aria-label="History sections"
+  {%- if oob %} hx-swap-oob="true"{% endif %}>
+  <input type="hidden" name="tab" value="problems">
+  <input type="hidden" class="hstate" name="sec" value="{{ s.sec }}">
+  <input type="hidden" class="hstate" name="status" value="{{ s.status }}">
+  <ul class="section-rail__list">
+    {% for sec in history_rail %}
+    <li>
+      <button type="submit" class="section-rail__btn{% if sec.selected %} section-rail__btn--on{% endif %}"
+              name="sec" value="{{ sec.key }}"{% if sec.selected %} aria-current="true"{% endif %}
+              hx-get="/patients/{{ key }}/history/list" hx-include=".hstate" hx-vals='{"sec": "{{ sec.key }}", "entry": ""}'
+              hx-target="#history-list" hx-indicator="#history-list" hx-swap="outerHTML">
+        <span class="section-rail__name">{{ sec.label }}</span>
+        {% if sec.pill %}<span class="pill pill--{{ sec.pill_kind }}">{{ sec.pill }}</span>{% endif %}
+        <span class="section-rail__count">{{ sec.count }}</span>
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+  <div class="section-rail__status">
+    <p class="section-rail__label" id="history-status-label">Status</p>
+    <div class="segmented--toggle section-rail__toggle" role="group" aria-labelledby="history-status-label">
+      {% for value, label in [("all", "All"), ("active", "Active")] %}
+      <button type="submit" class="segmented--toggle__item" name="status" value="{{ value }}"
+              aria-pressed="{{ 'true' if s.status == value else 'false' }}"
+              hx-get="/patients/{{ key }}/history/list" hx-include=".hstate" hx-vals='{"status": "{{ value }}", "entry": ""}'
+              hx-target="#history-list" hx-indicator="#history-list" hx-swap="outerHTML">{{ label }}</button>
+      {% endfor %}
+    </div>
+  </div>
+</form>

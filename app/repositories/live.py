@@ -736,3 +736,76 @@ def note_index(emr_id: int) -> list[dict[str, Any]]:
             "source": "EMR",
         })  # fmt: skip
     return items
+
+
+# --- Problems & allergies tab (Option B) --------------------------------------------------------
+
+
+def _text(value: Any) -> str | None:
+    return (value or "").strip() or None
+
+
+@cached
+def history_entries(emr_id: int) -> list[dict[str, Any]]:
+    """Current state of every history entry (latest revision) with its attributes and the
+    provider of the visit it was recorded in. Interpretation happens in the service."""
+    rows, attributes = parallel(
+        lambda: emr.history_entries(emr_id), lambda: emr.history_entry_attributes(emr_id)
+    )
+    attrs: dict[int, list[dict[str, Any]]] = {}
+    for a in attributes:
+        if _text(a["title"]) or _text(a["value"]):
+            attrs.setdefault(a["hx_id"], []).append({
+                "sort_order": a["sort_order"] or 0,
+                "title": _text(a["title"]),
+                "value": _text(a["value"]),
+                "severity_code": a["severity_code"],
+            })  # fmt: skip
+    entries = []
+    for r in rows:
+        who = _provider(r["provider_last"], r["provider_first"], r["provider_title"])
+        entries.append({
+            "id": r["hx_id"],
+            "category_code": r["category_code"],
+            "code_system": _text(r["code_system"]),
+            "code": _text(r["code"]),
+            "imo_code": r["imo_code"] or None,
+            "title": _text(r["title"]),
+            "description": _text(r["description"]),
+            "activity_code": r["activity_code"],
+            "significance_code": r["significance_code"],
+            "acuity_code": r["acuity_code"],
+            "onset": r["onset"],
+            "onset_mask": r["onset_mask"],
+            "resolved": r["resolved"],
+            "comments": _text(r["comments"]),
+            "basis": _text(r["basis"]),
+            "reason": _text(r["reason"]),
+            "recorded": r["recorded"],
+            "provider": None if who == "—" else who,
+            "attributes": sorted(attrs.get(r["hx_id"], []), key=lambda a: a["sort_order"]),
+            "source": "EMR",
+        })  # fmt: skip
+    return entries
+
+
+@cached
+def history_changes(emr_id: int, hx_id: int) -> list[dict[str, Any]]:
+    """Every revision of one entry of this patient, oldest first (ownership-checked in SQL)."""
+    revisions = []
+    for r in emr.history_changes(emr_id, hx_id):
+        who = _provider(r["provider_last"], r["provider_first"], r["provider_title"])
+        revisions.append({
+            "revision": r["revision"],
+            "changed": r["changed"],
+            "title": _text(r["title"]),
+            "activity_code": r["activity_code"],
+            "significance_code": r["significance_code"],
+            "onset": r["onset"],
+            "onset_mask": r["onset_mask"],
+            "resolved": r["resolved"],
+            "comments": _text(r["comments"]),
+            "reason": _text(r["reason"]),
+            "provider": None if who == "—" else who,
+        })  # fmt: skip
+    return revisions

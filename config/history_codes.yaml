@@ -1,0 +1,31 @@
+# Problems & allergies: HX_DIAGNOSIS.SOURCE -> how its SOURCE_CODE is shown.
+#   standard: true  -> a real clinical code, shown first ("ICD-9 250.00")
+#   standard: false -> an internal Allscripts reference, shown only as a small grey tag
+# Discovery 2026-10-13 (latest revisions, 259,693 entries): HISTORY 226,443 (internal lexicon id),
+# ICD9 19,476, MEDISPAN_NAME 8,724 (allergy drugs), PARID 4,453 (allergen group ids, allergies),
+# DX_FREETEXT 235, FREETEXT 176, CPT 137, UNII 41, HCPCS 4, ICD10 3, SNOMED 1.
+# IMO_CODE (17,853 entries) is the IMO lexicon id: internal tag only.
+sources:
+  ICD9: {label: ICD-9, standard: true}
+  ICD10: {label: ICD-10, standard: true}
+  SNOMED: {label: SNOMED CT, standard: true}
+  CPT: {label: CPT, standard: true}
+  HCPCS: {label: HCPCS, standard: true}
+  MEDISPAN_NAME: {label: Medi-Span, standard: true}
+  UNII: {label: UNII, standard: true}
+  PARID: {label: Allergen group, standard: false}
+  HISTORY: {label: History, standard: false}
+  DX_FREETEXT: {label: Free text, standard: false}
+  FREETEXT: {label: Free text, standard: false}
+default: {label: Other, standard: false}
+
+# Allergy "Type" (no allergy-type column exists): by SOURCE first, then title keywords.
+allergy_kinds:
+  status_titles: ['(?i)^\W*(no known|nka\b|nkda\b|nkfa\b)']   # "Status" entries (NKA / NKDA)
+  by_source: {MEDISPAN_NAME: Drug, UNII: Drug, PARID: Drug class}
+  keywords:
+    Food: [peanut, nut, shellfish, shrimp, fish, egg, milk, dairy, lactose, wheat, gluten, soy,
+           strawberr, tomato, food]
+    Environmental: [latex, pollen, dust, mold, mould, grass, tree, ragweed, cat, dog, dander,
+                    bee, wasp, insect, sting, adhesive, tape, nickel, seasonal]
+  default: Other
