@@ -253,3 +253,47 @@ def medications(person_key: int) -> list[dict[str, Any]]:
                 }
             )
     return rows
+
+
+# (name, value, low, high) per lab draw; vitals per visit.
+_LABS = [
+    ("TSH", "2.10", "0.40", "4.00"),
+    ("A1C", "7.8", "4.0", "5.6"),
+    ("POTASSIUM", "3.1", "3.5", "5.1"),
+]
+_VITALS = [
+    ("VS-BLOOD PRESSURE", "128/82"),
+    ("VS-PULSE", "72"),
+    ("VS-WEIGHT", "180lb"),
+    ("VS-HEIGHT", "5ft10in"),
+    ("BMI", "25.8"),
+]
+
+
+def clinical_items(person_key: int) -> list[dict[str, Any]]:
+    if person_key not in PEOPLE_BY_KEY or (person_key - 5_000) % 4 == 3:
+        return []
+    note_ids = [n["note_id"] for n in NOTES.get(person_key, [])]
+    rows: list[dict[str, Any]] = []
+    item_id = person_key * 1000
+    for visit in range(3):
+        when = datetime(2005 + visit, 4, 12, 10, 30)
+        items = [(name, value, None, None) for name, value in _VITALS]
+        items += _LABS if visit != 1 else []
+        items.append(("GENERIC-PHONE ENTRY", "(555)000-0000 home.", None, None))
+        for name, value, low, high in items:
+            item_id += 1
+            rows.append(
+                {
+                    "item_id": item_id,
+                    "service_datetime": when,
+                    "item_name": name,
+                    "value": value,
+                    "ref_low": low,
+                    "ref_high": high,
+                    "comments": "Fasting" if name == "A1C" else None,
+                    "note_id": note_ids[0] if note_ids and visit == 0 else None,
+                }
+            )
+    rows.sort(key=lambda r: (r["service_datetime"], r["item_id"]), reverse=True)
+    return rows

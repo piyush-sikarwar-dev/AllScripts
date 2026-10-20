@@ -1,0 +1,44 @@
+{# Pre-2010 chart: vitals, one row per recorded time (values as entered, units included). #}
+{% from "components/table.html" import pager_nav, count_text %}
+{% from "components/empty_state.html" import empty_state %}
+{% set base = "/legacy/" ~ key %}
+{% set v = vitals %}
+<section class="card table-card" aria-labelledby="legacy-vitals-title">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="legacy-vitals-title">Vitals</h2>
+    <p class="table-card__count">{{ count_text(v.pager, "readings") }}</p>
+  </div>
+  {% if v.rows %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Date</th><th scope="col">BP</th><th scope="col">Pulse</th><th scope="col">Temp</th>
+          <th scope="col">Resp</th><th scope="col">Weight</th><th scope="col">Height</th><th scope="col">BMI</th>
+          <th scope="col">Waist</th><th scope="col">Chart note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in v.rows %}
+        <tr>
+          <td class="nowrap">{{ r.date }}{% if r.time %}<span class="cell-sub">{{ r.time }}</span>{% endif %}</td>
+          <td class="mono nowrap">{{ r.bp }}</td>
+          <td class="mono">{{ r.pulse }}</td>
+          <td class="mono nowrap">{{ r.temp }}</td>
+          <td class="mono">{{ r.resp }}</td>
+          <td class="mono nowrap">{{ r.weight }}</td>
+          <td class="mono nowrap">{{ r.height }}</td>
+          <td class="mono">{{ r.bmi }}</td>
+          <td class="mono nowrap">{{ r.waist }}</td>
+          <td>{% if r.note_id %}<a class="cell-link" href="{{ base }}?note={{ r.note_id }}"
+                hx-get="{{ base }}/tab/notes?note={{ r.note_id }}" hx-target="#chart-tabs" hx-swap="outerHTML">Open note</a>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager_nav(v.pager, base, base ~ "/tab/vitals", "#chart-tabs", {"tab": "vitals"}) }}
+  {% else %}
+    {{ empty_state("No vitals recorded in the pre-2010 chart.") }}
+  {% endif %}
+</section>

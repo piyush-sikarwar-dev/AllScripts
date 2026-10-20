@@ -1,0 +1,74 @@
+{# Pre-2010 chart: lab results (newest first) with test / year filters and paging. #}
+{% from "components/badge.html" import flag_badge %}
+{% from "components/table.html" import pager_nav, count_text %}
+{% from "components/empty_state.html" import empty_state %}
+{% set base = "/legacy/" ~ key %}
+{% set l = labs %}
+<section class="card table-card" aria-labelledby="legacy-labs-title">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="legacy-labs-title">Lab results</h2>
+    <p class="table-card__count">{{ count_text(l.pager, "results") }}</p>
+  </div>
+  {% if l.tests %}
+  <div class="table-card__tools">
+    <form class="toolbar" method="get" action="{{ base }}"
+          hx-get="{{ base }}/tab/labs" hx-target="#chart-tabs" hx-swap="outerHTML"
+          hx-trigger="change, submit">
+      <input type="hidden" name="tab" value="labs">
+      <div class="field field--wide">
+        <label class="field__label" for="legacy-lab-test">Test</label>
+        <select class="select" id="legacy-lab-test" name="test">
+          <option value="">All tests</option>
+          {% for name in l.tests %}
+          <option value="{{ name }}"{% if name == l.test %} selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="legacy-lab-year">Year</label>
+        <select class="select" id="legacy-lab-year" name="year">
+          <option value="">All years</option>
+          {% for y in l.years %}
+          <option value="{{ y }}"{% if y == l.year %} selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <noscript><div class="toolbar__actions"><button type="submit" class="btn btn--secondary">Apply</button></div></noscript>
+    </form>
+  </div>
+  {% endif %}
+  {% if l.rows %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Date</th>
+          <th scope="col">Test</th>
+          <th scope="col">Result</th>
+          <th scope="col">Reference range</th>
+          <th scope="col">Flag</th>
+          <th scope="col">Chart note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in l.rows %}
+        <tr>
+          <td class="nowrap">{{ r.date }}</td>
+          <td>{{ r.test }}{% if r.comment %}<span class="cell-sub">{{ r.comment }}</span>{% endif %}</td>
+          <td class="mono">{{ r.result }}</td>
+          <td class="mono nowrap">{{ r.range }}</td>
+          <td>{% if r.flag %}{{ flag_badge(r.flag) }}{% endif %}</td>
+          <td>{% if r.note_id %}<a class="cell-link" href="{{ base }}?note={{ r.note_id }}"
+                hx-get="{{ base }}/tab/notes?note={{ r.note_id }}" hx-target="#chart-tabs" hx-swap="outerHTML">Open note</a>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager_nav(l.pager, base, base ~ "/tab/labs", "#chart-tabs", l.params(page=None)) }}
+  {% elif l.test or l.year %}
+    {{ empty_state("No lab results match these filters.") }}
+  {% else %}
+    {{ empty_state("No lab results recorded in the pre-2010 chart.") }}
+  {% endif %}
+</section>

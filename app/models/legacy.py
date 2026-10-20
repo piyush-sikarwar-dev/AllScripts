@@ -153,3 +153,47 @@ class LegacyMedications(BaseModel):
     past: list[LegacyMedication]
     voided: list[LegacyMedication]
     show_voided: bool
+
+
+class LegacyLabRow(BaseModel):
+    date: str
+    test: str
+    result: str
+    range: str
+    flag: str | None
+    comment: str
+    note_id: int | None
+
+
+class LegacyLabPage(BaseModel):
+    rows: list[LegacyLabRow]
+    pager: Pager
+    tests: list[str]
+    test: str
+    years: list[str]
+    year: str
+
+    def params(self, **override: object) -> dict[str, object]:
+        values: dict[str, object] = {"tab": "labs", "test": self.test, "year": self.year,
+                                     "page": self.pager.page}  # fmt: skip
+        values.update(override)
+        return {k: v for k, v in values.items() if v not in (None, "")}
+
+
+class LegacyVitalsRow(BaseModel):
+    date: str
+    time: str
+    bp: str
+    pulse: str
+    temp: str
+    resp: str
+    weight: str
+    height: str
+    bmi: str
+    waist: str
+    note_id: int | None
+
+
+class LegacyVitalsPage(BaseModel):
+    rows: list[LegacyVitalsRow]
+    pager: Pager

@@ -20,6 +20,8 @@ from app.models.legacy import (
     LegacyAllergy,
     LegacyHeader,
     LegacyHistory,
+    LegacyLabPage,
+    LegacyLabRow,
     LegacyMedEntry,
     LegacyMedication,
     LegacyMedications,
@@ -30,6 +32,8 @@ from app.models.legacy import (
     LegacyProblem,
     LegacyRow,
     LegacySearch,
+    LegacyVitalsPage,
+    LegacyVitalsRow,
 )
 from app.repositories import legacy_repository
 from app.services import NotFoundError, call
@@ -211,6 +215,8 @@ TABS: list[tuple[str, str]] = [
     ("notes", "Chart notes"),
     ("problems", "Problems & allergies"),
     ("meds", "Medications"),
+    ("labs", "Lab results"),
+    ("vitals", "Vitals"),
 ]
 TAB_NAMES = {name for name, _ in TABS}
 TAB_LABELS = dict(TABS)
@@ -370,12 +376,131 @@ async def medications(key: str, show_voided: bool = False) -> LegacyMedications:
     )
 
 
+def _number(value: str | None) -> float | None:
+    try:
+        return float((value or "").strip())
+    except ValueError:
+        return None
+
+
+def _lab_flag(value: str | None, low: str | None, high: str | None) -> str | None:
+    """'H' / 'L' when a plain numeric result is outside a numeric reference range."""
+    result, lo, hi = _number(value), _number(low), _number(high)
+    if result is None:
+        return None
+    if hi is not None and result > hi:
+        return "H"
+    if lo is not None and result < lo:
+        return "L"
+    return None
+
+
+def _range(low: str | None, high: str | None) -> str:
+    low, high = (low or "").strip(), (high or "").strip()
+    if low and high:
+        return f"{low} – {high}"
+    if high:
+        return f"≤ {high}"
+    if low:
+        return f"≥ {low}"
+    return EMPTY
+
+
+async def _items(key: str) -> tuple[list[dict], list[dict], set[int]]:
+    """Clinical values split into (labs, vitals), plus the patient's note ids (for links)."""
+    pkey = person_key(key)
+    repo = legacy_repository()
+    rows, notes = await asyncio.gather(call(repo.clinical_items, pkey), call(repo.notes, pkey))
+    codes = legacy_codes()
+    labs_rows, vital_rows = [], []
+    for r in rows:
+        kind = codes.item_kind(r.get("item_name"))
+        if kind == "lab":
+            labs_rows.append(r)
+        elif kind == "vital":
+            vital_rows.append(r)
+    return labs_rows, vital_rows, {int(n["note_id"]) for n in notes}
+
+
+def _note_link(note_id: object, note_ids: set[int]) -> int | None:
+    return int(note_id) if note_id is not None and int(note_id) in note_ids else None
+
+
+async def labs(key: str, test: str = "", year: str = "", page: int | None = None) -> LegacyLabPage:
+    rows, _, note_ids = await _items(key)
+    tests = sorted({_squash(r["item_name"]) for r in rows})
+    years = sorted(
+        {str(r["service_datetime"].year) for r in rows if r["service_datetime"]}, reverse=True
+    )
+    test = test if test in tests else ""
+    year = year if year in years else ""
+    chosen = [
+        r
+        for r in rows
+        if (not test or _squash(r["item_name"]) == test)
+        and (not year or (r["service_datetime"] and str(r["service_datetime"].year) == year))
+    ]
+    shown, pager = paginate(chosen, clamp_page(page))
+    return LegacyLabPage(
+        rows=[
+            LegacyLabRow(
+                date=date_us(_day(r["service_datetime"])),
+                test=_squash(r["item_name"]),
+                result=(r.get("value") or "").strip() or EMPTY,
+                range=_range(r.get("ref_low"), r.get("ref_high")),
+                flag=_lab_flag(r.get("value"), r.get("ref_low"), r.get("ref_high")),
+                comment=_squash(r.get("comments")),
+                note_id=_note_link(r.get("note_id"), note_ids),
+            )
+            for r in shown
+        ],
+        pager=pager,
+        tests=tests,
+        test=test,
+        years=years,
+        year=year,
+    )
+
+
+_VITAL_COLUMNS = ("bp", "pulse", "temp", "resp", "weight", "height", "bmi", "waist")
+
+
+async def vitals(key: str, page: int | None = None) -> LegacyVitalsPage:
+    """One row per recorded time (newest first), one column per vital sign."""
+    _, rows, note_ids = await _items(key)
+    columns = legacy_codes().vital_columns()
+    by_time: dict[object, dict[str, object]] = {}
+    for r in rows:  # newest first
+        row = by_time.setdefault(r["service_datetime"], {"note_id": None})
+        column = columns[(r["item_name"] or "").strip().upper()]
+        row.setdefault(column, (r.get("value") or "").strip())
+        row["note_id"] = row["note_id"] or _note_link(r.get("note_id"), note_ids)
+    shown, pager = paginate(list(by_time.items()), clamp_page(page))
+    return LegacyVitalsPage(
+        rows=[
+            LegacyVitalsRow(
+                date=date_us(_day(when)),  # type: ignore[arg-type]
+                time=_time(when),  # type: ignore[arg-type]
+                note_id=values["note_id"],  # type: ignore[arg-type]
+                **{c: str(values.get(c) or EMPTY) for c in _VITAL_COLUMNS},
+            )
+            for when, values in shown
+        ],
+        pager=pager,
+    )
+
+
 async def tab_context(key: str, tab: str, params: Mapping[str, str]) -> dict[str, Any]:
     """Everything one tab of the pre-2010 chart needs (full page or HTMX fragment)."""
     if tab == "problems":
         return {"history": await history(key, params.get("voided") == "1")}
     if tab == "meds":
         return {"meds": await medications(key, params.get("voided") == "1")}
+    page_no = int(params["page"]) if (params.get("page") or "").isdigit() else 1
+    if tab == "labs":
+        return {"labs": await labs(key, params.get("test", ""), params.get("year", ""), page_no)}
+    if tab == "vitals":
+        return {"vitals": await vitals(key, page_no)}
     page = int(params["page"]) if (params.get("page") or "").isdigit() else 1
     notes = await note_page(key, params.get("year", ""), page)
     raw_note = params.get("note") or ""

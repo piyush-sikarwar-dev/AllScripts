@@ -14,6 +14,19 @@ class LegacyCodes(BaseModel):
     problem_voided: list[int] = []
     allergy_voided: list[int] = []
     severity_blank: list[str] = []
+    vital_items: dict[str, str] = {}
+    skip_item_prefixes: list[str] = []
+
+    def item_kind(self, name: str | None) -> str:
+        """'vital' | 'lab' | 'skip' for a clinical item name."""
+        upper = (name or "").strip().upper()
+        if not upper or any(upper.startswith(p) for p in self.skip_item_prefixes):
+            return "skip"
+        return "vital" if upper in self.vital_columns() else "lab"
+
+    def vital_columns(self) -> dict[str, str]:
+        """Item name (upper case) → vitals column."""
+        return {name.upper(): column for column, name in self.vital_items.items()}
 
     def problem_status_label(self, code: int | None) -> str:
         if code is None:

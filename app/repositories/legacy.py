@@ -85,3 +85,11 @@ def medications(person_key: int) -> list[dict[str, Any]]:
     rows = dmz.legacy_medications(person_key)
     rows.sort(key=lambda r: (sort_key(r["date_of_service"] or r["date_written"]), r["entry_id"]))
     return rows
+
+
+@cached
+def clinical_items(person_key: int) -> list[dict[str, Any]]:
+    """Recorded lab and vital values, newest first."""
+    rows = dmz.legacy_clinical_items(person_key)
+    rows.sort(key=lambda r: (sort_key(r["service_datetime"]), r["item_id"]), reverse=True)
+    return rows

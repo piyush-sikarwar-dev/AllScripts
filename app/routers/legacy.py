@@ -87,8 +87,8 @@ async def legacy_rows(
 
 def _validated(params: Mapping[str, str]) -> dict[str, str]:
     """Only the known state parameters, length-capped (they are echoed into URLs)."""
-    keep = ("year", "page", "note", "voided")
-    return {k: params[k][:12] for k in keep if params.get(k)}
+    keep = ("year", "page", "note", "voided", "test")
+    return {k: params[k][:60] for k in keep if params.get(k)}
 
 
 async def _tab(request: Request, background: BackgroundTasks, key: str, tab: str) -> dict:

@@ -277,3 +277,50 @@ def test_med_status_groups():
     assert kind == "voided"
     med, kind = _medication([{**base, "entry_id": 1, "status_group": None, "status_key": 55}])
     assert kind == "past" and med.status == "Unknown (code 55)"
+
+
+def test_labs_tab_flags_filters_and_note_link(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "labs"})
+    assert r.status_code == 200 and 'id="tab-labs"' in r.text
+    assert "TSH" in r.text and "0.40 – 4.00" in r.text
+    assert "High" in r.text and "Low" in r.text  # A1C 7.8 > 5.6, potassium 3.1 < 3.5
+    assert "GENERIC-PHONE" not in r.text and "(555)000-0000" not in r.text  # skipped fields
+    assert "VS-PULSE" not in r.text  # vitals are not labs
+    assert "Showing 6 of 6" in r.text and "Fasting" in r.text
+    first_note = NOTES[p["person_key"]][0]["note_id"]
+    assert f"?note={first_note}" in r.text
+    r = client.get(f"/legacy/{_key(p)}/tab/labs", params={"test": "TSH"}, headers=HTMX)
+    assert "Showing 2 of 2" in r.text and "A1C</td>" not in r.text
+    assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?tab=labs&test=TSH"
+    r = client.get(f"/legacy/{_key(p)}/tab/labs", params={"test": "NOPE"}, headers=HTMX)
+    assert "Showing 6 of 6" in r.text  # unknown test → all
+
+
+def test_vitals_tab(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "vitals"})
+    assert r.status_code == 200 and "Showing 3 of 3" in r.text
+    assert "128/82" in r.text and "180lb" in r.text and "5ft10in" in r.text and "25.8" in r.text
+    assert "10:30 AM" in r.text and "TSH" not in r.text
+    empty = next(p for p in PEOPLE if (p["person_key"] - 5_000) % 4 == 3)
+    r = client.get(f"/legacy/{_key(empty)}", params={"tab": "vitals"})
+    assert "No vitals recorded in the pre-2010 chart." in r.text
+    r = client.get(f"/legacy/{_key(empty)}", params={"tab": "labs"})
+    assert "No lab results recorded in the pre-2010 chart." in r.text
+
+
+def test_note_link_opens_notes_tab(client):
+    p = _with_history()
+    note = NOTES[p["person_key"]][-1]["note_id"]  # oldest: not on the default selection
+    r = client.get(f"/legacy/{_key(p)}/tab/notes", params={"note": note}, headers=HTMX)
+    assert r.status_code == 200 and f"/legacy/{_key(p)}/notes/{note}/print" in r.text
+
+
+def test_lab_flag_and_range():
+    from app.services.legacy import _lab_flag, _range
+
+    assert _lab_flag("7.8", "4.0", "5.6") == "H" and _lab_flag("3.1", "3.5", "5.1") == "L"
+    assert _lab_flag("<0.01", "0.4", "4") is None and _lab_flag("5", None, None) is None
+    assert _range("1", "2") == "1 – 2" and _range(None, "200") == "≤ 200"
+    assert _range("", "") == "—"

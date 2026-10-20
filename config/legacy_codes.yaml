@@ -15,3 +15,17 @@ allergy_voided: [30, 999]
 
 # Severity text that means "not recorded" (shown as a dash).
 severity_blank: ["Not Available"]
+
+# Clinical values (conv.cac_patclin_item + conv.cac_clin_refitem.name): which item names are
+# vitals (column → item name). Every other item is a lab result, except the skipped prefixes
+# (template fields such as GENERIC-DATE / GENERIC-PHONE ENTRY that mean nothing on their own).
+vital_items:
+  bp: VS-BLOOD PRESSURE
+  pulse: VS-PULSE
+  temp: VS-TEMPERATURE
+  resp: VS-RESPIRATION
+  weight: VS-WEIGHT
+  height: VS-HEIGHT
+  bmi: BMI
+  waist: WAIST MEASUREMENT
+skip_item_prefixes: ["GENERIC-", "HEALTH MAINT-"]
