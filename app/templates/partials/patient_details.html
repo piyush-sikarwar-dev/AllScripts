@@ -98,6 +98,18 @@
     {% else %}{{ empty_state("No assigned providers.", compact=True) }}{% endif %}
   </section>
 
+  <section class="card" aria-labelledby="ov-reminders">
+    <h2 class="card__title" id="ov-reminders">Clinical reminders</h2>
+    {% if reminders %}
+    <ul class="item-list">
+      {% for r in reminders %}
+      <li><span class="item-list__name">{{ r.subject }}{% if r.open %} {{ badge("Open", "abn") }}{% endif %}</span>
+        <span class="item-list__detail">Due {{ r.due }}{% if r.priority != "—" %} · {{ r.priority }} priority{% endif %}{% if not r.open %} · {{ r.status }}{% endif %}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}{{ empty_state("No clinical reminders.", compact=True) }}{% endif %}
+  </section>
+
   <section class="card" aria-labelledby="ov-consents">
     <h2 class="card__title" id="ov-consents">Consents</h2>
     {% if d.consents %}
@@ -110,3 +122,37 @@
     {% else %}{{ empty_state("No consents on file.", compact=True) }}{% endif %}
   </section>
 </div>
+
+<section class="card table-card" aria-labelledby="ov-referrals">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="ov-referrals">Referrals received</h2>
+    <p class="table-card__count">{{ referrals|length }} {{ "referral" if referrals|length == 1 else "referrals" }}</p>
+  </div>
+  {% if referrals %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr><th scope="col">Date</th><th scope="col">Referred by</th><th scope="col">Referred to</th>
+            <th scope="col">Diagnosis</th><th scope="col">Authorization</th><th scope="col">Visits</th>
+            <th scope="col">Expires</th><th scope="col">Status</th></tr>
+      </thead>
+      <tbody>
+        {% for f in referrals %}
+        <tr>
+          <td class="nowrap">{{ f.date }}</td>
+          <td>{{ f.referred_from }}</td>
+          <td>{{ f.referred_to }}</td>
+          <td>{{ f.diagnoses }}{% if f.notes %}<span class="cell-sub">{{ f.notes }}</span>{% endif %}</td>
+          <td><span class="mono">{{ f.authorization }}</span>{% if f.insurance != "—" %}<span class="cell-sub">{{ f.insurance }}</span>{% endif %}</td>
+          <td>{{ f.visits }}</td>
+          <td class="nowrap">{{ f.expires }}</td>
+          <td>{{ f.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {{ empty_state("No referrals received.") }}
+  {% endif %}
+</section>

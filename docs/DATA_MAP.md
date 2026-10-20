@@ -94,7 +94,7 @@ patient data).
 | Dictations / transcriptions | `TRANSCRIPTION` (3,455) + `TRANSCRIPTIONDATA` (3,455) | `DICTATED_DT`, `IMREPROV_CODE`, `trans_data`; hide `MARK_ERRONEOUS_DT` rows | **Yes (P6)** |
 | Chart attachments (free-text entries) | `CHARTATTACHMENT` (57,093) | `CHAT_DATE`, `CHAT_SUBJECT`, `CHAT_CONTENT` | Maybe (likely belongs in Notes) |
 | Scanned documents | `SCAN_DOCUMENT` (626,325) → `SCAN_DOCUMENTPAGE` (1,943,064), `SCAN_DOCUMENTTYPE` (306) | `DOCUMENT_DT`, `TITLE`, type `DESCRIPTION`, page `FILELOCATION` (path on `\\amhs-db1\hmscan`) | **Yes (P8)**: metadata now, images once the share is mounted |
-| Release-of-information requests made in Allscripts | `PHIREQUEST` (659) | request dates, status. Requester name/address are PHI of third parties | Maybe (history of past releases) |
+| Release-of-information requests made in Allscripts | `PHIREQUEST` (659) + `PHIREQUEST_STATUS`, `PHIREQUEST_APPROVALSTATUS`, `PHIREQUEST_REQUESTEDINFO` (PHIRQST_INFO) | request / completed dates, status, approval, requested information, requester name (address / phone / fax not read) | **Yes (live)**: Release log → "Release requests recorded in Allscripts" |
 
 ### 3.5 Problems, allergies and history
 
@@ -143,7 +143,7 @@ Key columns: `TITLE`, `SOURCE`/`SOURCE_CODE` (code system and code), `ONSET_DATE
 |---|---|---|
 | Phone/internal messages about a patient | `MESSAGE` (5,441), `MESSAGE_SAVED` (128,189) | Maybe (often part of a legal record set) |
 | Patient-portal messages | `WEBMESSAGE` (3,234), `WEBMESSAGE_SAVED` (2,206); `ATTACHMENT` blobs | Maybe |
-| Clinical reminders | `REMINDERS` (17,650) | Maybe |
+| Clinical reminders | `REMINDERS` (17,650): subject, due date, priority (MSGPRIOR), completed by / on; `REM_ERRONEOUS` hidden | **Yes (live)**: Overview card + PDF |
 | Appointments (EMR side) | `ARCH_SCHEDULE` (218,843): the EMR appointment table despite the `ARCH_` prefix | Maybe (PM appointments are richer, see §4) |
 
 ### 3.9 Reference data (lookups)
@@ -178,7 +178,7 @@ lists (`DICT_TYPE`, `DICT_CODE`, `DICT_DESCRIPTION`). They are the likely key to
 | Addresses | `Addresses` (27,348) | street, city, state, zip, phone | Maybe |
 | Insurance policies | `Patient_Policies` (24,276) → `Policies` (24,462) → `Insurance_Plans` (4,306), `Carriers` (349) | coverage order (P / S / T; X and V = inactive), group no., certificate no., effective/expiration dates, plan description, copay, policy holder. **`Carriers.Elig_Password` NEVER** | **Yes (live)**: Overview + PDF insurance table (source PM) |
 | Appointments | `Appointments` (153,408), `Appointment_Types` (46), `Cancellation_Reasons` | `Appointment_DateTime`, `Duration`, `Status`, type, check-in/out, cancellation, no-show | Maybe: a good candidate for an "Appointments" tab |
-| Referrals received | `Incoming_Referrals` (4,805) + diagnoses | dates, authorization no., referred from/to, notes | Maybe |
+| Referrals received | `Incoming_Referrals` (4,805) + `Incoming_Referral_Diags` → `Diagnosis_Codes` | dates, status (A / C / N, labels TODO confirm), authorization / pre-cert no., visits authorized, referred from / to (`Practitioners`, never SSN / Federal ID), insurance, notes | **Yes (live)**: Overview table + PDF |
 | Account notes | `Notes` (20,807) | `Subject`, `Text`, `Date_Entered` (mostly billing/admin) | Maybe (admin, not clinical) |
 | Custom patient fields | `Patient_Info` (46,603) + `Patient_Info_Fields` (8) | | Maybe (need field names first) |
 | Billing: charges, diagnoses billed, payments, statements, remittances | `Vouchers` (89,292), `Services` (215,079), `Service_Diagnoses` (353,511), `Payments` (242,755), `Statement_History` (89,905), `ERA_*` | | No (financial records, outside the clinical release scope unless requested) |

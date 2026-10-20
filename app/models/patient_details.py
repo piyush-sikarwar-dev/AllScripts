@@ -63,3 +63,25 @@ class PatientDetails(BaseModel):
     care_team: list[CareTeamMember]
     consents: list[ConsentItem]
     has_photo: bool
+
+
+class ReminderItem(BaseModel):
+    subject: str
+    due: str
+    priority: str
+    status: str  # "Open" | "Completed on …"
+    open: bool
+    entered: str
+
+
+class ReferralItem(BaseModel):
+    date: str
+    status: str
+    referred_from: str
+    referred_to: str
+    diagnoses: str
+    authorization: str
+    visits: str
+    expires: str
+    insurance: str
+    notes: str

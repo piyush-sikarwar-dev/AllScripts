@@ -98,6 +98,27 @@
   <tbody>{% for c in d.consents %}<tr><td>{{ c.name }}</td><td>{{ c.answer }}</td><td>{{ c.recorded }}</td><td>{{ c.expires }}</td></tr>{% endfor %}</tbody>
 </table>
 {% else %}<p class="empty">No consents on file.</p>{% endif %}
+<h2>Clinical reminders</h2>
+{% if reminders %}
+<table>
+  <thead><tr><th>Reminder</th><th>Due</th><th>Priority</th><th>Status</th></tr></thead>
+  <tbody>{% for r in reminders %}<tr><td>{{ r.subject }}</td><td>{{ r.due }}</td><td>{{ r.priority }}</td><td>{{ r.status }}</td></tr>{% endfor %}</tbody>
+</table>
+{% else %}<p class="empty">No clinical reminders.</p>{% endif %}
+<h2>Referrals received</h2>
+{% if referrals %}
+<table>
+  <thead><tr><th>Date</th><th>Referred by</th><th>Referred to</th><th>Diagnosis</th><th>Authorization</th><th>Visits</th><th>Expires</th><th>Status</th></tr></thead>
+  <tbody>
+    {% for f in referrals %}
+    <tr><td>{{ f.date }}</td><td>{{ f.referred_from }}</td><td>{{ f.referred_to }}</td>
+      <td>{{ f.diagnoses }}{% if f.notes %}<br><span class="muted">{{ f.notes }}</span>{% endif %}</td>
+      <td>{{ f.authorization }}{% if f.insurance != "—" %}<br><span class="muted">{{ f.insurance }}</span>{% endif %}</td>
+      <td>{{ f.visits }}</td><td>{{ f.expires }}</td><td>{{ f.status }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="empty">No referrals received.</p>{% endif %}
 {% endif %}
 {% endif %}
 

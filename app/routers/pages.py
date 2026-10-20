@@ -12,7 +12,7 @@ from app.crosswalk import resolve
 from app.services import NotFoundError
 from app.services.chart_header import get_header
 from app.services.patients import build_search, dashboard_totals, parse_dob, search_patients
-from app.services.release_log import release_page
+from app.services.release_log import allscripts_release_page, release_page
 from app.services.selection import export_item_count
 from app.services.tabs import TAB_LABELS, TAB_NAMES, TABS, tab_context
 from app.templating import render, url_with
@@ -115,13 +115,18 @@ async def release_log(
     request: Request,
     user: User,
     page: Annotated[int, Query(ge=1, le=100_000)] = 1,
+    apage: Annotated[int, Query(ge=1, le=100_000)] = 1,
     date_from: Annotated[str, Query(alias="from")] = "",
     date_to: Annotated[str, Query(alias="to")] = "",
 ) -> HTMLResponse:
     filters = _ReleaseFilters(date_from, date_to)
-    rows, pager = await release_page(page, filters.date_from, filters.date_to)
+    (rows, pager), (old_rows, old_pager) = await asyncio.gather(
+        release_page(page, filters.date_from, filters.date_to),
+        allscripts_release_page(apage, filters.date_from, filters.date_to),
+    )
     return render(
         request,
         "pages/release_log.html",
-        {"user": user, "nav": "release", "rows": rows, "pager": pager, "filters": filters},
-    )
+        {"user": user, "nav": "release", "rows": rows, "pager": pager, "filters": filters,
+         "old_rows": old_rows, "old_pager": old_pager, "page": pager.page},
+    )  # fmt: skip

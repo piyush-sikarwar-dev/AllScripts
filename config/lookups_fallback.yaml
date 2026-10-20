@@ -58,3 +58,10 @@ plan_type: {0: "—", 1: Medicare, 2: Medicaid, 3: Private insurance, 4: HMO / m
 pm_coverage: {P: Primary, S: Secondary, T: Tertiary, X: Inactive, V: Inactive}
 # PM.Patient_Policies.Relationship: blank = the patient holds the policy (18,369 of 18,380 rows).
 pm_relationship: {"": Self, S: Spouse, C: Child, O: Other}
+# REMINDERS.REM_PRIORITY (MSGPRIOR dictionary, read 2026-10-21).
+reminder_priority: {0: Low, 1: Medium, 2: High}
+# PHIREQUEST_REQUESTEDINFO.DICTCODE (PHIRQST_INFO dictionary).
+phi_requested_info: {0: Lab results, 1: Immunization records, 2: Radiology results, 3: H&P reports, 4: Chart attachments, 5: Scanned documents, 6: CCR, 7: CCD, 8: Workers comp notes, 9: Confidential notes, 10: Other (see notes)}
+# PM.Incoming_Referrals.Status. No dictionary; C 3,362 / A 1,442 / N 1 rows (read 2026-10-21).
+# TODO: confirm with the clinic (C = closed / completed, A = active, N = new).
+referral_status: {A: Active, C: Closed, N: New}

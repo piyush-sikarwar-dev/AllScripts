@@ -1082,3 +1082,50 @@ def lab_orders(emr_id: int) -> list[dict[str, Any]]:
     rows = emr.lab_orders(emr_id)
     rows.sort(key=lambda r: (sort_key(r["ordered_at"]), r["order_id"]), reverse=True)
     return rows
+
+
+@cached
+def reminders(emr_id: int) -> list[dict[str, Any]]:
+    """Clinical reminders, newest due date first."""
+    rows = emr.reminders(emr_id)
+    rows.sort(key=lambda r: (sort_key(r["due_at"]), r["reminder_id"]), reverse=True)
+    return rows
+
+
+@cached
+def referrals(ntier_id: int | None) -> list[dict[str, Any]]:
+    """Referrals received (PM), newest first, each with its diagnoses."""
+    if ntier_id is None:
+        return []
+    rows, diagnoses = parallel(
+        lambda: ntier.incoming_referrals(ntier_id),
+        lambda: ntier.incoming_referral_diagnoses(ntier_id),
+    )
+    by_referral: dict[int, list[dict[str, Any]]] = {}
+    for d in diagnoses:
+        by_referral.setdefault(d["referral_id"], []).append(d)
+    for r in rows:
+        r["diagnoses"] = by_referral.get(r["referral_id"], [])
+    rows.sort(key=lambda r: (sort_key(r["referral_date"]), r["referral_id"]), reverse=True)
+    return rows
+
+
+_phi_cache: tuple[float, list[dict[str, Any]]] | None = None
+
+
+def phi_requests() -> list[dict[str, Any]]:
+    """Release requests recorded in Allscripts (whole table, 659 rows; cached 24 h), newest first,
+    each with the information it asked for."""
+    global _phi_cache
+    now = time.monotonic()
+    if _phi_cache and _phi_cache[0] > now:
+        return [dict(r) for r in _phi_cache[1]]
+    rows, info = parallel(emr.phi_requests, emr.phi_request_info)
+    asked: dict[int, list[int]] = {}
+    for i in info:
+        asked.setdefault(i["request_id"], []).append(i["code"])
+    for r in rows:
+        r["requested"] = sorted(asked.get(r["request_id"], []))
+    rows.sort(key=lambda r: (sort_key(r["entered_at"]), r["request_id"]), reverse=True)
+    _phi_cache = (now + TOTALS_TTL_SECONDS, rows)
+    return [dict(r) for r in rows]

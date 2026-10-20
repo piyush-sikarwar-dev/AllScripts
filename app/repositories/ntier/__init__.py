@@ -25,3 +25,15 @@ PATIENT_POLICIES = "ntier/patient_policies.sql"
 
 def patient_policies(ntier_id: int) -> list[dict[str, Any]]:
     return run_query(Source.NTIER, PATIENT_POLICIES, {"ntier_id": ntier_id})
+
+
+INCOMING_REFERRALS = "ntier/incoming_referrals.sql"
+INCOMING_REFERRAL_DIAGNOSES = "ntier/incoming_referral_diagnoses.sql"
+
+
+def incoming_referrals(ntier_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.NTIER, INCOMING_REFERRALS, {"ntier_id": ntier_id})
+
+
+def incoming_referral_diagnoses(ntier_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.NTIER, INCOMING_REFERRAL_DIAGNOSES, {"ntier_id": ntier_id})

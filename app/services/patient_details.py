@@ -15,6 +15,8 @@ from app.models.patient_details import (
     Guarantor,
     InsurancePolicy,
     PatientDetails,
+    ReferralItem,
+    ReminderItem,
 )
 from app.repositories import source_repository
 from app.services import NotFoundError, call
@@ -224,3 +226,78 @@ async def patient_photo(ref: PatientRef) -> bytes:
     if not data or not (data.startswith(b"\xff\xd8\xff") or data.startswith(b"\x89PNG")):
         raise NotFoundError(f"{ref.patient_key}/photo")
     return data
+
+
+def _who(last: object, first: object) -> str:
+    return person_name(last, first)  # type: ignore[arg-type]
+
+
+def _reminder(r: dict) -> ReminderItem:
+    done = bool(r.get("completed"))
+    completed_on = date_us(_day(r.get("completed_at")))
+    by = _who(r.get("completed_last"), r.get("completed_first"))
+    status = "Open"
+    if done:
+        status = _join(
+            f"Completed {completed_on}" if completed_on != EMPTY else "Completed",
+            f"by {by}" if by != EMPTY else "",
+            sep=" ",
+        )
+    return ReminderItem(
+        subject=_text(r.get("subject")) or EMPTY,
+        due=date_us(_day(r.get("due_at"))),
+        priority=label("reminder_priority", r.get("priority")),
+        status=status,
+        open=not done,
+        entered=_join(
+            date_us(_day(r.get("entered_at"))),
+            _who(r.get("entered_last"), r.get("entered_first")),
+            sep=" by ",
+        ),
+    )
+
+
+async def reminders(ref: PatientRef) -> list[ReminderItem]:
+    """Open reminders first (soonest due first), then completed ones (newest first); entries marked
+    erroneous are left out."""
+    rows = [
+        r for r in await call(source_repository().reminders, ref.emr_id) if not r.get("erroneous")
+    ]
+    open_rows = sorted(
+        (r for r in rows if not r.get("completed")), key=lambda r: sort_key(r.get("due_at"))
+    )
+    done_rows = [r for r in rows if r.get("completed")]
+    return [_reminder(r) for r in open_rows + done_rows]
+
+
+def _practitioner(last: object, first: object, suffix: object) -> str:
+    return _join(_who(last, first), _text(suffix), sep=" ")
+
+
+def _referral(r: dict) -> ReferralItem:
+    dxs = [
+        _join(_text(d.get("code")), _text(d.get("description")), sep=" ")
+        for d in r.get("diagnoses") or []
+    ]
+    auth = _join(
+        _text(r.get("authorization_number")),
+        f"pre-cert {_text(r.get('precert_number'))}" if _text(r.get("precert_number")) else "",
+    )
+    visits = r.get("visits_authorized")
+    return ReferralItem(
+        date=date_us(_day(r.get("referral_date"))),
+        status=label("referral_status", _text(r.get("status"))),
+        referred_from=_practitioner(r.get("from_last"), r.get("from_first"), r.get("from_suffix"))
+        or EMPTY,
+        referred_to=_practitioner(r.get("to_last"), r.get("to_first"), r.get("to_suffix")) or EMPTY,
+        diagnoses="; ".join(x for x in dxs if x) or EMPTY,
+        authorization=auth or EMPTY,
+        visits=str(visits) if visits else EMPTY,
+        expires=date_us(_day(r.get("expires"))),
+        insurance=or_dash(_text(r.get("carrier"))),
+        notes=_text(r.get("notes")),
+    )
+
+
+async def referrals(ref: PatientRef) -> list[ReferralItem]:
+    return [_referral(r) for r in await call(source_repository().referrals, ref.ntier_id)]

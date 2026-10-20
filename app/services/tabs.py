@@ -19,7 +19,7 @@ from app.services.meds import fills_tab, meds_tab
 from app.services.notes_service import notes_tab
 from app.services.notes_service import parse_state as parse_notes_state
 from app.services.overview import overview
-from app.services.patient_details import patient_details
+from app.services.patient_details import patient_details, referrals, reminders
 from app.services.visits import parse_state, selected_visit_ids, visits_tab
 from app.services.vitals import vitals_tab
 
@@ -58,8 +58,8 @@ async def tab_context(
 
     if name == "overview":
         show_archived = params.get("archived") == "1"
-        ctx["overview"], ctx["details"] = await asyncio.gather(
-            overview(ref), patient_details(ref, show_archived)
+        ctx["overview"], ctx["details"], ctx["reminders"], ctx["referrals"] = await asyncio.gather(
+            overview(ref), patient_details(ref, show_archived), reminders(ref), referrals(ref)
         )
         state = {"archived": "1"} if show_archived else {}
     elif name == "visits":

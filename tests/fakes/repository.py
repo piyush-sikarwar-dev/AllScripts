@@ -591,3 +591,108 @@ def lab_orders(emr_id: int) -> list[dict]:
     ]
     rows.sort(key=lambda r: r["ordered_at"], reverse=True)
     return rows
+
+
+def reminders(emr_id: int) -> list[dict]:
+    if _index(emr_id) % 6 == 5:
+        return []
+    base = {"entered_last": "Doctor", "entered_first": "Sample", "erroneous": 0}
+    rows = [
+        {
+            **base,
+            "reminder_id": emr_id * 10 + 1,
+            "due_at": datetime(2023, 9, 1, 12, tzinfo=UTC),
+            "subject": "Repeat A1C",
+            "priority": 2,
+            "completed": 0,
+            "completed_at": None,
+            "entered_at": datetime(2023, 3, 1, 12, tzinfo=UTC),
+            "completed_last": None,
+            "completed_first": None,
+        },
+        {
+            **base,
+            "reminder_id": emr_id * 10 + 2,
+            "due_at": datetime(2022, 1, 15, 12, tzinfo=UTC),
+            "subject": "Annual physical",
+            "priority": 1,
+            "completed": 1,
+            "completed_at": datetime(2022, 1, 20, 12, tzinfo=UTC),
+            "entered_at": datetime(2021, 1, 15, 12, tzinfo=UTC),
+            "completed_last": "Nurse",
+            "completed_first": "Example",
+        },
+        {
+            **base,
+            "reminder_id": emr_id * 10 + 3,
+            "due_at": datetime(2021, 6, 1, 12, tzinfo=UTC),
+            "subject": "Entered by mistake",
+            "priority": 0,
+            "completed": 0,
+            "completed_at": None,
+            "entered_at": datetime(2021, 5, 1, 12, tzinfo=UTC),
+            "completed_last": None,
+            "completed_first": None,
+            "erroneous": 1,
+        },
+    ]
+    return rows
+
+
+def referrals(ntier_id: int | None) -> list[dict]:
+    if ntier_id is None:
+        return []
+    return [
+        {
+            "referral_id": ntier_id * 10,
+            "referral_date": date(2019, 4, 2),
+            "expires": date(2019, 10, 2),
+            "status": "C",
+            "is_external": True,
+            "authorization_number": "AUTH-123",
+            "precert_number": None,
+            "visits_authorized": 6,
+            "notes": "Referred for diabetes management",
+            "from_last": "Referrer",
+            "from_first": "Sample",
+            "from_suffix": None,
+            "to_last": "Doctor",
+            "to_first": "Sample",
+            "to_suffix": None,
+            "carrier": "Sample PM Carrier",
+            "diagnoses": [
+                {
+                    "referral_id": ntier_id * 10,
+                    "code": "E11.9",
+                    "description": "Type 2 diabetes mellitus without complications",
+                }
+            ],
+        },
+    ]
+
+
+def phi_requests() -> list[dict]:
+    rows = []
+    for n, p in enumerate(PATIENTS[:3]):
+        rows.append(
+            {
+                "request_id": 900 + n,
+                "emr_id": p.emr_id,
+                "status": 1 if n else 0,
+                "status_text": "Complete" if n else "In Progress",
+                "approval": 0,
+                "approval_text": "Not Required",
+                "entered_at": datetime(2014, 5, 1 + n, 12, tzinfo=UTC),
+                "deliver_by": None,
+                "completed_at": datetime(2014, 5, 3 + n, 12, tzinfo=UTC) if n else None,
+                "entire_chart": 1 if n == 1 else 0,
+                "for_patient": 1,
+                "high_priority": 0,
+                "requester": "Example Law Office" if n == 2 else None,
+                "entered_last": "Clerk",
+                "entered_first": "Sample",
+                "requested": [0, 3] if n == 0 else [],
+            }
+        )
+    rows.sort(key=lambda r: r["entered_at"], reverse=True)
+    return rows

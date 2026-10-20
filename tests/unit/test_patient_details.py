@@ -149,3 +149,41 @@ async def test_pdf_context_lists_open_and_canceled_orders():
     ctx = await gather(ref, ExportRequest(sections=["labs"]))
     tests = [o.test for o in ctx["lab_orders"]]
     assert sorted(tests) == ["Lipid panel", "TSH", "Vitamin D, 25-hydroxy"]
+
+
+def test_overview_reminders_and_referrals(client):
+    p = next(p for p in PATIENTS[:5] if p.ntier_id is not None)
+    r = client.get(f"/patients/{_key(p)}")
+    html = r.text
+    assert "Clinical reminders" in html and "Repeat A1C" in html and "High priority" in html
+    assert "Completed 01/20/2022 by Nurse, Example" in html
+    assert "Entered by mistake" not in html  # erroneous reminders hidden
+    assert html.index("Repeat A1C") < html.index("Annual physical")  # open first
+    assert "Referrals received" in html and "Referrer, Sample" in html and "AUTH-123" in html
+    assert "E11.9 Type 2 diabetes mellitus without complications" in html and "Closed" in html
+    assert "Referred for diabetes management" in html
+
+
+def test_overview_without_pm_has_no_referrals(client):
+    p = next(p for p in PATIENTS[:5] if p.ntier_id is None)
+    r = client.get(f"/patients/{_key(p)}")
+    assert "No referrals received." in r.text
+
+
+def test_release_log_lists_allscripts_requests(client):
+    r = client.get("/release-log")
+    assert r.status_code == 200 and "Release requests recorded in Allscripts" in r.text
+    assert "Lab results, H&amp;P reports" in r.text and "Entire chart" in r.text
+    assert "Example Law Office" in r.text and "In Progress" in r.text
+    assert f'href="/patients/EMR:{PATIENTS[0].emr_id}"' in r.text
+    r = client.get("/release-log", params={"from": "05/02/2014", "to": "05/02/2014"})
+    assert "Entire chart" in r.text and "Example Law Office" not in r.text
+
+
+@pytest.mark.anyio
+async def test_pdf_context_has_reminders_and_referrals():
+    p = next(p for p in PATIENTS[:5] if p.ntier_id is not None)
+    ref = await resolve(_key(p))
+    ctx = await gather(ref, ExportRequest(sections=["demographics"]))
+    assert [r.subject for r in ctx["reminders"]] == ["Repeat A1C", "Annual physical"]
+    assert ctx["referrals"][0].authorization == "AUTH-123"

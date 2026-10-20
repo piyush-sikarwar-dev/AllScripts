@@ -12,6 +12,9 @@ MRNS = "emr/mrn_for_patients.sql"
 PATIENT_HEADER_FULL = "emr/patient_header_full.sql"
 PHARMACY_FILLS = "emr/pharmacy_fills.sql"
 LAB_ORDERS = "emr/lab_orders.sql"
+REMINDERS = "emr/reminders.sql"
+PHI_REQUESTS = "emr/phi_requests.sql"
+PHI_REQUEST_INFO = "emr/phi_request_info.sql"
 PATIENT_INSURANCES = "emr/patient_insurances.sql"
 PATIENT_PROFILE = "emr/patient_profile.sql"
 PATIENT_RACE = "emr/patient_race.sql"
@@ -438,3 +441,15 @@ def pharmacy_fills(emr_id: int) -> list[dict[str, Any]]:
 
 def lab_orders(emr_id: int) -> list[dict[str, Any]]:
     return run_query(Source.EMR, LAB_ORDERS, {"emr_id": emr_id})
+
+
+def reminders(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, REMINDERS, {"emr_id": emr_id})
+
+
+def phi_requests() -> list[dict[str, Any]]:
+    return run_query(Source.EMR, PHI_REQUESTS)
+
+
+def phi_request_info() -> list[dict[str, Any]]:
+    return run_query(Source.EMR, PHI_REQUEST_INFO)

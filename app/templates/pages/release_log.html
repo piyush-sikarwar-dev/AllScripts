@@ -6,7 +6,7 @@
 {% block content %}
 <header class="page-header">
   <h1 class="page-title">Release log</h1>
-  <p class="page-subtitle">Every records release exported from this archive.</p>
+  <p class="page-subtitle">Every records release exported from this archive, and the release requests recorded in Allscripts before it was retired.</p>
 </header>
 <section class="card table-card" aria-labelledby="releases-title">
   <div class="table-card__head">
@@ -51,6 +51,53 @@
   {{ pager_nav(pager, "/release-log", "/release-log", "main", {"from": filters.raw_from, "to": filters.raw_to}) }}
   {% else %}
     {{ empty_state("No records have been released yet." if not (filters.raw_from or filters.raw_to) else "No releases in this period.") }}
+  {% endif %}
+</section>
+
+<section class="card table-card" aria-labelledby="old-releases-title">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="old-releases-title">Release requests recorded in Allscripts</h2>
+    <p class="table-card__count">{{ count_text(old_pager, "requests") }}</p>
+  </div>
+  <p class="table-card__note">Release-of-information requests logged in the Allscripts EHR before it was retired (read-only history; the date filter above applies).</p>
+  {% if old_rows %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr><th scope="col">Requested</th><th scope="col">Patient</th><th scope="col">Information requested</th>
+            <th scope="col">Requester</th><th scope="col">Status</th><th scope="col">Completed</th><th scope="col">Entered by</th></tr>
+      </thead>
+      <tbody>
+        {% for r in old_rows %}
+        <tr>
+          <td class="nowrap">{{ r.date }}</td>
+          <td><a class="cell-link" href="/patients/{{ r.patient_key }}">{{ r.patient_name }}</a></td>
+          <td>{{ r.requested }}</td>
+          <td>{{ r.requester }}</td>
+          <td>{{ r.status }}{% if r.approval %}<span class="cell-sub">{{ r.approval }}</span>{% endif %}</td>
+          <td class="nowrap">{{ r.completed }}</td>
+          <td>{{ r.entered_by }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if old_pager.pages > 1 %}
+  <nav class="pager" aria-label="Allscripts request pages">
+    <span>Page {{ old_pager.page }} of {{ old_pager.pages }}</span>
+    <span class="pager__buttons">
+      {% for label, n, enabled in [("Previous", old_pager.page - 1, old_pager.has_prev), ("Next", old_pager.page + 1, old_pager.has_next)] %}
+        {% if enabled %}
+        <a class="btn btn--secondary btn--sm" href="{{ url_with('/release-log', {'from': filters.raw_from, 'to': filters.raw_to, 'page': page}, apage=n) }}#old-releases-title">{{ label }}</a>
+        {% else %}
+        <span class="btn btn--secondary btn--sm" aria-disabled="true">{{ label }}</span>
+        {% endif %}
+      {% endfor %}
+    </span>
+  </nav>
+  {% endif %}
+  {% else %}
+    {{ empty_state("No Allscripts release requests in this period.") }}
   {% endif %}
 </section>
 {% endblock %}
