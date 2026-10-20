@@ -24,6 +24,7 @@ from app.services.legacy import (
     document_viewer,
     get_header,
     get_note,
+    lab_order,
     legacy_enabled,
     note_page,
     search_patients,
@@ -89,7 +90,7 @@ async def legacy_rows(
 
 def _validated(params: Mapping[str, str]) -> dict[str, str]:
     """Only the known state parameters, length-capped (they are echoed into URLs)."""
-    keep = ("year", "page", "note", "voided", "test", "type", "doc", "docpage")
+    keep = ("year", "page", "note", "voided", "test", "type", "doc", "docpage", "view", "order")
     return {k: params[k][:60] for k in keep if params.get(k)}
 
 
@@ -252,3 +253,28 @@ async def legacy_document_page(
           detail={"section": "legacy", "kind": "scan", "id": doc_id, "page": page_no,
                   "image": True})  # fmt: skip
     return Response(content=png, media_type="image/png")
+
+
+@router.get("/legacy/{key}/labs/{order_id}", response_class=HTMLResponse)
+async def legacy_lab_order(
+    request: Request,
+    background: BackgroundTasks,
+    key: str,
+    order_id: int,
+    year: str = "",
+    page: Page = 1,
+) -> HTMLResponse:
+    """One lab order with its results (HTMX); pushes the full-page URL."""
+    try:
+        order = await lab_order(key, order_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    audit(request, background, "view_lab_order", patient_key=key,
+          detail={"section": "legacy", "order": order.id})  # fmt: skip
+    state = {"tab": "labs", "view": "reports", "year": year[:4], "page": page}
+    return render(
+        request,
+        "partials/legacy_lab_order.html",
+        {"key": key, "order": order, "partial": True},
+        headers={"HX-Push-Url": url_with(f"/legacy/{key}", state, order=order_id)},
+    )

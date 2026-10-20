@@ -337,3 +337,105 @@ def document_file(person_key: int, document_id: int) -> dict[str, Any] | None:
     location = str(LEGACY_SHARE / "archive" / f"{document_id}.{ext}")
     return {"document_id": document_id, "location": location, "pages": row["pages"],
             "file_ext": ext}  # fmt: skip
+
+
+# (test name, collected, diagnoses, [(result name, value, units, low, high, flags, status)])
+_LAB_ORDERS = [
+    (
+        datetime(2005, 4, 12),
+        [
+            (
+                "Comp. Metabolic Panel (14) - 322000",
+                [("250.00", "DIABETES MELLITUS TYPE II")],
+                [
+                    ("Glucose, Serum", "98", "mg/dL", "65", "99", "", "F"),
+                    ("Potassium, Serum", "3.1", "mmol/L", "3.5", "5.2", "L", "F"),
+                ],
+            ),
+            (
+                "TSH - 004259",
+                [("244.9", "HYPOTHYROIDISM NOS")],
+                [
+                    ("TSH", "2.10", "uIU/mL", "0.450", "4.500", "", "F"),
+                ],
+            ),
+        ],
+    ),
+    (
+        datetime(2007, 9, 3),
+        [
+            (
+                "Hemoglobin A1c - 001453",
+                [],
+                [("Hemoglobin A1c", "7.8", "%", "4.8", "5.6", "H", "P")],
+            ),
+        ],
+    ),
+    (datetime(2008, 2, 20), [("Lipid Panel - 303756", [], [])]),  # ordered, no results came back
+]
+
+
+def lab_reports(person_key: int) -> list[dict[str, Any]]:
+    if person_key not in PEOPLE_BY_KEY or (person_key - 5_000) % 4 == 3:
+        return []
+    orders = []
+    for o_n, (when, tests) in enumerate(_LAB_ORDERS):
+        order_id = person_key * 100 + o_n
+        test_rows = []
+        for t_n, (test_name, dxs, results) in enumerate(tests):
+            test_id = order_id * 10 + t_n
+            result_rows = []
+            for r_n, (name, value, units, low, high, flags, status) in enumerate(results):
+                result_id = test_id * 10 + r_n
+                result_rows.append(
+                    {
+                        "result_id": result_id,
+                        "test_id": test_id,
+                        "name": name,
+                        "value": value,
+                        "units": units,
+                        "ref_low": low,
+                        "ref_high": high,
+                        "flags": flags,
+                        "status": status,
+                        "comments": None,
+                        "sequence_num": r_n,
+                        "lab_comments": ["Fasting specimen."] if name == "Glucose, Serum" else [],
+                        "staff_comments": [
+                            {"comment": "Sample follow-up comment.", "created_at": when}
+                        ]
+                        if name == "TSH"
+                        else [],
+                    }
+                )
+            test_rows.append(
+                {
+                    "test_id": test_id,
+                    "order_id": order_id,
+                    "test_name": test_name,
+                    "collected_date": when,
+                    "test_comments": None,
+                    "diagnoses": [
+                        {"test_id": test_id, "dx_code": c, "dx_desc": d, "priority": i}
+                        for i, (c, d) in enumerate(dxs)
+                    ],
+                    "results": result_rows,
+                }
+            )
+        orders.append(
+            {
+                "order_id": order_id,
+                "order_no": f"ORD{order_id}",
+                "order_date": when - timedelta(days=1),
+                "service_date": when,
+                "result_date": when + timedelta(days=2),
+                "comments": "Sample order comment" if o_n == 0 else None,
+                "provider_last": "Sample",
+                "provider_first": "Doctor",
+                "provider_title": "MD",
+                "facility": "Main Street Clinic",
+                "tests": test_rows,
+            }
+        )
+    orders.sort(key=lambda o: o["service_date"], reverse=True)
+    return orders

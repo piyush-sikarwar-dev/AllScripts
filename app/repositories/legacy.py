@@ -105,3 +105,45 @@ def documents(person_key: int) -> list[dict[str, Any]]:
 
 def document_file(person_key: int, document_id: int) -> dict[str, Any] | None:
     return dmz.legacy_document_file(person_key, document_id)
+
+
+def _order_date(order: dict[str, Any]) -> Any:
+    return order.get("service_date") or order.get("order_date") or order.get("result_date")
+
+
+@cached
+def lab_reports(person_key: int) -> list[dict[str, Any]]:
+    """Lab orders (newest first), each with its tests; each test with its diagnoses and results;
+    each result with its lab comment lines and staff follow-up comments."""
+    orders, tests, results, lab_comments, task_comments, diagnoses = parallel(
+        lambda: dmz.legacy_lab_orders(person_key),
+        lambda: dmz.legacy_lab_tests(person_key),
+        lambda: dmz.legacy_lab_results(person_key),
+        lambda: dmz.legacy_lab_result_comments(person_key),
+        lambda: dmz.legacy_lab_task_comments(person_key),
+        lambda: dmz.legacy_lab_diagnoses(person_key),
+    )
+    by_result: dict[int, dict[str, list]] = {}
+    for c in sorted(lab_comments, key=lambda c: c["line_no"] or 0):
+        by_result.setdefault(c["result_id"], {"lab": [], "staff": []})["lab"].append(c["comment"])
+    for c in sorted(task_comments, key=lambda c: (sort_key(c["created_at"]), c["line_no"] or 0)):
+        by_result.setdefault(c["result_id"], {"lab": [], "staff": []})["staff"].append(
+            {"comment": c["comment"], "created_at": c["created_at"]}
+        )
+    results_by_test: dict[int, list[dict[str, Any]]] = {}
+    for r in sorted(results, key=lambda r: (r["sequence_num"] or 0, r["result_id"])):
+        found = by_result.get(r["result_id"], {"lab": [], "staff": []})
+        r["lab_comments"], r["staff_comments"] = found["lab"], found["staff"]
+        results_by_test.setdefault(r["test_id"], []).append(r)
+    dx_by_test: dict[int, list[dict[str, Any]]] = {}
+    for d in sorted(diagnoses, key=lambda d: d["priority"] or 0):
+        dx_by_test.setdefault(d["test_id"], []).append(d)
+    tests_by_order: dict[int, list[dict[str, Any]]] = {}
+    for t in sorted(tests, key=lambda t: t["test_id"]):
+        t["results"] = results_by_test.get(t["test_id"], [])
+        t["diagnoses"] = dx_by_test.get(t["test_id"], [])
+        tests_by_order.setdefault(t["order_id"], []).append(t)
+    for o in orders:
+        o["tests"] = tests_by_order.get(o["order_id"], [])
+    orders.sort(key=lambda o: (sort_key(_order_date(o)), o["order_id"]), reverse=True)
+    return orders

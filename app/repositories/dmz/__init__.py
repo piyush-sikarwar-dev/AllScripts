@@ -20,6 +20,12 @@ LEGACY_MEDICATIONS = "dmz/legacy_medications.sql"
 LEGACY_CLINICAL_ITEMS = "dmz/legacy_clinical_items.sql"
 LEGACY_DOCUMENTS = "dmz/legacy_documents.sql"
 LEGACY_DOCUMENT_FILE = "dmz/legacy_document_file.sql"
+LEGACY_LAB_ORDERS = "dmz/legacy_lab_orders.sql"
+LEGACY_LAB_TESTS = "dmz/legacy_lab_tests.sql"
+LEGACY_LAB_RESULTS = "dmz/legacy_lab_results.sql"
+LEGACY_LAB_RESULT_COMMENTS = "dmz/legacy_lab_result_comments.sql"
+LEGACY_LAB_TASK_COMMENTS = "dmz/legacy_lab_task_comments.sql"
+LEGACY_LAB_DIAGNOSES = "dmz/legacy_lab_diagnoses.sql"
 
 
 def like_prefix(value: str | None) -> str | None:
@@ -90,3 +96,27 @@ def legacy_document_file(person_key: int, document_id: int) -> dict[str, Any] | 
     params = {"person_key": person_key, "document_id": document_id}
     rows = run_query(Source.DMZ, LEGACY_DOCUMENT_FILE, params)
     return rows[0] if rows else None
+
+
+def legacy_lab_orders(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_LAB_ORDERS, {"person_key": person_key})
+
+
+def legacy_lab_tests(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_LAB_TESTS, {"person_key": person_key})
+
+
+def legacy_lab_results(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_LAB_RESULTS, {"person_key": person_key})
+
+
+def legacy_lab_result_comments(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_LAB_RESULT_COMMENTS, {"person_key": person_key})
+
+
+def legacy_lab_task_comments(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_LAB_TASK_COMMENTS, {"person_key": person_key})
+
+
+def legacy_lab_diagnoses(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_LAB_DIAGNOSES, {"person_key": person_key})

@@ -1,0 +1,48 @@
+{# Pre-2010 lab report body: each ordered test with its results, lab comments and staff
+   follow-up comments. Used by the Labs tab order view and by result notes in Chart notes. #}
+{% from "components/badge.html" import flag_badge, voided_badge %}
+{% macro lab_tests(tests) -%}
+{% for t in tests %}
+<section class="legacy-lab-test" aria-label="{{ t.name }}">
+  <h3 class="legacy-lab-test__title">{{ t.name }}</h3>
+  <p class="legacy-lab-test__meta">
+    {%- if t.collected != "—" %}Collected {{ t.collected }}{% endif %}
+    {%- if t.diagnoses %}{% if t.collected != "—" %} · {% endif %}For: {{ t.diagnoses }}{% endif %}</p>
+  {% if t.comment %}<p class="legacy-lab-test__comment">{{ t.comment }}</p>{% endif %}
+  {% if t.results %}
+  <div class="table-scroll">
+    <table class="table legacy-lab-table">
+      <thead>
+        <tr>
+          <th scope="col">Result</th><th scope="col">Value</th><th scope="col">Units</th>
+          <th scope="col">Reference range</th><th scope="col">Flag</th><th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in t.results %}
+        <tr>
+          <td>{{ r.name }}{% if r.voided %} {{ voided_badge() }}{% endif %}</td>
+          <td class="mono">{{ r.value }}</td>
+          <td class="mono">{{ r.units }}</td>
+          <td class="mono nowrap">{{ r.range }}</td>
+          <td>{% if r.flag %}{{ flag_badge(r.flag) }}{% endif %}</td>
+          <td>{{ r.status }}</td>
+        </tr>
+        {% if r.comments or r.staff_comments %}
+        <tr class="legacy-lab-table__comments">
+          <td colspan="6">
+            {% for c in r.comments %}<p class="legacy-lab-comment">{{ c }}</p>{% endfor %}
+            {% for c in r.staff_comments %}<p class="legacy-lab-comment"><span class="legacy-lab-comment__label">Staff follow-up{% if c.date != "—" %} · {{ c.date }}{% endif %}:</span> {{ c.text }}</p>{% endfor %}
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="legacy-lab-test__empty">No results were recorded for this test.</p>
+  {% endif %}
+</section>
+{% endfor %}
+{%- endmacro %}

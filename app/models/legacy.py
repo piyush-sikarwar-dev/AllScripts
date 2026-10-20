@@ -194,8 +194,8 @@ class LegacyLabPage(BaseModel):
     year: str
 
     def params(self, **override: object) -> dict[str, object]:
-        values: dict[str, object] = {"tab": "labs", "test": self.test, "year": self.year,
-                                     "page": self.pager.page}  # fmt: skip
+        values: dict[str, object] = {"tab": "labs", "view": "values", "test": self.test,
+                                     "year": self.year, "page": self.pager.page}  # fmt: skip
         values.update(override)
         return {k: v for k, v in values.items() if v not in (None, "")}
 
@@ -264,3 +264,63 @@ class LegacyOverview(BaseModel):
     medications: list[LegacyOverviewItem]
     last_note: LegacyNoteRow | None
     counts: dict[str, int]
+
+
+class LegacyLabComment(BaseModel):
+    date: str
+    text: str
+
+
+class LegacyLabResult(BaseModel):
+    name: str
+    value: str
+    units: str
+    range: str
+    flag: str | None
+    status: str
+    voided: bool
+    comments: list[str]
+    staff_comments: list[LegacyLabComment]
+
+
+class LegacyLabTest(BaseModel):
+    name: str
+    collected: str
+    diagnoses: str
+    comment: str
+    results: list[LegacyLabResult]
+
+
+class LegacyLabOrderRow(BaseModel):
+    id: int
+    date: str
+    title: str
+    provider: str
+    results: int
+    abnormal: int
+
+
+class LegacyLabOrder(BaseModel):
+    id: int
+    title: str
+    date: str
+    ordered: str
+    resulted: str
+    provider: str
+    facility: str
+    order_no: str
+    comment: str
+    tests: list[LegacyLabTest]
+
+
+class LegacyLabReports(BaseModel):
+    rows: list[LegacyLabOrderRow]
+    pager: Pager
+    years: list[str]
+    year: str
+    order: LegacyLabOrder | None
+
+    def params(self, **override: object) -> dict[str, object]:
+        values: dict[str, object] = {"tab": "labs", "year": self.year, "page": self.pager.page}
+        values.update(override)
+        return {k: v for k, v in values.items() if v not in (None, "")}

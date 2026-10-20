@@ -1,0 +1,21 @@
+{# One pre-2010 lab order: dates, ordering provider, facility, then each test and its results. #}
+{% from "components/legacy_lab_report.html" import lab_tests %}
+{% set o = order %}
+<article class="note-view">
+  <div class="note-view__head">
+    <div class="note-view__heading">
+      <span class="badge badge--legacy">Pre-2010</span>
+      <h2 class="note-view__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>Lab report · {{ o.date }}</h2>
+      <p class="note-view__meta">{{ o.title }}</p>
+    </div>
+  </div>
+  <dl class="legacy-facts">
+    <div><dt>Ordered by</dt><dd>{{ o.provider }}</dd></div>
+    <div><dt>Facility</dt><dd>{{ o.facility }}</dd></div>
+    <div><dt>Ordered</dt><dd>{{ o.ordered }}</dd></div>
+    <div><dt>Resulted</dt><dd>{{ o.resulted }}</dd></div>
+    <div><dt>Order number</dt><dd class="mono">{{ o.order_no }}</dd></div>
+  </dl>
+  {% if o.comment %}<p class="legacy-lab-test__comment">{{ o.comment }}</p>{% endif %}
+  {% if o.tests %}{{ lab_tests(o.tests) }}{% else %}<p class="legacy-lab-test__empty">No tests are recorded on this order.</p>{% endif %}
+</article>

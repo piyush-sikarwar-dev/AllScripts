@@ -16,6 +16,14 @@ class LegacyCodes(BaseModel):
     severity_blank: list[str] = []
     vital_items: dict[str, str] = {}
     skip_item_prefixes: list[str] = []
+    result_status: dict[str, str] = {}
+    result_voided: list[str] = []
+
+    def result_status_label(self, code: str | None) -> str:
+        code = (code or "").strip()
+        if not code:
+            return "—"
+        return self.result_status.get(code, f"Unknown (code {code})")
 
     def item_kind(self, name: str | None) -> str:
         """'vital' | 'lab' | 'skip' for a clinical item name."""

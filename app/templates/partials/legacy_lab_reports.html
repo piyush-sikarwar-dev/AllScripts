@@ -1,0 +1,75 @@
+{# Pre-2010 Labs tab, "Lab reports" view: lab orders (newest first) and the selected order. #}
+{% from "components/empty_state.html" import empty_state %}
+{% set lr = reports %}
+{% set base = "/legacy/" ~ key %}
+<div class="notes__cols">
+  <section class="card note-list" aria-labelledby="legacy-lab-orders-title">
+    <h2 class="visually-hidden" id="legacy-lab-orders-title">Lab reports</h2>
+    {% if lr.years|length > 1 %}
+    <form class="note-list__tools" method="get" action="{{ base }}"
+          hx-get="{{ base }}/tab/labs" hx-target="#chart-tabs" hx-swap="outerHTML" hx-trigger="change, submit">
+      <input type="hidden" name="tab" value="labs">
+      <input type="hidden" name="view" value="reports">
+      <div class="note-list__sort">
+        <label class="visually-hidden" for="legacy-lab-order-year">Year</label>
+        <select class="select" id="legacy-lab-order-year" name="year">
+          <option value="">All years</option>
+          {% for y in lr.years %}
+          <option value="{{ y }}"{% if y == lr.year %} selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <noscript><button type="submit" class="btn btn--secondary">Apply</button></noscript>
+    </form>
+    {% endif %}
+    <div class="note-list__results">
+      <p class="note-list__context">{{ "{:,}".format(lr.pager.total) }} lab {{ "report" if lr.pager.total == 1 else "reports" }}{% if lr.year %} in {{ lr.year }}{% endif %}</p>
+      {% if lr.rows %}
+      <ul class="note-list__rows" data-list>
+        {% for r in lr.rows %}
+        {% set is_selected = lr.order and lr.order.id == r.id %}
+        <li>
+          <a class="note-row{% if is_selected %} note-row--selected{% endif %}" data-list-row
+             {%- if is_selected %} aria-current="true"{% endif %}
+             href="{{ url_with(base, lr.params(view='reports', order=r.id)) }}"
+             hx-get="{{ url_with(base ~ '/labs/' ~ r.id, {'year': lr.year, 'page': lr.pager.page}) }}"
+             hx-target="#legacy-lab-order" hx-indicator="#legacy-lab-order" hx-swap="innerHTML">
+            <span class="note-row__meta">
+              <span>{{ r.date }}</span>
+              {% if r.abnormal %}<span class="badge badge--abn">{{ r.abnormal }} abnormal</span>{% endif %}
+            </span>
+            <span class="note-row__title">{{ r.title }}</span>
+            <span class="note-row__sub">{{ r.results }} result{{ "s" if r.results != 1 }}{% if r.provider != "—" %} · {{ r.provider }}{% endif %}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% if lr.pager.pages > 1 %}
+      <nav class="pager note-list__pager" aria-label="Lab report pages">
+        <span>Page {{ lr.pager.page }} of {{ lr.pager.pages }}</span>
+        <span class="pager__buttons">
+          {% for label, n, enabled in [("‹ Previous", lr.pager.page - 1, lr.pager.has_prev), ("Next ›", lr.pager.page + 1, lr.pager.has_next)] %}
+            {% if enabled %}
+            <a class="btn btn--secondary btn--sm" href="{{ url_with(base, lr.params(view='reports', page=n)) }}"
+               hx-get="{{ url_with(base ~ '/tab/labs', lr.params(view='reports', page=n, tab=None)) }}"
+               hx-target="#chart-tabs" hx-swap="outerHTML">{{ label }}</a>
+            {% else %}
+            <span class="btn btn--secondary btn--sm" aria-disabled="true">{{ label }}</span>
+            {% endif %}
+          {% endfor %}
+        </span>
+      </nav>
+      {% endif %}
+      {% else %}
+        {{ empty_state("No lab reports in the pre-2010 chart.") }}
+      {% endif %}
+    </div>
+  </section>
+  <section class="card note-detail" id="legacy-lab-order" aria-label="Lab report" aria-live="polite">
+    {% if lr.order %}
+      {% with order = lr.order, partial = False %}{% include "partials/legacy_lab_order.html" %}{% endwith %}
+    {% else %}
+      {{ empty_state("Select a lab report to see its results.") }}
+    {% endif %}
+  </section>
+</div>

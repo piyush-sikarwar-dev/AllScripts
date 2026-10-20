@@ -26,8 +26,14 @@ from app.models.legacy import (
     LegacyDocViewer,
     LegacyHeader,
     LegacyHistory,
+    LegacyLabComment,
+    LegacyLabOrder,
+    LegacyLabOrderRow,
     LegacyLabPage,
+    LegacyLabReports,
+    LegacyLabResult,
     LegacyLabRow,
+    LegacyLabTest,
     LegacyMedEntry,
     LegacyMedication,
     LegacyMedications,
@@ -613,12 +619,13 @@ async def overview(key: str) -> LegacyOverview:
     last chart note, and how many records each tab holds."""
     pkey = person_key(key)
     repo = legacy_repository()
-    hist, meds, notes, items, docs = await asyncio.gather(
+    hist, meds, notes, items, docs, reports = await asyncio.gather(
         history(key),
         medications(key),
         call(repo.notes, pkey),
         _items(key),
         call(repo.documents, pkey),
+        call(repo.lab_reports, pkey),
     )
     labs_rows, vital_rows, _ = items
     last = _note_row(notes[0]) if notes else None
@@ -642,11 +649,146 @@ async def overview(key: str) -> LegacyOverview:
             "notes": len(notes),
             "problems": len(hist.problems) + len(hist.allergies),
             "meds": len(meds.active) + len(meds.past),
-            "labs": len(labs_rows),
+            "labs": len(reports) or len(labs_rows),  # lab reports, else recorded values
             "vitals": len({r["service_datetime"] for r in vital_rows}),
             "docs": len(docs),
         },
     )
+
+
+def _text_lines(value: object) -> str:
+    """Free text with line endings normalised and surrounding blank lines removed."""
+    lines = str(value or "").replace("\r", "").split("\n")
+    return "\n".join(line.rstrip() for line in lines).strip()
+
+
+def _result_flag(r: dict) -> str | None:
+    """The lab's own abnormal flag (H, L, A, …); else computed for plain numeric results."""
+    flag = (r.get("flags") or "").strip().upper()
+    return flag or _lab_flag(r.get("value"), r.get("ref_low"), r.get("ref_high"))
+
+
+def _lab_result(r: dict, codes: LegacyCodes) -> LegacyLabResult:
+    status = (r.get("status") or "").strip()
+    lines = [_text_lines(r.get("comments"))] + [_text_lines(c) for c in r.get("lab_comments") or []]
+    return LegacyLabResult(
+        name=_squash(r.get("name")) or EMPTY,
+        value=_squash(r.get("value")) or EMPTY,
+        units=_squash(r.get("units")),
+        range=_range(r.get("ref_low"), r.get("ref_high")),
+        flag=_result_flag(r),
+        status=codes.result_status_label(status),
+        voided=status in codes.result_voided,
+        comments=[c for c in lines if c],
+        staff_comments=[
+            LegacyLabComment(date=date_us(_day(c.get("created_at"))), text=text)
+            for c in r.get("staff_comments") or []
+            if (text := _text_lines(c.get("comment")))
+        ],
+    )
+
+
+def _lab_test(t: dict, codes: LegacyCodes) -> LegacyLabTest:
+    dxs = [_squash(d.get("dx_desc")) or _squash(d.get("dx_code")) for d in t.get("diagnoses") or []]
+    return LegacyLabTest(
+        name=_squash(t.get("test_name")) or "Lab test",
+        collected=date_us(_day(t.get("collected_date"))),
+        diagnoses=", ".join(dict.fromkeys(d for d in dxs if d)),
+        comment=_text_lines(t.get("test_comments")),
+        results=[_lab_result(r, codes) for r in t.get("results") or []],
+    )
+
+
+def _order_day(o: dict) -> date | None:
+    return _day(o.get("service_date") or o.get("order_date") or o.get("result_date"))
+
+
+def _order_title(o: dict) -> str:
+    names = [_squash(t.get("test_name")) for t in o.get("tests") or []]
+    names = [n for n in dict.fromkeys(names) if n]
+    if not names:
+        return "Lab order"
+    return ", ".join(names[:3]) + (f" + {len(names) - 3} more" if len(names) > 3 else "")
+
+
+def _order_row(o: dict, codes: LegacyCodes) -> LegacyLabOrderRow:
+    results = [r for t in o.get("tests") or [] for r in t.get("results") or []]
+    return LegacyLabOrderRow(
+        id=int(o["order_id"]),
+        date=date_us(_order_day(o)),
+        title=_order_title(o),
+        provider=_provider(o),
+        results=len(results),
+        abnormal=sum(1 for r in results if _result_flag(r)),
+    )
+
+
+def _lab_order(o: dict, codes: LegacyCodes) -> LegacyLabOrder:
+    return LegacyLabOrder(
+        id=int(o["order_id"]),
+        title=_order_title(o),
+        date=date_us(_order_day(o)),
+        ordered=date_us(_day(o.get("order_date"))),
+        resulted=date_us(_day(o.get("result_date"))),
+        provider=_provider(o),
+        facility=or_dash(o.get("facility")),
+        order_no=or_dash(o.get("order_no")),
+        comment=_text_lines(o.get("comments")),
+        tests=[_lab_test(t, codes) for t in o.get("tests") or []],
+    )
+
+
+async def lab_reports(
+    key: str, year: str = "", page: int | None = None, order_id: int | None = None
+) -> LegacyLabReports:
+    """Lab orders with their results, newest first; the selected (or first) order opened."""
+    orders = await call(legacy_repository().lab_reports, person_key(key))
+    codes = legacy_codes()
+    years = sorted({str(d.year) for o in orders if (d := _order_day(o))}, reverse=True)
+    year = year if year in years else ""
+    chosen = [o for o in orders if not year or ((d := _order_day(o)) and str(d.year) == year)]
+    shown, pager = paginate(chosen, clamp_page(page))
+    if order_id is not None:
+        selected = next((o for o in orders if int(o["order_id"]) == order_id), None)
+        if selected is None:
+            raise NotFoundError(f"{key}/lab-order/{order_id}")
+    else:
+        selected = shown[0] if shown else None
+    return LegacyLabReports(
+        rows=[_order_row(o, codes) for o in shown],
+        pager=pager,
+        years=years,
+        year=year,
+        order=_lab_order(selected, codes) if selected else None,
+    )
+
+
+async def lab_order(key: str, order_id: int) -> LegacyLabOrder:
+    orders = await call(legacy_repository().lab_reports, person_key(key))
+    found = next((o for o in orders if int(o["order_id"]) == order_id), None)
+    if found is None:
+        raise NotFoundError(f"{key}/lab-order/{order_id}")
+    return _lab_order(found, legacy_codes())
+
+
+LAB_VIEWS = ("reports", "values")
+
+
+async def labs_context(key: str, params: Mapping[str, str], page_no: int) -> dict[str, Any]:
+    """Labs tab: "reports" (orders and results from the lab system, the default when the patient
+    has any) or "values" (lab values recorded on the clinical flowsheet)."""
+    view = params.get("view", "")
+    if view not in LAB_VIEWS:
+        orders = await call(legacy_repository().lab_reports, person_key(key))
+        view = "reports" if orders else "values"
+    if view == "reports":
+        raw = params.get("order") or ""
+        reports = await lab_reports(
+            key, params.get("year", ""), page_no, int(raw) if raw.isdigit() else None
+        )
+        return {"lab_view": view, "reports": reports}
+    values = await labs(key, params.get("test", ""), params.get("year", ""), page_no)
+    return {"lab_view": view, "labs": values}
 
 
 async def tab_context(key: str, tab: str, params: Mapping[str, str]) -> dict[str, Any]:
@@ -659,7 +801,7 @@ async def tab_context(key: str, tab: str, params: Mapping[str, str]) -> dict[str
         return {"meds": await medications(key, params.get("voided") == "1")}
     page_no = int(params["page"]) if (params.get("page") or "").isdigit() else 1
     if tab == "labs":
-        return {"labs": await labs(key, params.get("test", ""), params.get("year", ""), page_no)}
+        return await labs_context(key, params, page_no)
     if tab == "vitals":
         return {"vitals": await vitals(key, page_no)}
     if tab == "docs":

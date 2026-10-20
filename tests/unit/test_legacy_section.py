@@ -282,7 +282,7 @@ def test_med_status_groups():
 
 def test_labs_tab_flags_filters_and_note_link(client):
     p = _with_history()
-    r = client.get(f"/legacy/{_key(p)}", params={"tab": "labs"})
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "labs", "view": "values"})
     assert r.status_code == 200 and 'id="tab-labs"' in r.text
     assert "TSH" in r.text and "0.40 – 4.00" in r.text
     assert "High" in r.text and "Low" in r.text  # A1C 7.8 > 5.6, potassium 3.1 < 3.5
@@ -291,10 +291,11 @@ def test_labs_tab_flags_filters_and_note_link(client):
     assert "Showing 6 of 6" in r.text and "Fasting" in r.text
     first_note = NOTES[p["person_key"]][0]["note_id"]
     assert f"?note={first_note}" in r.text
-    r = client.get(f"/legacy/{_key(p)}/tab/labs", params={"test": "TSH"}, headers=HTMX)
+    tab_url = f"/legacy/{_key(p)}/tab/labs"
+    r = client.get(tab_url, params={"view": "values", "test": "TSH"}, headers=HTMX)
     assert "Showing 2 of 2" in r.text and "A1C</td>" not in r.text
-    assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?tab=labs&test=TSH"
-    r = client.get(f"/legacy/{_key(p)}/tab/labs", params={"test": "NOPE"}, headers=HTMX)
+    assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?tab=labs&test=TSH&view=values"
+    r = client.get(tab_url, params={"view": "values", "test": "NOPE"}, headers=HTMX)
     assert "Showing 6 of 6" in r.text  # unknown test → all
 
 
@@ -445,3 +446,93 @@ def test_note_types_title_and_filter(client):
     note = next(n for n in rows if n["note_type"] == "DEC FOLLOW-UP VISIT")
     r = client.get(f"/legacy/{_key(p)}/notes/{note['note_id']}", headers=HTMX)
     assert "DEC FOLLOW-UP VISIT · " in r.text
+
+
+def test_lab_reports_view_is_default(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "labs"})
+    assert r.status_code == 200 and "segmented__item--active" in r.text
+    assert "3 lab reports" in r.text and "Lab report · 02/20/2008" in r.text  # newest opened
+    assert "No results were recorded for this test." in r.text  # the lipid order
+    assert "Recorded values" in r.text
+
+
+def test_lab_report_detail_units_flags_comments(client):
+    p = _with_history()
+    order_id = p["person_key"] * 100  # the 2005 order: CMP + TSH
+    r = client.get(f"/legacy/{_key(p)}/labs/{order_id}", headers=HTMX)
+    assert r.status_code == 200
+    assert "Comp. Metabolic Panel (14) - 322000" in r.text and "TSH - 004259" in r.text
+    assert "mmol/L" in r.text and "3.5 – 5.2" in r.text and "Low" in r.text
+    assert "Final" in r.text and "Fasting specimen." in r.text
+    assert "Staff follow-up" in r.text and "Sample follow-up comment." in r.text
+    assert "For: DIABETES MELLITUS TYPE II" in r.text and "Sample, Doctor, MD" in r.text
+    assert "Sample order comment" in r.text and f"ORD{order_id}" in r.text
+    assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?tab=labs&view=reports&order={order_id}"
+    r = client.get(f"/legacy/{_key(p)}/labs/{p['person_key'] * 100 + 1}", headers=HTMX)
+    assert "High" in r.text and "Preliminary" in r.text
+
+
+def test_lab_report_list_flags_and_ownership(client):
+    a, b = [p for p in PEOPLE if (p["person_key"] - 5_000) % 4 != 3][:2]
+    r = client.get(f"/legacy/{_key(a)}", params={"tab": "labs", "view": "reports"})
+    assert "1 abnormal" in r.text
+    other = b["person_key"] * 100
+    assert client.get(f"/legacy/{_key(a)}/labs/{other}", headers=HTMX).status_code == 404
+    params = {"tab": "labs", "view": "reports", "order": other}
+    assert client.get(f"/legacy/{_key(a)}", params=params).status_code == 404
+
+
+def test_labs_default_to_values_without_reports(client, monkeypatch):
+    import tests.fakes.legacy as fake
+
+    monkeypatch.setattr(fake, "lab_reports", lambda person_key: [])
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "labs"})
+    assert "Lab values recorded in the chart" in r.text and "TSH" in r.text
+
+
+def test_live_lab_reports_assembly(monkeypatch):
+    d = live_legacy.dmz
+    monkeypatch.setattr(
+        d,
+        "legacy_lab_orders",
+        lambda k: [
+            {"order_id": 1, "service_date": datetime(2005, 1, 1)},
+            {"order_id": 2, "service_date": datetime(2007, 1, 1)},
+        ],
+    )
+    monkeypatch.setattr(d, "legacy_lab_tests", lambda k: [{"test_id": 10, "order_id": 1}])
+    monkeypatch.setattr(
+        d,
+        "legacy_lab_results",
+        lambda k: [
+            {"result_id": 101, "test_id": 10, "sequence_num": 2},
+            {"result_id": 100, "test_id": 10, "sequence_num": 1},
+        ],
+    )
+    monkeypatch.setattr(
+        d,
+        "legacy_lab_result_comments",
+        lambda k: [
+            {"result_id": 100, "line_no": 2, "comment": "b"},
+            {"result_id": 100, "line_no": 1, "comment": "a"},
+        ],
+    )
+    monkeypatch.setattr(
+        d,
+        "legacy_lab_task_comments",
+        lambda k: [{"result_id": 101, "line_no": 1, "comment": "called", "created_at": None}],
+    )
+    monkeypatch.setattr(
+        d,
+        "legacy_lab_diagnoses",
+        lambda k: [{"test_id": 10, "dx_code": "250.00", "dx_desc": "DM", "priority": 1}],
+    )
+    out = live_legacy.lab_reports(1)
+    assert [o["order_id"] for o in out] == [2, 1] and out[0]["tests"] == []
+    test = out[1]["tests"][0]
+    assert [r["result_id"] for r in test["results"]] == [100, 101]
+    assert test["results"][0]["lab_comments"] == ["a", "b"]
+    assert test["results"][1]["staff_comments"][0]["comment"] == "called"
+    assert test["diagnoses"][0]["dx_code"] == "250.00"
