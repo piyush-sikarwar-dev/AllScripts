@@ -18,7 +18,9 @@ SELECT
     a.ADDR_ZIP AS zip,
     a.ADDR_PHONE AS phone,
     ins.carrier_name AS primary_insurance,
-    m.mrn AS mrn
+    m.mrn AS mrn,
+    CASE WHEN EXISTS (SELECT 1 FROM HPSITE.DEMOGRAPHICPICTURE AS pic WHERE pic.IMREDEM_CODE = d.IMREDEM_CODE)
+         THEN 1 ELSE 0 END AS has_photo
 FROM HPSITE.DEMOGRAPHICS AS d
 LEFT JOIN HPSITE.ADDRESSES AS a
     ON a.IMREADDR_CODE = d.DEM_HOMEADDR

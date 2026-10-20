@@ -36,4 +36,5 @@ async def get_header(ref: PatientRef) -> ChartHeader:
         address=_address(p),
         primary_insurance=or_dash(p["primary_insurance"]),
         deceased=bool(p["deceased"]),
+        photo_url=f"/patients/{ref.patient_key}/photo" if p.get("has_photo") else None,
     )

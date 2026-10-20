@@ -251,6 +251,102 @@ class ChartSql(FakeSql):
                 },
             ],
             emr.HX_MEDICATIONS: [],
+            emr.PATIENT_INSURANCES: [
+                {
+                    "policy_id": 1,
+                    "rank": 0,
+                    "carrier": "Sample Health Plan",
+                    "carrier_phone": None,
+                    "plan_type": 5,
+                    "group_number": "G-1",
+                    "plan_number": None,
+                    "member_id": "MEM-1",
+                    "effective_date": date(2019, 1, 1),
+                    "termination_date": None,
+                    "subscriber_last": "Sample",
+                    "subscriber_first": "Patient A",
+                    "subscriber_middle": None,
+                    "subscriber_dob": date(1960, 5, 4),
+                    "relation_code": 1,
+                    "workers_comp": 0,
+                    "archived": 0,
+                },
+                {
+                    "policy_id": 2,
+                    "rank": 0,
+                    "carrier": "Old Sample Plan",
+                    "carrier_phone": None,
+                    "plan_type": 3,
+                    "group_number": None,
+                    "plan_number": None,
+                    "member_id": None,
+                    "effective_date": None,
+                    "termination_date": date(2017, 1, 1),
+                    "subscriber_last": None,
+                    "subscriber_first": None,
+                    "subscriber_middle": None,
+                    "subscriber_dob": None,
+                    "relation_code": 0,
+                    "workers_comp": 0,
+                    "archived": 1,
+                },
+            ],
+            emr.PATIENT_PROFILE: [
+                {
+                    "marital_status": 2,
+                    "guarantor_relation": 1,
+                    "guarantor_last": "Sample",
+                    "guarantor_first": "Patient A",
+                    "guarantor_middle": None,
+                    "guarantor_suffix": None,
+                    "guarantor_dob": date(1960, 5, 4),
+                    "guarantor_address": "1 Example Street",
+                    "guarantor_city": "Anytown",
+                    "guarantor_state": "ST",
+                    "guarantor_zip": "00000",
+                    "guarantor_phone": None,
+                    "has_photo": 0,
+                }
+            ],
+            emr.PATIENT_RACE: [{"code": 5}],
+            emr.PATIENT_ETHNICITY: [{"code": 2}],
+            emr.PATIENT_CONTACTS: [
+                {
+                    "contact_id": 1,
+                    "rank": 1,
+                    "last_name": "Contact",
+                    "first_name": "Sample",
+                    "middle_name": None,
+                    "relationship": "Spouse",
+                    "emergency": 1,
+                    "proxy": 1,
+                    "address": None,
+                    "city": None,
+                    "state": None,
+                    "zip": None,
+                    "phone": "555-0300",
+                    "mobile": None,
+                    "email": None,
+                }
+            ],
+            emr.PATIENT_CARE_TEAM: [
+                {
+                    "role_code": 1,
+                    "added_at": datetime(2016, 1, 4, tzinfo=UTC),
+                    "provider_last": "Doctor",
+                    "provider_first": "Example",
+                    "provider_title": "MD",
+                }
+            ],
+            emr.PATIENT_CONSENTS: [
+                {
+                    "consent_id": 1,
+                    "consent_code": 1,
+                    "answer_code": 3,
+                    "expires": None,
+                    "recorded_at": datetime(2016, 1, 4, tzinfo=UTC),
+                }
+            ],
             emr.LAST_VISIT_DETAIL: [
                 {
                     "contact_id": 5,
@@ -295,9 +391,19 @@ def chart_mode(monkeypatch, real_mode):
 
     fake = ChartSql()
     monkeypatch.setattr(emr, "run_query", fake.run_query)
-    monkeypatch.setattr(
-        ntier, "run_query", lambda *a, **k: [{"patient_number": "P1", "account_number": "A-900"}]
-    )
+    pm_policy = {"policy_id": 9, "coverage": "P", "relationship": " ",
+                 "carrier": "Sample PM Carrier", "carrier_phone": None, "plan_name": None,
+                 "group_name": None, "group_number": None,
+                 "certificate_number": "CERT-9", "effective_date": date(2018, 1, 1),
+                 "expiration_date": None, "copay": None, "holder_last": None, "holder_first": None,
+                 "holder_middle": None, "holder_dob": None}  # fmt: skip
+
+    def ntier_rows(source, sql_name, params=None, **_k):
+        if sql_name == ntier.PATIENT_POLICIES:
+            return [pm_policy]
+        return [{"patient_number": "P1", "account_number": "A-900"}]
+
+    monkeypatch.setattr(ntier, "run_query", ntier_rows)
     settings = get_settings().model_copy(update={"use_fake_data": False})
     monkeypatch.setattr(crosswalk_module, "get_settings", lambda: settings)
     crosswalk_module.clear_cache()
@@ -334,6 +440,12 @@ def test_real_chart_header_and_overview(chart_mode, client):
     assert "Sample med 10 mg" in html and "1 tablet by mouth daily" in html
     assert "Stopped med" not in html  # ended
     assert "03/04/2021" in html and "Example, Doctor MD" in html and "Main Clinic" in html
+    # Patient details (Overview): every live query feeds the cards.
+    assert "Sample Health Plan" in html and "BCBS" in html and "MEM-1" in html
+    assert "Old Sample Plan" not in html and "Show archived (1)" in html
+    assert "White" in html and "Not Hispanic or Latino" in html and "Married" in html
+    assert "Health-care proxy" in html and "Primary care physician" in html and "HIPAA" in html
+    assert "Sample PM Carrier" in html  # PM policies via the Ntier link
 
 
 def test_not_connected_error_renders_friendly_page(chart_mode, client, monkeypatch):

@@ -33,6 +33,7 @@ from app.services.history_service import selected_entries_for_pdf
 from app.services.labs import lab_row
 from app.services.meds import med_row, medication_items
 from app.services.notes_service import note_detail, note_index, parse_note_ref
+from app.services.patient_details import patient_details
 from app.services.patients import parse_dob as parse_us_date
 from app.services.problems import problem_groups
 from app.services.visit_contacts import visit_detail
@@ -219,6 +220,8 @@ async def gather(ref: PatientRef, req: ExportRequest) -> dict[str, Any]:
     if req.visit_ids and "visits" not in sections:  # added visits print in the Visits section
         sections.append("visits")
     ctx: dict[str, Any] = {"header": await get_header(ref), "sections": sections}
+    if "demographics" in sections:  # every policy, archived ones marked, for the release
+        ctx["details"] = await patient_details(ref, show_archived=True)
     if "visits" in sections:
         ctx["visits"] = await _visits(ref, req)
     if "appointments" in req.sections:

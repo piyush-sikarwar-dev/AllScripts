@@ -1,0 +1,112 @@
+{# Overview: patient details beyond the header — insurance (EMR + PM), demographics, contacts and
+   health-care proxy, guarantor, care team, consents. Archived EMR policies only with the toggle. #}
+{% from "components/badge.html" import source_badge, badge %}
+{% from "components/empty_state.html" import empty_state %}
+{% set d = details %}
+{% set base = "/patients/" ~ key %}
+<section class="card table-card" aria-labelledby="ov-insurance">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="ov-insurance">Insurance</h2>
+    <p class="table-card__count">
+      {{ d.insurances|length }} {{ "policy" if d.insurances|length == 1 else "policies" }}
+      {%- if d.archived_count %} ·
+      <a class="cell-link" href="{{ url_with(base, {'tab': 'overview', 'archived': None if d.show_archived else '1'}) }}"
+         hx-get="{{ url_with(base ~ '/tab/overview', {'archived': None if d.show_archived else '1'}) }}"
+         hx-target="#chart-tabs" hx-swap="outerHTML">{{ "Hide" if d.show_archived else "Show" }} archived ({{ d.archived_count }})</a>
+      {%- endif %}
+    </p>
+  </div>
+  {% if d.insurances %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Order</th><th scope="col">Carrier</th><th scope="col">Plan</th>
+          <th scope="col">Group no.</th><th scope="col">Member / certificate</th>
+          <th scope="col">Policy holder</th><th scope="col">Effective</th><th scope="col">Ends</th>
+          <th scope="col">Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in d.insurances %}
+        <tr>
+          <td class="nowrap">{{ p.order }}{% if p.archived %} {{ badge("Archived", "voided") }}{% endif %}</td>
+          <td><span class="cell-strong">{{ p.carrier }}</span>{% if p.carrier_phone != "—" %}<span class="cell-sub">{{ p.carrier_phone }}</span>{% endif %}</td>
+          <td>{{ p.plan }}</td>
+          <td class="mono">{{ p.group }}</td>
+          <td class="mono">{{ p.member_id }}</td>
+          <td>{{ p.holder }}{% if p.relationship != "—" %}<span class="cell-sub">{{ p.relationship }}</span>{% endif %}</td>
+          <td class="nowrap">{{ p.effective }}</td>
+          <td class="nowrap">{{ p.ends }}</td>
+          <td>{{ source_badge(p.source) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {{ empty_state("No insurance policies on file.") }}
+  {% endif %}
+</section>
+
+<div class="card-grid">
+  <section class="card" aria-labelledby="ov-demographics">
+    <h2 class="card__title" id="ov-demographics">Demographics</h2>
+    <dl class="facts">
+      <div><dt>Race</dt><dd>{{ d.race }}</dd></div>
+      <div><dt>Ethnicity</dt><dd>{{ d.ethnicity }}</dd></div>
+      <div><dt>Marital status</dt><dd>{{ d.marital_status }}</dd></div>
+    </dl>
+  </section>
+
+  <section class="card" aria-labelledby="ov-contacts">
+    <h2 class="card__title" id="ov-contacts">Emergency contacts &amp; proxy</h2>
+    {% if d.contacts %}
+    <ul class="item-list">
+      {% for c in d.contacts %}
+      <li><span class="item-list__name">{{ c.name }}{% for r in c.roles %} {{ badge(r, "pm" if "proxy" in r else "neutral") }}{% endfor %}</span>
+        <span class="item-list__detail">{{ c.relationship }}{% if c.phone != "—" %} · {{ c.phone }}{% endif %}</span>
+        {% if c.address != "—" %}<span class="item-list__detail">{{ c.address }}</span>{% endif %}
+        {% if c.email != "—" %}<span class="item-list__detail">{{ c.email }}</span>{% endif %}</li>
+      {% endfor %}
+    </ul>
+    {% else %}{{ empty_state("No emergency contacts on file.", compact=True) }}{% endif %}
+  </section>
+
+  <section class="card" aria-labelledby="ov-guarantor">
+    <h2 class="card__title" id="ov-guarantor">Guarantor</h2>
+    {% if d.guarantor %}
+    {% set g = d.guarantor %}
+    <dl class="facts">
+      <div><dt>Name</dt><dd>{{ g.name }}</dd></div>
+      <div><dt>Relationship</dt><dd>{{ g.relationship }}</dd></div>
+      <div><dt>Date of birth</dt><dd>{{ g.dob }}</dd></div>
+      <div><dt>Phone</dt><dd>{{ g.phone }}</dd></div>
+      <div><dt>Address</dt><dd>{{ g.address }}</dd></div>
+    </dl>
+    {% else %}{{ empty_state("No guarantor on file.", compact=True) }}{% endif %}
+  </section>
+
+  <section class="card" aria-labelledby="ov-care-team">
+    <h2 class="card__title" id="ov-care-team">Care team</h2>
+    {% if d.care_team %}
+    <ul class="item-list">
+      {% for m in d.care_team %}
+      <li><span class="item-list__name">{{ m.name }}</span><span class="item-list__detail">{{ m.role }}{% if m.since != "—" %} · since {{ m.since }}{% endif %}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}{{ empty_state("No assigned providers.", compact=True) }}{% endif %}
+  </section>
+
+  <section class="card" aria-labelledby="ov-consents">
+    <h2 class="card__title" id="ov-consents">Consents</h2>
+    {% if d.consents %}
+    <ul class="item-list">
+      {% for c in d.consents %}
+      <li><span class="item-list__name">{{ c.name }}</span>
+        <span class="item-list__detail">{{ c.answer }}{% if c.recorded != "—" %} · recorded {{ c.recorded }}{% endif %}{% if c.expires != "—" %} · expires {{ c.expires }}{% endif %}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}{{ empty_state("No consents on file.", compact=True) }}{% endif %}
+  </section>
+</div>

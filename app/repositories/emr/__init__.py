@@ -10,6 +10,14 @@ PATIENT_SEARCH = "emr/patient_search.sql"
 LAST_VISITS = "emr/last_visit_for_patients.sql"
 MRNS = "emr/mrn_for_patients.sql"
 PATIENT_HEADER_FULL = "emr/patient_header_full.sql"
+PATIENT_INSURANCES = "emr/patient_insurances.sql"
+PATIENT_PROFILE = "emr/patient_profile.sql"
+PATIENT_RACE = "emr/patient_race.sql"
+PATIENT_ETHNICITY = "emr/patient_ethnicity.sql"
+PATIENT_CONTACTS = "emr/patient_contacts.sql"
+PATIENT_CARE_TEAM = "emr/patient_care_team.sql"
+PATIENT_CONSENTS = "emr/patient_consents.sql"
+PATIENT_PHOTO = "emr/patient_photo.sql"
 HISTORY_ITEMS = "emr/history_items.sql"
 HISTORY_ATTRIBUTES = "emr/history_attributes.sql"
 MEDICATIONS = "emr/medications.sql"
@@ -386,3 +394,37 @@ def chart_attachment_text(emr_id: int, attachment_id: int) -> str | None:
     params = {"emr_id": emr_id, "attachment_id": attachment_id}
     rows = run_query(Source.EMR, CHART_ATTACHMENT_TEXT, params)
     return rows[0]["note_text"] if rows else None
+
+
+def patient_insurances(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, PATIENT_INSURANCES, {"emr_id": emr_id})
+
+
+def patient_profile(emr_id: int) -> dict[str, Any] | None:
+    rows = run_query(Source.EMR, PATIENT_PROFILE, {"emr_id": emr_id})
+    return rows[0] if rows else None
+
+
+def patient_race(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, PATIENT_RACE, {"emr_id": emr_id})
+
+
+def patient_ethnicity(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, PATIENT_ETHNICITY, {"emr_id": emr_id})
+
+
+def patient_contacts(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, PATIENT_CONTACTS, {"emr_id": emr_id})
+
+
+def patient_care_team(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, PATIENT_CARE_TEAM, {"emr_id": emr_id})
+
+
+def patient_consents(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, PATIENT_CONSENTS, {"emr_id": emr_id})
+
+
+def patient_photo(emr_id: int) -> bytes | None:
+    rows = run_query(Source.EMR, PATIENT_PHOTO, {"emr_id": emr_id})
+    return bytes(rows[0]["photo"]) if rows and rows[0]["photo"] else None

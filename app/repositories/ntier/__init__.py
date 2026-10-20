@@ -18,3 +18,10 @@ APPOINTMENTS = "ntier/appointments.sql"
 
 def appointments(ntier_id: int) -> list[dict[str, Any]]:
     return run_query(Source.NTIER, APPOINTMENTS, {"ntier_id": ntier_id})
+
+
+PATIENT_POLICIES = "ntier/patient_policies.sql"
+
+
+def patient_policies(ntier_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.NTIER, PATIENT_POLICIES, {"ntier_id": ntier_id})

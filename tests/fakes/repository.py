@@ -4,7 +4,8 @@ Function names and return shapes are the contract the real `app/repositories/` m
 from Phase 4 on: plain dicts / lists of dicts with raw values.
 """
 
-from datetime import date
+from datetime import UTC, date, datetime
+from decimal import Decimal
 
 from app.documents.render import embedded_images, render_document
 from tests.fakes.data import PATIENTS, PATIENTS_BY_ID, FakePatient
@@ -78,6 +79,7 @@ def get_patient(emr_id: int) -> dict | None:
         "zip": p.zip,
         "pm_account": p.pm_account,
         "primary_insurance": p.primary_insurance,
+        "has_photo": patient_photo(emr_id) is not None,
     }
 
 
@@ -354,3 +356,167 @@ def document_image(emr_id: int, document_id: int, index: int) -> tuple[str, byte
             images = embedded_images(note["html"].encode())
             return images[index] if 0 <= index < len(images) else None
     return None
+
+
+# A tiny valid JPEG (1x1 grey pixel), used as the photo of every second fake patient.
+_FAKE_PHOTO = bytes.fromhex(
+    "ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707070909080a0c140d0c0b0b0c1912"
+    "130f141d1a1f1e1d1a1c1c20242e2720222c231c1c2837292c30313434341f27393d38323c2e333432ffc0000b080001"
+    "000101011100ffc4001f0000010501010101010100000000000000000102030405060708090a0bffc400b51000020103"
+    "03020403050504040000017d01020300041105122131410613516107227114328191a1082342b1c11552d1f024336272"
+    "82090a161718191a25262728292a3435363738393a434445464748494a535455565758595a636465666768696a737475"
+    "767778797a838485868788898a92939495969798999aa2a3a4a5a6a7a8a9aab2b3b4b5b6b7b8b9bac2c3c4c5c6c7c8c9"
+    "cad2d3d4d5d6d7d8d9dae1e2e3e4e5e6e7e8e9eaf1f2f3f4f5f6f7f8f9faffda0008010100003f00fbd3ffd9"
+)
+
+
+def _index(emr_id: int) -> int:
+    return next(i for i, p in enumerate(PATIENTS) if p.emr_id == emr_id)
+
+
+def patient_details(emr_id: int, ntier_id: int | None) -> dict:
+    p = PATIENTS_BY_ID[emr_id]
+    i = _index(emr_id)
+    if i % 6 == 5:  # some patients have nothing beyond the header
+        return {
+            "insurances": [],
+            "pm_policies": [],
+            "profile": {"marital_status": None, "has_photo": 0},
+            "race": [],
+            "ethnicity": [],
+            "contacts": [],
+            "care_team": [],
+            "consents": [],
+        }
+    insurances = [
+        {
+            "policy_id": emr_id * 10 + n,
+            "rank": rank,
+            "carrier": carrier,
+            "carrier_phone": "555-0100",
+            "plan_type": plan_type,
+            "group_number": f"G{emr_id}{n}",
+            "plan_number": None,
+            "member_id": f"M{emr_id}{n}",
+            "effective_date": date(2015 + n, 1, 1),
+            "termination_date": date(2018, 12, 31) if archived else None,
+            "subscriber_last": p.last_name,
+            "subscriber_first": p.first_name,
+            "subscriber_middle": None,
+            "subscriber_dob": p.dob,
+            "relation_code": 1,
+            "workers_comp": 0,
+            "archived": archived,
+        }
+        for n, (rank, carrier, plan_type, archived) in enumerate(
+            [
+                (0, p.primary_insurance or "Sample Health Plan", 5, 0),
+                (1, "Example Medicare", 1, 0),
+                (0, "Old Sample Insurer", 3, 1),
+            ]
+        )
+    ]
+    pm = (
+        [
+            {
+                "policy_id": emr_id,
+                "coverage": "P",
+                "relationship": " ",
+                "carrier": "Sample PM Carrier",
+                "carrier_phone": "555-0200",
+                "plan_name": "Sample PPO",
+                "group_name": "Example Employer",
+                "group_number": "PMG1",
+                "certificate_number": f"CERT{emr_id}",
+                "effective_date": date(2016, 3, 1),
+                "expiration_date": None,
+                "copay": Decimal("25.0000"),
+                "holder_last": p.last_name,
+                "holder_first": p.first_name,
+                "holder_middle": None,
+                "holder_dob": p.dob,
+            }
+        ]
+        if ntier_id is not None
+        else []
+    )
+    profile = {
+        "marital_status": 2,
+        "guarantor_relation": 1,
+        "guarantor_last": p.last_name,
+        "guarantor_first": p.first_name,
+        "guarantor_middle": None,
+        "guarantor_suffix": None,
+        "guarantor_dob": p.dob,
+        "guarantor_address": p.address,
+        "guarantor_city": p.city,
+        "guarantor_state": p.state,
+        "guarantor_zip": p.zip,
+        "guarantor_phone": p.phone,
+        "has_photo": 1 if i % 2 == 0 else 0,
+    }
+    contacts = [
+        {
+            "contact_id": 1,
+            "rank": 1,
+            "last_name": "Contact",
+            "first_name": "Sample",
+            "middle_name": None,
+            "relationship": "Spouse",
+            "emergency": 1,
+            "proxy": 1,
+            "address": "1 Example St",
+            "city": "Sampletown",
+            "state": "NY",
+            "zip": "00000",
+            "phone": "555-0300",
+            "mobile": "555-0301",
+            "email": None,
+        }
+    ]
+    care_team = [
+        {
+            "role_code": 1,
+            "added_at": datetime(2016, 1, 4, tzinfo=UTC),
+            "provider_last": "Doctor",
+            "provider_first": "Sample",
+            "provider_title": "MD",
+        },
+        {
+            "role_code": 3,
+            "added_at": datetime(2019, 6, 1, tzinfo=UTC),
+            "provider_last": "Specialist",
+            "provider_first": "Example",
+            "provider_title": "DO",
+        },
+    ]
+    consents = [
+        {
+            "consent_id": 1,
+            "consent_code": 1,
+            "answer_code": 3,
+            "expires": None,
+            "recorded_at": datetime(2016, 1, 4, tzinfo=UTC),
+        },
+        {
+            "consent_id": 2,
+            "consent_code": 14,
+            "answer_code": 1,
+            "expires": date(2030, 1, 1),
+            "recorded_at": datetime(2020, 2, 2, tzinfo=UTC),
+        },
+    ]
+    return {
+        "insurances": insurances,
+        "pm_policies": pm,
+        "profile": profile,
+        "race": [5],
+        "ethnicity": [2],
+        "contacts": contacts,
+        "care_team": care_team,
+        "consents": consents,
+    }
+
+
+def patient_photo(emr_id: int) -> bytes | None:
+    return _FAKE_PHOTO if _index(emr_id) % 2 == 0 and _index(emr_id) % 6 != 5 else None

@@ -1,5 +1,6 @@
 {% from "components/empty_state.html" import empty_state %}
 {% set o = overview %}
+<div class="overview-stack">
 <div class="card-grid">
   <section class="card" aria-labelledby="ov-problems">
     <h2 class="card__title" id="ov-problems">Active problems</h2>
@@ -43,4 +44,6 @@
        hx-get="/patients/{{ key }}/tab/visits" hx-target="#chart-tabs" hx-swap="outerHTML">All visits</a>
     {% else %}{{ empty_state("No visits recorded.", compact=True) }}{% endif %}
   </section>
+</div>
+{% if details is defined and details %}{% include "partials/patient_details.html" %}{% endif %}
 </div>

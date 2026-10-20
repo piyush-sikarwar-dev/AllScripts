@@ -10,7 +10,8 @@ sex:
   F: Female    # fake data
   M: Male      # fake data
   U: Unknown   # fake data
-marital_status: {}
+# MARST dictionary (hpsystem.DICTIONARIES_MASTER, read 2026-10-21).
+marital_status: {0: "—", 1: Single, 2: Married, 3: Divorced, 4: Widowed, 5: Separated, 6: Unknown}
 language: {}
 patient_status: {}
 # Problem / allergy / medication-history activity (DXACT dictionary).
@@ -38,3 +39,22 @@ unit: {0: "", 1: cm, 2: in, 3: "°C", 4: "°F", 5: kg, 6: lb, 7: yr, 8: mo}
 lab_status: {0: Undefined, 1: Ordered, 2: Preliminary, 3: Final, 4: Reviewed, 5: Pending, 6: Canceled, 7: Erroneous}
 # Prescription status (MEDSTA dictionary).
 med_status: {1: Active, 2: Inactive, 3: Discontinued, 4: Ordered, 5: Continued, 6: Erroneous Entry, 7: Undefined}
+# Patient details (hpsystem.DICTIONARIES_MASTER / HPSITE.DICTIONARIES_SITE, read 2026-10-21).
+# PATIENT_RACE.RACE_CODE (RACE-SUMMARY): 5 = 10,911 rows, 0 = 6,298, 6 = 2,477, 3 = 1,152.
+race: {0: "—", 1: American Indian or Alaska Native, 2: Asian, 3: Black or African American, 4: Native Hawaiian or Other Pacific Islander, 5: White, 6: Refused to report / unreported, 7: Other Pacific Islander, 8: More than one race}
+# PATIENT_ETHNICITY.ETHNICITY_CODE (ETHNICITY-SUM).
+ethnicity: {0: "—", 1: Hispanic or Latino, 2: Not Hispanic or Latino, 3: Refused to report / unreported}
+# PATIENT_CONSENT.CONSENT_CODE (CONSENT, master + site rows) and ANSWER_CODE (CONANS).
+consent: {-194: Liver biopsy (scanned in), -193: Liver biopsy, -180: Lucas Research pre-study screening consent, 1: HIPAA, 2: Acquire medication history, 3: ABN, 4: DOQ-IT, 5: Living will, 6: Consent of care agreement, 7: Allscripts Community Record consent, 8: Immunization registry export, 10: Syndromic surveillance export, 11: Patient consent for treatment, 12: Authorization to share information for research, 13: Informed consent to participate in research, 14: HIE authorization / consent, 15: Authorization for sharing with family / friends, 16: Chronic care management consent}
+consent_answer: {0: Declined, 1: Accepted, 2: On file, 3: Unknown}
+# PATIENT_PHYSICIANS.PHYSICIAN_ROLE_CODE (PHYSICIANROLE): 3 = 23,499, 2 = 21,343, 1 = 1,651.
+care_role: {1: Primary care physician, 2: Usual caregiver, 3: Referral / consult, 99: Unknown}
+# INSURANCES.INS_PATREL_TOSUB and DEMOGRAPHICS.DEM_PATREL_TOGUARANTOR (PATRELATION).
+relation: {0: "—", 1: Self, 2: Spouse, 3: Male dependent, 4: Female dependent, 5: Other}
+# INSURANCES.INS_PLANTYPE (INSPLAN).
+plan_type: {0: "—", 1: Medicare, 2: Medicaid, 3: Private insurance, 4: HMO / managed care, 5: BCBS, 6: Other, 7: Self pay, 8: Worker's comp, 9: Medicare A, 10: Medicare B}
+# PM.Patient_Policies.Coverage. No dictionary; read from the data 2026-10-21: X (4,773) and V (2)
+# are ended policies (3,693 of 4,773 X rows have a past expiration date).
+pm_coverage: {P: Primary, S: Secondary, T: Tertiary, X: Inactive, V: Inactive}
+# PM.Patient_Policies.Relationship: blank = the patient holds the policy (18,369 of 18,380 rows).
+pm_relationship: {"": Self, S: Spouse, C: Child, O: Other}

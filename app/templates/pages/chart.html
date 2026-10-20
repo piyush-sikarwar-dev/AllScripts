@@ -8,7 +8,11 @@
 
 <section class="chart-header" aria-labelledby="patient-name">
   <div class="chart-header__main">
+    {% if header.photo_url %}
+    <img class="avatar avatar--photo" src="{{ header.photo_url }}" alt="Photo of {{ header.name }} on file">
+    {% else %}
     <span class="avatar" aria-hidden="true">{{ header.initials }}</span>
+    {% endif %}
     <div class="chart-header__body">
       <div class="chart-header__name">
         <h1 class="chart-header__title" id="patient-name">{{ header.name }}</h1>

@@ -41,7 +41,64 @@
   <tr><td>Primary insurance</td><td>{{ h.primary_insurance }}</td></tr>
   {% if h.deceased %}<tr><td>Status</td><td>Deceased</td></tr>{% endif %}
   <tr><td>Records in</td><td>{{ h.sources | join(", ") }}</td></tr>
+  {% if details %}
+  <tr><td>Race</td><td>{{ details.race }}</td></tr>
+  <tr><td>Ethnicity</td><td>{{ details.ethnicity }}</td></tr>
+  <tr><td>Marital status</td><td>{{ details.marital_status }}</td></tr>
+  {% endif %}
 </table>
+{% if details %}
+{% set d = details %}
+<h2>Insurance</h2>
+{% if d.insurances %}
+<table>
+  <thead><tr><th>Order</th><th>Carrier</th><th>Plan</th><th>Group no.</th><th>Member / certificate</th><th>Policy holder</th><th>Effective</th><th>Ends</th><th>Source</th></tr></thead>
+  <tbody>
+    {% for p in d.insurances %}
+    <tr><td>{{ p.order }}{% if p.archived %} (archived){% endif %}</td><td>{{ p.carrier }}{% if p.carrier_phone != "—" %}<br><span class="muted">{{ p.carrier_phone }}</span>{% endif %}</td>
+      <td>{{ p.plan }}</td><td class="mono">{{ p.group }}</td><td class="mono">{{ p.member_id }}</td>
+      <td>{{ p.holder }}{% if p.relationship != "—" %}<br><span class="muted">{{ p.relationship }}</span>{% endif %}</td>
+      <td>{{ p.effective }}</td><td>{{ p.ends }}</td><td>{{ p.source }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="empty">No insurance policies on file.</p>{% endif %}
+<h2>Emergency contacts &amp; health-care proxy</h2>
+{% if d.contacts %}
+<table>
+  <thead><tr><th>Name</th><th>Relationship</th><th>Role</th><th>Phone</th><th>Address</th></tr></thead>
+  <tbody>
+    {% for c in d.contacts %}
+    <tr><td>{{ c.name }}</td><td>{{ c.relationship }}</td><td>{{ c.roles | join(", ") or "—" }}</td><td>{{ c.phone }}</td><td>{{ c.address }}{% if c.email != "—" %}<br>{{ c.email }}{% endif %}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="empty">No emergency contacts on file.</p>{% endif %}
+<h2>Guarantor</h2>
+{% if d.guarantor %}
+<table class="kv">
+  <tr><td>Name</td><td>{{ d.guarantor.name }}</td></tr>
+  <tr><td>Relationship</td><td>{{ d.guarantor.relationship }}</td></tr>
+  <tr><td>Date of birth</td><td>{{ d.guarantor.dob }}</td></tr>
+  <tr><td>Phone</td><td>{{ d.guarantor.phone }}</td></tr>
+  <tr><td>Address</td><td>{{ d.guarantor.address }}</td></tr>
+</table>
+{% else %}<p class="empty">No guarantor on file.</p>{% endif %}
+<h2>Care team</h2>
+{% if d.care_team %}
+<table>
+  <thead><tr><th>Provider</th><th>Role</th><th>Since</th></tr></thead>
+  <tbody>{% for m in d.care_team %}<tr><td>{{ m.name }}</td><td>{{ m.role }}</td><td>{{ m.since }}</td></tr>{% endfor %}</tbody>
+</table>
+{% else %}<p class="empty">No assigned providers.</p>{% endif %}
+<h2>Consents</h2>
+{% if d.consents %}
+<table>
+  <thead><tr><th>Consent</th><th>Answer</th><th>Recorded</th><th>Expires</th></tr></thead>
+  <tbody>{% for c in d.consents %}<tr><td>{{ c.name }}</td><td>{{ c.answer }}</td><td>{{ c.recorded }}</td><td>{{ c.expires }}</td></tr>{% endfor %}</tbody>
+</table>
+{% else %}<p class="empty">No consents on file.</p>{% endif %}
+{% endif %}
 {% endif %}
 
 {% if "visits" in sections %}

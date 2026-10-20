@@ -128,6 +128,7 @@ def get_patient(emr_id: int) -> dict[str, Any] | None:
         "state": header["state"],
         "zip": header["zip"],
         "primary_insurance": header["primary_insurance"],
+        "has_photo": bool(header.get("has_photo")),
         "pm_account": ((pm or {}).get("account_number") or "").strip() or None,
         "ntier_id": ntier_id,
         "dmz_id": dmz_id,
@@ -1019,3 +1020,36 @@ def attachment_text(emr_id: int, attachment_id: int) -> str | None:
     """Plain text of an RTF-only chart attachment of this patient."""
     rtf = emr.chart_attachment_text(emr_id, attachment_id)
     return rtf_to_text(rtf) if rtf else None
+
+
+@cached
+def patient_details(emr_id: int, ntier_id: int | None) -> dict[str, Any]:
+    """Insurance (EMR + PM), race, ethnicity, marital status, contacts, guarantor, care team,
+    consents and photo flag of one patient (shape matches tests/fakes/repository)."""
+    calls = [
+        lambda: emr.patient_insurances(emr_id),
+        lambda: emr.patient_profile(emr_id),
+        lambda: emr.patient_race(emr_id),
+        lambda: emr.patient_ethnicity(emr_id),
+        lambda: emr.patient_contacts(emr_id),
+        lambda: emr.patient_care_team(emr_id),
+        lambda: emr.patient_consents(emr_id),
+        lambda: ntier.patient_policies(ntier_id) if ntier_id is not None else [],
+    ]
+    insurances, profile, race, ethnicity, contacts, care_team, consents, pm_policies = parallel(
+        *calls
+    )
+    return {
+        "insurances": insurances,
+        "pm_policies": pm_policies,
+        "profile": profile or {},
+        "race": [r["code"] for r in race],
+        "ethnicity": [r["code"] for r in ethnicity],
+        "contacts": contacts,
+        "care_team": care_team,
+        "consents": consents,
+    }
+
+
+def patient_photo(emr_id: int) -> bytes | None:
+    return emr.patient_photo(emr_id)

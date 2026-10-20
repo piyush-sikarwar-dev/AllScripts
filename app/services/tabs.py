@@ -1,5 +1,6 @@
 """Chart tab registry: builds the template context for one tab from its query parameters."""
 
+import asyncio
 from collections.abc import Mapping
 from typing import Any
 
@@ -18,6 +19,7 @@ from app.services.meds import meds_tab
 from app.services.notes_service import notes_tab
 from app.services.notes_service import parse_state as parse_notes_state
 from app.services.overview import overview
+from app.services.patient_details import patient_details
 from app.services.visits import parse_state, selected_visit_ids, visits_tab
 from app.services.vitals import vitals_tab
 
@@ -55,7 +57,11 @@ async def tab_context(
     state: dict[str, Any] = {}
 
     if name == "overview":
-        ctx["overview"] = await overview(ref)
+        show_archived = params.get("archived") == "1"
+        ctx["overview"], ctx["details"] = await asyncio.gather(
+            overview(ref), patient_details(ref, show_archived)
+        )
+        state = {"archived": "1"} if show_archived else {}
     elif name == "visits":
         selection = await selected_visit_ids(session_id, ref.patient_key)
         ctx.update(await visits_tab(ref, parse_state(params), selection))

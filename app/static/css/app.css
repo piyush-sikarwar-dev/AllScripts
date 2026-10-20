@@ -98,6 +98,11 @@ a:hover { color: var(--accent-hover); }
   flex-wrap: wrap; margin-bottom: 10px; }
 .card__head .card__title { margin-bottom: 0; }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.overview-stack { display: flex; flex-direction: column; gap: 16px; }
+.facts { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.facts div { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.facts dt { flex: 0 0 120px; font-size: 13px; color: var(--muted); }
+.facts dd { margin: 0; flex: 1 1 160px; min-width: 0; overflow-wrap: anywhere; }
 .stack { display: flex; flex-direction: column; gap: 16px; }
 
 /* ---------- Stat card ---------- */

@@ -19,6 +19,7 @@ class ChartHeader(BaseModel):
     address: str
     primary_insurance: str
     deceased: bool = False
+    photo_url: str | None = None
 
 
 # --- Overview -----------------------------------------------------------------------------------

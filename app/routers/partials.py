@@ -44,6 +44,7 @@ from app.services.notes_service import (
     toggle_note_export,
 )
 from app.services.notes_service import parse_state as parse_notes_state
+from app.services.patient_details import patient_photo
 from app.services.patients import build_search, search_patients
 from app.services.tabs import TAB_NAMES, TABS, tab_context
 from app.services.visits import (
@@ -619,3 +620,17 @@ async def document_embedded_image(
     detail = {"kind": "document", "id": doc_id, "image": index}
     audit(request, background, "view_document", patient_key=ref.patient_key, detail=detail)
     return Response(content=data, media_type=mime)
+
+
+@router.get("/patients/{key}/photo")
+async def patient_photo_image(request: Request, background: BackgroundTasks, key: str) -> Response:
+    """The patient's photo (DEMOGRAPHICPICTURE), shown in the chart header."""
+    ref = await _resolve(key)
+    try:
+        data = await patient_photo(ref)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    audit(request, background, "view_document", patient_key=ref.patient_key,
+          detail={"kind": "photo"})  # fmt: skip
+    media = "image/png" if data.startswith(b"\x89PNG") else "image/jpeg"
+    return Response(content=data, media_type=media)

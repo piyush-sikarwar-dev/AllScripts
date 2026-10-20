@@ -55,19 +55,19 @@ patient data).
 | Name, DOB, sex, deceased, home address link | `DEMOGRAPHICS` (21,384) | `DEM_LASTNAME`, `DEM_FIRSTNAME`, `DEM_DATEOFBIRTH`, `DEM_SEX` (1 Male, 2 Female *confirmed*), `DEM_DECEASED`, `DEM_DATEOFDEATH`, `DEM_HOMEADDR` | **Yes (live)** |
 | Address and phone | `ADDRESSES` (302,989) | `ADDR_ADDRESS`, `ADDR_CITY`, `ADDR_STATE`, `ADDR_ZIP`, `ADDR_PHONE`, `ADDR_EMAILADDRESS` | **Yes (live)**: 20,889 patients have a street, 17,562 a phone |
 | MRN | `PATIENT_IDENTIFIER` (27,143), `PATIENT_IDENTIFIER_SOURCES` (2) | see §2 | **Yes (live)** |
-| Race / ethnicity | `PATIENT_RACE` (21,008), `PATIENT_ETHNICITY` (21,384) | `RACE_CODE`, `ETHNICITY_CODE` (decode via dictionaries) | Maybe (demographics section of the PDF) |
-| Emergency contacts / health-care proxy | `PATIENT_CONTACTS` (4,642) | name, relationship, `PATCON_EMERGENCY`, `PATCON_HEALTHCAREPROXY` | Maybe |
-| Guarantor | `DEMGUARANTOR` (21,921) | name, DOB, address. **`GUARANTOR_SSNUM` NEVER** | Maybe |
-| Care team | `PATIENT_PHYSICIANS` (46,493) | `PROVIDER_ID`, `PHYSICIAN_ROLE_CODE` | Maybe |
-| Consents | `PATIENT_CONSENT` (21,366) | `CONSENT_CODE`, `ANSWER_CODE`, `EXPIRATION_DATE` | Maybe |
-| Patient photo | `DEMOGRAPHICPICTURE` (10,278) | image | Maybe (not planned) |
+| Race / ethnicity | `PATIENT_RACE` (21,008), `PATIENT_ETHNICITY` (21,384) | `RACE_CODE` (RACE-SUMMARY), `ETHNICITY_CODE` (ETHNICITY-SUM) | **Yes (live)**: Overview + PDF |
+| Emergency contacts / health-care proxy | `PATIENT_CONTACTS` (4,642) | name, relationship (text), `PATCON_EMERGENCY`, `PATCON_HEALTHCAREPROXY` (never 1 in the data), address / phones | **Yes (live)**: Overview + PDF |
+| Guarantor | `DEMGUARANTOR` (21,921) | name, DOB, address, relationship (`DEM_PATREL_TOGUARANTOR`, PATRELATION). **`GUARANTOR_SSNUM` NEVER** | **Yes (live)**: Overview + PDF |
+| Care team | `PATIENT_PHYSICIANS` (46,493) | `PROVIDER_ID` → PROVIDERS, `PHYSICIAN_ROLE_CODE` (PHYSICIANROLE), `ADDED_DATE` | **Yes (live)**: Overview + PDF |
+| Consents | `PATIENT_CONSENT` (21,366) | `CONSENT_CODE` (CONSENT master + site), `ANSWER_CODE` (CONANS), `EXPIRATION_DATE` | **Yes (live)**: Overview + PDF |
+| Patient photo | `DEMOGRAPHICPICTURE` (10,278) | JPEG | **Yes (live)**: chart header (`/patients/{key}/photo`) |
 | Merge history | `PATIENT_MERGE_HISTORY` (289) and detail (29,248) | | No (used for redirects only) |
 
 ### 3.2 Insurance
 
 | Information | Tables (rows) | Useful columns | Show? |
 |---|---|---|---|
-| Patient's policies | `INSURANCES` (69,085) | `INS_RANK` (0 = primary), `IMRECARRIER_CODE`, `INS_GROUPNUMBER`, `INS_PLANNUMBER`, `INS_ENROLLMENTDATE`, `INS_TERMINATIONDATE`, `TAG_ARCHIVED`. **`INS_SUBSSNUM` NEVER** | **Yes (live)** primary carrier; full list in P9 PDF |
+| Patient's policies | `INSURANCES` (69,085) | `INS_RANK` (0 = primary), `IMRECARRIER_CODE`, `INS_GROUPNUMBER`, `INS_PLANNUMBER`, `INS_ENROLLMENTDATE`, `INS_TERMINATIONDATE`, `TAG_ARCHIVED`. **`INS_SUBSSNUM` NEVER** | **Yes (live)**: every policy on the Overview (archived behind "Show archived") and in the PDF (archived marked); `INS_PLANTYPE` = INSPLAN, `INS_PATREL_TOSUB` = PATRELATION |
 | Carriers | `INSURANCECARRIERS` (807) | `CARRIER_NAME` | **Yes (live)** |
 | Pharmacy benefit eligibility | `ELIGIBILITY` (29,642) | | No |
 
@@ -176,7 +176,7 @@ lists (`DICT_TYPE`, `DICT_CODE`, `DICT_DESCRIPTION`). They are the likely key to
 | Account | `Accounts` (21,329) | `Account_Number` | **Yes (live: header "PM account")** |
 | Person details (patients, guarantors, subscribers) | `Contacts` (31,024) | name, DOB, sex, phones, email, `Address_ID`. **`SSN`, `Drivers_License_No` NEVER** | Maybe (cross-check of demographics) |
 | Addresses | `Addresses` (27,348) | street, city, state, zip, phone | Maybe |
-| Insurance policies | `Patient_Policies` (24,276) → `Policies` (24,462) → `Insurance_Plans` (4,306), `Carriers` (349) | coverage order, group no., certificate no., effective/expiration dates, plan description, copay. **`Carriers.Elig_Password` NEVER** | **Yes (P9 PDF, insurance section)** |
+| Insurance policies | `Patient_Policies` (24,276) → `Policies` (24,462) → `Insurance_Plans` (4,306), `Carriers` (349) | coverage order (P / S / T; X and V = inactive), group no., certificate no., effective/expiration dates, plan description, copay, policy holder. **`Carriers.Elig_Password` NEVER** | **Yes (live)**: Overview + PDF insurance table (source PM) |
 | Appointments | `Appointments` (153,408), `Appointment_Types` (46), `Cancellation_Reasons` | `Appointment_DateTime`, `Duration`, `Status`, type, check-in/out, cancellation, no-show | Maybe: a good candidate for an "Appointments" tab |
 | Referrals received | `Incoming_Referrals` (4,805) + diagnoses | dates, authorization no., referred from/to, notes | Maybe |
 | Account notes | `Notes` (20,807) | `Subject`, `Text`, `Date_Entered` (mostly billing/admin) | Maybe (admin, not clinical) |
