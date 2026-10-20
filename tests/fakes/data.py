@@ -811,6 +811,37 @@ def add_attachments(p: FakePatient, seed: int) -> None:
         )
 
 
+def _embedded_report_html() -> str:
+    """A letter-type document whose content is a picture stored as base64 text after an <img>
+    tag, like the real Allscripts "scanned report" packages."""
+    import base64
+    import io
+
+    from PIL import Image
+
+    out = io.BytesIO()
+    Image.new("RGB", (60, 80), color=(240, 240, 240)).save(out, format="JPEG")
+    data = base64.b64encode(out.getvalue()).decode()
+    return f'<table><tr><td><img src="SCANDOC_1" width="60" height="80">{data}</td></tr></table>'
+
+
+def add_embedded_report(p: FakePatient) -> None:
+    p.clinical_notes.append(
+        {
+            "kind": "document",
+            "id": 990000 + p.emr_id,
+            "date": datetime(2020, 2, 5, 10, 0),
+            "title": "COLONOSCOPY REPORT",
+            "who": PROVIDERS[0],
+            "app_source": "Clinical Module",
+            "map_sources": [],
+            "source": "EMR",
+            "encounter_id": None,
+            "html": _embedded_report_html(),
+        }
+    )
+
+
 def build_patients(count: int = 30, seed: int = 20100827) -> list[FakePatient]:
     rng = random.Random(seed)
     ids = dict.fromkeys(("contact", "note", "hx", "med", "lab", "vital", "doc"), 0)
@@ -822,6 +853,7 @@ def build_patients(count: int = 30, seed: int = 20100827) -> list[FakePatient]:
             add_appointments(p, seed)
             add_messages(p, seed)
             add_attachments(p, seed)
+            add_embedded_report(p)
     return patients
 
 

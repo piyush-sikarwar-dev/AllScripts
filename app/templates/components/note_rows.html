@@ -10,7 +10,7 @@
       {% elif r.kind == "html" %}
         {% if r.caption %}<p class="note-grid__caption">{{ r.caption }}</p>{% endif %}
         {# Sanitised with nh3 in app/documents/render.py before it reaches the template. #}
-        <div class="note-html">{{ r.html | safe }}</div>
+        <div class="note-html">{{ r.html | embed_images(base.split("/")[2]) | safe }}</div>
       {% elif r.kind == "dx" %}
         <ul class="note-grid__list">
           {% for code, title in r.dx %}<li>{{ title }}{% if code %} <span class="mono muted">{{ code }}</span>{% endif %}</li>{% endfor %}

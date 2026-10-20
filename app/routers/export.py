@@ -15,6 +15,7 @@ from app.config import get_settings
 from app.crosswalk import PatientRef, resolve
 from app.db.app import new_session
 from app.formatting import to_clinic_time
+from app.repositories import source_repository
 from app.repositories.appdb import releases, utcnow
 from app.services import NotFoundError, call
 from app.services.chart_header import get_header
@@ -97,7 +98,14 @@ async def export_pdf(
     cover = cover_context(req, user.full_name, code, now)
     html = templates.get_template("pdf/export.html").render(**ctx, cover=cover)
     try:
-        pdf, pages = await anyio.to_thread.run_sync(render_pdf, html, ctx["page_locations"])
+        repo = source_repository()
+
+        def load_image(doc_id: int, index: int):
+            return repo.document_image(ref.emr_id, doc_id, index)  # ownership checked in SQL
+
+        pdf, pages = await anyio.to_thread.run_sync(
+            render_pdf, html, ctx["page_locations"], load_image
+        )
     except (OSError, ImportError) as exc:  # PDF engine (Pango) not available on this machine
         log.error("pdf engine unavailable: %s", type(exc).__name__)
         return render(request, "pages/errors/export_unavailable.html", {"nav": "patients"},

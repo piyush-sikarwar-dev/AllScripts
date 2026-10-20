@@ -16,7 +16,7 @@
   {% if v.kind == "document" %}
     {% if v.note and v.note.html %}
       {# Sanitised with nh3 in app/documents/render.py before it reaches the template. #}
-      <div class="note-html">{{ v.note.html | safe }}</div>
+      <div class="note-html">{{ v.note.html | embed_images(key) | safe }}</div>
     {% elif v.note and v.note.text %}
       <div class="note-text">{{ v.note.text }}</div>
     {% else %}

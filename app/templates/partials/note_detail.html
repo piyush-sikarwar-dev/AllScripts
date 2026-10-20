@@ -36,9 +36,9 @@
     {{ empty_state("This note's content is not available in the archive.", compact=True) }}
   {% elif note.view == "original" %}
     {% if note.format_failed %}{{ warning_banner("Couldn't format this note — showing the original.") }}{% endif %}
-    {{ note_original(note) }}
+    {{ note_original(note, key) }}
   {% else %}
-    {{ note_formatted(note) }}
+    {{ note_formatted(note, key) }}
   {% endif %}
 
   <div class="note-view__actions">

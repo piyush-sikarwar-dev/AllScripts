@@ -1,5 +1,5 @@
 {# Notes: formatted and original bodies (Notes tab detail, note print page, PDF release). #}
-{% macro note_formatted(note) -%}
+{% macro note_formatted(note, key) -%}
 {% if note.fields %}
 <dl class="note-kv">
   {% for f in note.fields %}
@@ -11,16 +11,16 @@
 </dl>
 {% elif note.formatted_html %}
 {# Sanitised with nh3 (app/documents/render.py); SSNs masked (app/services/note_format.py). #}
-<div class="note-readable note-html">{{ note.formatted_html | safe }}</div>
+<div class="note-readable note-html">{{ note.formatted_html | embed_images(key) | safe }}</div>
 {% elif note.formatted_text %}
 <div class="note-readable">{% for p in note.formatted_text %}<p>{{ p }}</p>{% endfor %}</div>
 {% endif %}
 {%- endmacro %}
 
-{% macro note_original(note) -%}
+{% macro note_original(note, key) -%}
 {% if note.original_html %}
 {# Sanitised with nh3 (app/documents/render.py); SSNs masked (app/services/note_format.py). #}
-<div class="note-original note-original--html note-html">{{ note.original_html | safe }}</div>
+<div class="note-original note-original--html note-html">{{ note.original_html | embed_images(key) | safe }}</div>
 {% elif note.original_text %}
 <pre class="note-original">{{ note.original_text }}</pre>
 {% endif %}

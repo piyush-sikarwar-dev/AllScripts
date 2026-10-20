@@ -11,7 +11,12 @@ import time
 from datetime import date, datetime
 from typing import Any
 
-from app.documents.render import DocumentFormatError, render_document, rtf_to_text
+from app.documents.render import (
+    DocumentFormatError,
+    embedded_images,
+    render_document,
+    rtf_to_text,
+)
 from app.formatting import date_us, person_name, sort_key, to_clinic_time
 from app.lookups import get_lookups
 from app.lookups.note_categories import note_categories
@@ -360,10 +365,22 @@ def _document_html(emr_id: int, document_id: int) -> str | None:
     if row is None:
         return None
     try:
-        return render_document(row["content"])
+        return render_document(row["content"], document_id)
     except DocumentFormatError:
         log.warning("document %s could not be rendered", document_id)
         return None
+
+
+def document_image(emr_id: int, document_id: int, index: int) -> tuple[str, bytes] | None:
+    """(mime, bytes) of the n-th picture embedded in a clinical document of this patient."""
+    row = emr.document_content(emr_id, document_id)  # ownership checked in SQL
+    if row is None:
+        return None
+    try:
+        images = embedded_images(row["content"])
+    except DocumentFormatError:
+        return None
+    return images[index] if 0 <= index < len(images) else None
 
 
 @cached
@@ -467,7 +484,7 @@ def note(emr_id: int, kind: str, note_id: int) -> dict[str, Any] | None:
         if row is None:
             return None
         try:
-            html = render_document(row["content"])
+            html = render_document(row["content"], note_id)
         except DocumentFormatError:
             html = None
         return {"kind": kind, "id": note_id, "date": row["created"],

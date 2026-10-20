@@ -6,7 +6,7 @@ from Phase 4 on: plain dicts / lists of dicts with raw values.
 
 from datetime import date
 
-from app.documents.render import sanitize_html
+from app.documents.render import embedded_images, render_document
 from tests.fakes.data import PATIENTS, PATIENTS_BY_ID, FakePatient
 
 
@@ -136,7 +136,9 @@ def note(emr_id: int, kind: str, note_id: int) -> dict | None:
         (n for n in p.clinical_notes if n["kind"] == kind and n["id"] == note_id), None
     )
     if synthetic is not None:
-        html = sanitize_html(synthetic["html"]) if synthetic.get("html") else None
+        html = (
+            render_document(synthetic["html"].encode(), note_id) if synthetic.get("html") else None
+        )
         return synthetic | {"html": html, "text": synthetic.get("text"), "author": synthetic["who"]}
     found = next((n for n in PATIENTS_BY_ID[emr_id].notes if n["id"] == note_id), None)
     if found is None or kind != "document":
@@ -344,3 +346,11 @@ def attachment_text(emr_id: int, attachment_id: int) -> str | None:
     if doc is None or doc["format"] != "rtf":
         return None
     return "Dear Dr. Example, placeholder letter text generated for interface review only."
+
+
+def document_image(emr_id: int, document_id: int, index: int) -> tuple[str, bytes] | None:
+    for note in PATIENTS_BY_ID[emr_id].clinical_notes:
+        if note["kind"] == "document" and note["id"] == document_id and note.get("html"):
+            images = embedded_images(note["html"].encode())
+            return images[index] if 0 <= index < len(images) else None
+    return None

@@ -246,7 +246,7 @@ async def gather(ref: PatientRef, req: ExportRequest) -> dict[str, Any]:
     return ctx
 
 
-def render_pdf(html: str, page_locations: dict[int, str]) -> tuple[bytes, int]:
+def render_pdf(html: str, page_locations: dict[int, str], image_loader=None) -> tuple[bytes, int]:
     """HTML → PDF with WeasyPrint (sync; call in a worker thread). Returns (pdf, page_count)."""
     dll_dirs = get_settings().weasyprint_dll_directories
     if dll_dirs and not os.environ.get("WEASYPRINT_DLL_DIRECTORIES"):
@@ -257,7 +257,8 @@ def render_pdf(html: str, page_locations: dict[int, str]) -> tuple[bytes, int]:
     store = get_store()
 
     class ReleaseFetcher(URLFetcher):
-        """Only scanned pages (scanpage:<id>) and the app's own font files may be loaded."""
+        """Only scanned pages (scanpage:<id>), pictures embedded in this patient's documents
+        (docimage:<doc>/<n>) and the app's own font files may be loaded."""
 
         def fetch(self, url: str, headers: dict | None = None) -> URLFetcherResponse:
             if url.startswith("scanpage:"):
@@ -269,13 +270,20 @@ def render_pdf(html: str, page_locations: dict[int, str]) -> tuple[bytes, int]:
                 except (DocumentUnavailableError, DocumentFormatError) as exc:
                     raise ValueError("page not available") from exc
                 return URLFetcherResponse(url, body=png, headers={"Content-Type": "image/png"})
+            if url.startswith("docimage:") and image_loader is not None:
+                doc_id, _, index = url.split(":", 1)[1].partition("/")
+                found = image_loader(int(doc_id), int(index)) if doc_id.isdigit() else None
+                if found is None or not index.isdigit():
+                    raise ValueError("image not available")
+                mime, data = found
+                return URLFetcherResponse(url, body=data, headers={"Content-Type": mime})
             if url.startswith("file:"):
                 path = Path(url2pathname(urlparse(url).path)).resolve()
                 if path.is_relative_to(FONT_DIR):
                     return super().fetch(url, headers)
             raise ValueError("external resources are not allowed in releases")
 
-    fetcher = ReleaseFetcher(allowed_protocols={"file", "scanpage"})
+    fetcher = ReleaseFetcher(allowed_protocols={"file", "scanpage", "docimage"})
     base = FONT_DIR.as_uri() + "/"
     css = CSS(filename=str(PDF_DIR / "pdf.css"), base_url=base, url_fetcher=fetcher)
     document = HTML(string=html, url_fetcher=fetcher, base_url=base).render(stylesheets=[css])

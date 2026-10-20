@@ -220,3 +220,11 @@ async def page_png(ref: PatientRef, doc_id: int, page: int) -> bytes:
         return await call(cached_png, target["page_id"], load)
     except (DocumentUnavailableError, DocumentFormatError) as exc:
         raise NotFoundError(f"scan {doc_id} page {page}") from exc
+
+
+async def document_image(ref: PatientRef, doc_id: int, index: int) -> tuple[str, bytes]:
+    """A picture embedded in a clinical document of this patient: (mime, bytes)."""
+    found = await call(source_repository().document_image, ref.emr_id, doc_id, index)
+    if found is None:
+        raise NotFoundError(f"document {doc_id} image {index}")
+    return found

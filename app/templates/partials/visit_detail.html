@@ -40,7 +40,7 @@
         <pre class="original-block__text">{{ block.text }}</pre>
         {% else %}
         {# Sanitised with nh3 in app/documents/render.py before it reaches the template. #}
-        <div class="note-html">{{ block.html | safe }}</div>
+        <div class="note-html">{{ block.html | embed_images(key) | safe }}</div>
         {% endif %}
       </section>
       {% endfor %}

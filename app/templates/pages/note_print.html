@@ -19,9 +19,9 @@
   {% if not note.has_content %}
   <p class="muted">This note's content is not available in the archive.</p>
   {% elif note.view == "original" %}
-  {{ note_original(note) }}
+  {{ note_original(note, key) }}
   {% else %}
-  {{ note_formatted(note) }}
+  {{ note_formatted(note, key) }}
   {% endif %}
   <p class="print-visit__footer">Printed by {{ user.full_name }} · {{ printed_at }}</p>
   <p class="print-visit__screen-note no-print">The print dialog opens automatically. <button type="button" class="btn btn--secondary btn--sm" data-action="print">Print again</button></p>

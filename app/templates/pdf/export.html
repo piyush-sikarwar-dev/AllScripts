@@ -73,7 +73,7 @@
       {% for doc in d.documents %}
       <p class="muted">{{ doc.title }}{% if doc.meta %} · {{ doc.meta }}{% endif %}</p>
       {# Sanitised with nh3 in app/documents/render.py. #}
-      <div class="note-html">{{ doc.html | safe }}</div>
+      <div class="note-html">{{ doc.html | embed_images("__pdf__") | safe }}</div>
       {% endfor %}
     {% endif %}
     {% if d.note_text %}<div class="note-text">{{ d.note_text }}</div>{% endif %}
@@ -113,10 +113,10 @@
     {% if not n.has_content %}
     <p class="empty">This note's content is not available in the archive.</p>
     {% else %}
-      {% if n.view == "formatted" %}{{ note_formatted(n) }}{% endif %}
+      {% if n.view == "formatted" %}{{ note_formatted(n, "__pdf__") }}{% endif %}
       <div class="note-original-page">
         <h2>Original: {{ n.title }}</h2>
-        {{ note_original(n) }}
+        {{ note_original(n, "__pdf__") }}
       </div>
     {% endif %}
   </div>

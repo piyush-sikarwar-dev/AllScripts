@@ -267,6 +267,7 @@ a:hover { color: var(--accent-hover); }
 .note-html table { border-collapse: collapse; max-width: 100%; }
 .note-html td, .note-html th { padding: 2px 8px 2px 0; vertical-align: top; text-align: left; }
 .note-html p { margin: 0 0 6px; }
+.note-html img.doc-embedded-img { display: block; max-width: 100%; height: auto; border: 1px solid var(--row-border); }
 .note-html h1, .note-html h2, .note-html h3, .note-html h4 { font-size: 15px; margin: 10px 0 4px; }
 
 .scan-page { margin: 0; background: var(--panel); border-radius: var(--r-ctl); padding: 8px;

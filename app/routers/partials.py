@@ -24,6 +24,7 @@ from app.services.documents import (
     DOC_KINDS,
     attachment_pdf,
     attachment_png,
+    document_image,
     document_viewer,
     page_png,
 )
@@ -603,3 +604,18 @@ async def attachment_file(
           detail={"kind": "attachment", "id": attachment_id, "file": True})  # fmt: skip
     disposition = f'attachment; filename="chart-attachment-{attachment_id}.pdf"'
     return Response(pdf, media_type="application/pdf", headers={"Content-Disposition": disposition})
+
+
+@router.get("/patients/{key}/documents/document/{doc_id}/images/{index}")
+async def document_embedded_image(
+    request: Request, background: BackgroundTasks, key: str, doc_id: int, index: int
+) -> Response:
+    """A picture embedded in a clinical document (decoded from the stored package)."""
+    ref = await _resolve(key)
+    try:
+        mime, data = await document_image(ref, doc_id, index)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    detail = {"kind": "document", "id": doc_id, "image": index}
+    audit(request, background, "view_document", patient_key=ref.patient_key, detail=detail)
+    return Response(content=data, media_type=mime)

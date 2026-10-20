@@ -11,6 +11,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from app.config import get_settings
+from app.documents.render import embed_images
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 STATIC_DIR = Path(__file__).parent / "static"
@@ -46,6 +47,7 @@ def static_url(path: str) -> str:
 
 
 templates.env.globals["url_with"] = url_with
+templates.env.filters["embed_images"] = embed_images
 templates.env.globals["static_url"] = static_url
 templates.env.globals["clinic_name"] = lambda: get_settings().clinic_name
 
