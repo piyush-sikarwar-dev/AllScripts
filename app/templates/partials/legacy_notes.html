@@ -5,7 +5,19 @@
   {% if notes.total_all %}
   <form class="note-list__tools" method="get" action="{{ base }}"
         hx-get="{{ base }}/notes" hx-target="#legacy-note-results" hx-swap="outerHTML"
-        hx-trigger="change from:#legacy-year, submit">
+        hx-trigger="change from:#legacy-year, change from:#legacy-note-type, submit">
+    <input type="hidden" name="tab" value="notes">
+    {% if notes.types|length > 1 %}
+    <div class="note-list__sort legacy-wide-select">
+      <label class="visually-hidden" for="legacy-note-type">Note type</label>
+      <select class="select" id="legacy-note-type" name="type">
+        <option value=""{% if not notes.type %} selected{% endif %}>All note types</option>
+        {% for t in notes.types %}
+        <option value="{{ t }}"{% if t == notes.type %} selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
     <div class="note-list__sort">
       <label class="visually-hidden" for="legacy-year">Year</label>
       <select class="select" id="legacy-year" name="year">
@@ -19,7 +31,8 @@
   </form>
   <p class="note-list__context">
     {{ "{:,}".format(notes.pager.total) }} {{ "note" if notes.pager.total == 1 else "notes" }}
-    {%- if notes.year %} in {{ notes.year }}{% else %} · {{ notes.first_date }} – {{ notes.last_date }}{% endif %}
+    {%- if notes.type %} · {{ notes.type }}{% endif %}
+    {%- if notes.year %} in {{ notes.year }}{% elif not notes.type %} · {{ notes.first_date }} – {{ notes.last_date }}{% endif %}
   </p>
   <ul class="note-list__rows" data-list>
     {% for n in notes.rows %}
@@ -34,7 +47,7 @@
           <span>{{ n.date }}{% if n.time %} · {{ n.time }}{% endif %}</span>
           <span class="badge badge--legacy">Pre-2010</span>
         </span>
-        <span class="note-row__title">Chart note{% if not n.has_text %} (no text){% endif %}</span>
+        <span class="note-row__title">{{ n.type }}</span>
         {% if n.byline %}<span class="note-row__sub">{{ n.byline }}</span>{% endif %}
       </a>
     </li>

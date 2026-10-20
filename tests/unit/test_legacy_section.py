@@ -428,3 +428,20 @@ def test_note_byline_skips_missing_parts(client):
     assert "— · —" not in r.text
     r = client.get(f"/legacy/{_key(p)}", params={"tab": "notes"})
     assert "— · —" not in r.text
+
+
+def test_note_types_title_and_filter(client):
+    p = max(PEOPLE, key=lambda x: len(NOTES[x["person_key"]]))
+    rows = NOTES[p["person_key"]]
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "notes"})
+    assert "All note types" in r.text and "DEC FOLLOW-UP VISIT" in r.text
+    assert "NURSE PHONE CALL" in r.text and "ORDER MANAGEMENT RESULT" in r.text
+    params = {"type": "NURSE PHONE CALL"}
+    r = client.get(f"/legacy/{_key(p)}/notes", params=params, headers=HTMX)
+    expected = sum(1 for n in rows if n["note_type"] == "NURSE PHONE CALL")
+    assert f"{expected} notes · NURSE PHONE CALL" in r.text
+    assert r.text.count("data-list-row") == min(expected, 25)
+    assert "tab=notes&type=NURSE+PHONE+CALL" in r.headers["HX-Push-Url"]
+    note = next(n for n in rows if n["note_type"] == "DEC FOLLOW-UP VISIT")
+    r = client.get(f"/legacy/{_key(p)}/notes/{note['note_id']}", headers=HTMX)
+    assert "DEC FOLLOW-UP VISIT · " in r.text

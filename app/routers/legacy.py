@@ -145,10 +145,10 @@ async def legacy_tab(
 @router.get("/legacy/{key}/notes", response_class=HTMLResponse)
 async def legacy_notes(
     request: Request, background: BackgroundTasks, key: str, year: str = "", page: Page = 1,
-    note: NoteId | None = None,
+    note: NoteId | None = None, type: str = "",
 ) -> HTMLResponse:  # fmt: skip
     try:
-        notes = await note_page(key, year, page)
+        notes = await note_page(key, year, page, type[:60])
     except NotFoundError as exc:
         raise HTTPException(status_code=404) from exc
     audit(request, background, "view_tab", patient_key=key,
@@ -170,6 +170,7 @@ async def legacy_note(
     note_id: int,
     year: str = "",
     page: Page = 1,
+    type: str = "",
 ) -> HTMLResponse:
     try:
         opened = await get_note(key, note_id)
@@ -177,7 +178,8 @@ async def legacy_note(
         raise HTTPException(status_code=404) from exc
     audit(request, background, "view_note", patient_key=key,
           detail={"section": "legacy", "note": opened.id})  # fmt: skip
-    params = {k: v for k, v in (("year", year), ("page", page)) if v not in ("", 1)}
+    state = (("type", type[:60]), ("year", year), ("page", page))
+    params = {k: v for k, v in state if v not in ("", 1)}
     push = url_with(f"/legacy/{key}", {"tab": "notes", **params}, note=note_id)
     return render(
         request,

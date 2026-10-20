@@ -169,6 +169,7 @@ def _note_row(r: dict) -> LegacyNoteRow:
         id=int(r["note_id"]),
         date=date_us(_day(r["service_date"])),
         time=_time(r["service_date"]),
+        type=_squash(r.get("note_type")) or "Chart note",  # as stored (DEC CONSULT, HIPAA …)
         provider=_provider(r),
         facility=or_dash(r.get("facility")),
         has_text=bool(r["has_text"]),
@@ -180,12 +181,23 @@ def _year(r: dict) -> str:
     return str(value.year) if value else ""
 
 
-async def note_page(key: str, year: str = "", page: int | None = None) -> LegacyNotePage:
+def _note_type(r: dict) -> str:
+    return _squash(r.get("note_type")) or "Chart note"
+
+
+async def note_page(
+    key: str, year: str = "", page: int | None = None, note_type: str = ""
+) -> LegacyNotePage:
     rows = await call(legacy_repository().notes, person_key(key))
     years = sorted({_year(r) for r in rows if _year(r)}, reverse=True)
-    if year not in years:
-        year = ""
-    chosen = [r for r in rows if not year or _year(r) == year]
+    types = sorted({_note_type(r) for r in rows})
+    year = year if year in years else ""
+    note_type = note_type if note_type in types else ""
+    chosen = [
+        r
+        for r in rows
+        if (not year or _year(r) == year) and (not note_type or _note_type(r) == note_type)
+    ]
     shown, pager = paginate(chosen, clamp_page(page))
     dated = [r["service_date"] for r in rows if r["service_date"]]
     return LegacyNotePage(
@@ -193,6 +205,8 @@ async def note_page(key: str, year: str = "", page: int | None = None) -> Legacy
         pager=pager,
         years=years,
         year=year,
+        types=types,
+        type=note_type,
         total_all=len(rows),
         first_date=date_us(_day(min(dated))) if dated else EMPTY,
         last_date=date_us(_day(max(dated))) if dated else EMPTY,
@@ -212,6 +226,7 @@ async def get_note(key: str, note_id: int) -> LegacyNote:
         id=item.id,
         date=item.date,
         time=item.time,
+        type=item.type,
         provider=item.provider,
         facility=item.facility,
         text=(body or {}).get("text") or None,
@@ -659,7 +674,7 @@ async def tab_context(key: str, tab: str, params: Mapping[str, str]) -> dict[str
             )
         }
     page = int(params["page"]) if (params.get("page") or "").isdigit() else 1
-    notes = await note_page(key, params.get("year", ""), page)
+    notes = await note_page(key, params.get("year", ""), page, params.get("type", ""))
     raw_note = params.get("note") or ""
     note_id = int(raw_note) if raw_note.isdigit() else (notes.rows[0].id if notes.rows else None)
     note = await get_note(key, note_id) if note_id is not None else None

@@ -19,6 +19,7 @@ _SECTIONS = [
 ]
 
 LEGACY_START = datetime(2002, 1, 1, 9, 0)
+_NOTE_TYPES = ["DEC FOLLOW-UP VISIT", "NURSE PHONE CALL"]
 
 
 def _rtf(i: int) -> str:
@@ -75,6 +76,7 @@ def _build() -> tuple[list[dict[str, Any]], dict[int, list[dict[str, Any]]], dic
                     "provider_title": doctor[2],
                     "facility": _FACILITIES[n % len(_FACILITIES)],
                     "has_text": 1 if has_text else 0,
+                    "note_type": _NOTE_TYPES[n % 2] if has_text else "ORDER MANAGEMENT RESULT",
                 }
             )
             if has_text:

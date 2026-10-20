@@ -58,6 +58,7 @@ class LegacyNoteRow(BaseModel):
     id: int
     date: str
     time: str
+    type: str
     provider: str
     facility: str
     has_text: bool
@@ -73,12 +74,19 @@ class LegacyNotePage(BaseModel):
     pager: Pager
     years: list[str]
     year: str
+    types: list[str]
+    type: str
     total_all: int
     first_date: str
     last_date: str
 
     def params(self, **override: object) -> dict[str, object]:
-        values: dict[str, object] = {"tab": "notes", "year": self.year, "page": self.pager.page}
+        values: dict[str, object] = {
+            "tab": "notes",
+            "type": self.type,
+            "year": self.year,
+            "page": self.pager.page,
+        }
         values.update(override)
         return {k: v for k, v in values.items() if v not in (None, "")}
 
@@ -87,6 +95,7 @@ class LegacyNote(BaseModel):
     id: int
     date: str
     time: str
+    type: str
     provider: str
     facility: str
     text: str | None
