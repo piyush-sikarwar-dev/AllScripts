@@ -11,6 +11,7 @@ LAST_VISITS = "emr/last_visit_for_patients.sql"
 MRNS = "emr/mrn_for_patients.sql"
 PATIENT_HEADER_FULL = "emr/patient_header_full.sql"
 PHARMACY_FILLS = "emr/pharmacy_fills.sql"
+LAB_ORDERS = "emr/lab_orders.sql"
 PATIENT_INSURANCES = "emr/patient_insurances.sql"
 PATIENT_PROFILE = "emr/patient_profile.sql"
 PATIENT_RACE = "emr/patient_race.sql"
@@ -433,3 +434,7 @@ def patient_photo(emr_id: int) -> bytes | None:
 
 def pharmacy_fills(emr_id: int) -> list[dict[str, Any]]:
     return run_query(Source.EMR, PHARMACY_FILLS, {"emr_id": emr_id})
+
+
+def lab_orders(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, LAB_ORDERS, {"emr_id": emr_id})

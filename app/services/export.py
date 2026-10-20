@@ -30,7 +30,7 @@ from app.services import NotFoundError, call
 from app.services.appointments import all_appointments, appointment_row
 from app.services.chart_header import get_header
 from app.services.history_service import selected_entries_for_pdf
-from app.services.labs import lab_row
+from app.services.labs import lab_order_row, lab_orders, lab_row, order_group
 from app.services.meds import fill_row, med_row, medication_items, pharmacy_fills
 from app.services.notes_service import note_detail, note_index, parse_note_ref
 from app.services.patient_details import patient_details
@@ -237,6 +237,10 @@ async def gather(ref: PatientRef, req: ExportRequest) -> dict[str, Any]:
         labs = [r for r in await call(repo.labs, ref.emr_id) if _in_range(r["date"], req)]
         labs.sort(key=lambda r: (sort_key(r["date"]), r["test"]), reverse=True)
         ctx["labs"] = [lab_row(r) for r in labs]
+        orders = [o for o in await lab_orders(ref) if _in_range(o["ordered_at"], req)]
+        ctx["lab_orders"] = [
+            lab_order_row(o) for o in orders if order_group(o.get("status_code")) != "resulted"
+        ]
     if "vitals" in req.sections:
         vit = [v for v in await call(repo.vitals, ref.emr_id) if _in_range(v["date"], req)]
         vit.sort(key=lambda v: sort_key(v["date"]), reverse=True)

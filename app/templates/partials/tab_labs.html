@@ -1,32 +1,45 @@
-{% from "components/badge.html" import source_badge, flag_badge %}
+{% from "components/badge.html" import source_badge, flag_badge, badge %}
 {% from "components/table.html" import pager_nav, count_text %}
 {% from "components/input.html" import field %}
 {% from "components/empty_state.html" import empty_state %}
 {% set base = "/patients/" ~ key %}
 {% set f = filters %}
 {% set trend = f.view == "trend" %}
+{% set orders_view = f.view == "orders" %}
 <section class="card table-card" aria-labelledby="labs-title">
   <div class="table-card__head">
-    <h2 class="table-card__title" id="labs-title">{% if trend %}Lab trend · {{ f.test or "—" }}{% else %}Lab results{% endif %}</h2>
-    <p class="table-card__count">{{ count_text(pager, "results") }}</p>
+    <h2 class="table-card__title" id="labs-title">{% if orders_view %}Lab orders{% elif trend %}Lab trend · {{ f.test or "—" }}{% else %}Lab results{% endif %}</h2>
+    <p class="table-card__count">{{ count_text(pager, "orders" if orders_view else "results") }}</p>
   </div>
   <div class="table-card__tools stack">
     <nav class="segmented" aria-label="Lab results view">
-      {% for value, label in [("list", "List"), ("trend", "Trend")] %}
+      {% for value, label in [("list", "List"), ("trend", "Trend"), ("orders", "Orders")] %}
       <a class="segmented__item{% if f.view == value %} segmented__item--active{% endif %}"
          {%- if f.view == value %} aria-current="true"{% endif %}
-         href="{{ url_with(base, dict(state, tab='labs', view=value)) }}"
-         hx-get="{{ url_with(base ~ '/tab/labs', dict(state, view=value)) }}" hx-target="#chart-tabs" hx-swap="outerHTML">{{ label }}</a>
+         href="{{ url_with(base, dict(state, tab='labs', view=value, status=None)) }}"
+         hx-get="{{ url_with(base ~ '/tab/labs', dict(state, view=value, status=None)) }}" hx-target="#chart-tabs" hx-swap="outerHTML">{{ label }}</a>
       {% endfor %}
     </nav>
+    {% if orders_view %}
+    <nav class="segmented" aria-label="Lab order status">
+      {% for value, label in [("open", "Not resulted"), ("canceled", "Canceled"), ("all", "All orders")] %}
+      <a class="segmented__item{% if f.status == value %} segmented__item--active{% endif %}"
+         {%- if f.status == value %} aria-current="true"{% endif %}
+         href="{{ url_with(base, dict(state, tab='labs', status=value)) }}"
+         hx-get="{{ url_with(base ~ '/tab/labs', dict(state, status=value)) }}" hx-target="#chart-tabs" hx-swap="outerHTML">{{ label }} ({{ "{:,}".format(order_counts[value]) }})</a>
+      {% endfor %}
+    </nav>
+    {% endif %}
     <form class="toolbar" method="get" action="{{ base }}"
           hx-get="{{ base }}/tab/labs" hx-target="#chart-tabs" hx-swap="outerHTML">
       <input type="hidden" name="tab" value="labs">
       <input type="hidden" name="view" value="{{ f.view }}">
+      {% if orders_view %}<input type="hidden" name="status" value="{{ f.status }}">{% endif %}
       {{ field("from", "From", value=f.date_from, id="lab-from", placeholder="MM/DD/YYYY", inputmode="numeric",
                error=f.errors.get("date_from"), cls="field--narrow") }}
       {{ field("to", "To", value=f.date_to, id="lab-to", placeholder="MM/DD/YYYY", inputmode="numeric",
                error=f.errors.get("date_to"), cls="field--narrow") }}
+      {% if not orders_view %}
       <div class="field field--wide">
         <label class="field__label" for="lab-test">Test</label>
         <select class="select" id="lab-test" name="test">
@@ -36,6 +49,7 @@
           {% endfor %}
         </select>
       </div>
+      {% endif %}
       <div class="toolbar__actions">
         <button type="submit" class="btn btn--secondary">Apply</button>
         <a class="btn btn--secondary" href="{{ url_with(base, {'tab': 'labs', 'view': f.view}) }}"
@@ -43,7 +57,37 @@
       </div>
     </form>
   </div>
-  {% if labs %}
+  {% if orders_view %}
+  {% if orders %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr><th scope="col">Ordered</th><th scope="col">Test</th><th scope="col">Status</th>
+            <th scope="col">Ordered by</th><th scope="col">Diagnosis</th><th scope="col">Reported</th>
+            <th scope="col">Comment</th></tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td class="nowrap">{{ o.ordered }}</td>
+          <td><span class="cell-strong">{{ o.test }}</span></td>
+          <td>{% if o.status_group == "open" %}{{ badge(o.status, "abn") }}{% elif o.status_group == "canceled" %}{{ badge(o.status, "voided") }}{% else %}{{ o.status }}{% endif %}</td>
+          <td>{{ o.provider }}</td>
+          <td>{{ o.diagnosis }}</td>
+          <td class="nowrap">{{ o.reported }}</td>
+          <td>{{ o.comment }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager_nav(pager, base, base ~ "/tab/labs", "#chart-tabs", dict(state, tab="labs")) }}
+  {% elif f.errors %}
+    {{ empty_state("Correct the highlighted date to see orders.") }}
+  {% else %}
+    {{ empty_state({"open": "No lab orders waiting for results.", "canceled": "No canceled lab orders.", "all": "No lab orders recorded."}[f.status]) }}
+  {% endif %}
+  {% elif labs %}
   <div class="table-scroll">
     <table class="table">
       <thead>

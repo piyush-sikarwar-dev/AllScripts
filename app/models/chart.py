@@ -163,8 +163,20 @@ class LabFilters(BaseModel):
     date_from: str = ""
     date_to: str = ""
     test: str = ""
-    view: str = "list"  # "list" | "trend"
+    view: str = "list"  # "list" | "trend" | "orders"
+    status: str = "open"  # orders view: "open" | "canceled" | "all"
     errors: dict[str, str] = {}
+
+
+class LabOrderRow(BaseModel):
+    ordered: str
+    test: str
+    status: str
+    status_group: str  # "open" | "canceled" | "resulted"
+    provider: str
+    diagnosis: str
+    reported: str
+    comment: str
 
 
 class VitalRow(BaseModel):

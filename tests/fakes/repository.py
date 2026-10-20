@@ -556,3 +556,38 @@ def pharmacy_fills(emr_id: int) -> list[dict]:
             )
     rows.sort(key=lambda r: (r["last_fill_date"], r["written_date"]), reverse=True)
     return rows
+
+
+# (test, status code: 1 Ordered, 3 Final, 5 Pending, 6 Canceled, 7 Erroneous, comment)
+_LAB_ORDERS = [
+    ("Lipid panel", 1, "Patient to return fasting"),
+    ("Hemoglobin A1c", 3, None),
+    ("Vitamin D, 25-hydroxy", 5, None),
+    ("TSH", 6, "Canceled by provider"),
+    ("CBC with differential", 7, None),
+]
+
+
+def lab_orders(emr_id: int) -> list[dict]:
+    if _index(emr_id) % 6 == 5:
+        return []
+    rows = [
+        {
+            "order_id": emr_id * 10 + n,
+            "ordered_at": datetime(2021, 1 + n, 10, 15, 0, tzinfo=UTC),
+            "test": test,
+            "catalog_name": None,
+            "status_code": status,
+            "reported_at": datetime(2021, 1 + n, 12, tzinfo=UTC) if status == 3 else None,
+            "comment": comment,
+            "in_house": 0,
+            "provider_last": "Doctor",
+            "provider_first": "Sample",
+            "provider_title": "MD",
+            "diagnosis": "Type 2 diabetes mellitus" if n < 2 else None,
+            "diagnosis_code": "E11.9" if n < 2 else None,
+        }
+        for n, (test, status, comment) in enumerate(_LAB_ORDERS)
+    ]
+    rows.sort(key=lambda r: r["ordered_at"], reverse=True)
+    return rows

@@ -130,7 +130,7 @@ Key columns: `TITLE`, `SOURCE`/`SOURCE_CODE` (code system and code), `ONSET_DATE
 | Information | Tables (rows) | Useful columns | Show? |
 |---|---|---|---|
 | Lab results | `LAB_RESULT` (1,603,126) | `RESULT_NAME`, `RESULT_VALUE`, `RESULT_UNITS`, `RESULT_NORMAL_RANGE`, `RESULT_ABNORMAL`, `RESULT_FLAGS`, `RESULT_OBSERVATIONDATE`, `RESULT_COMMENTS`, `CORRECTED` | **Yes (P7)** |
-| Lab orders | `LABORDERS` (476,730), `LABSAMPLES` (467,913), `LABREQUISITION` (47,904) | `LABORDER_NAME`, `LABORDER_ORDERDATE`, status | **Yes (P7, as context)** |
+| Lab orders | `LABORDERS` (476,730), `LABSAMPLES` (467,913), `LABREQUISITION` (47,904) | `LABORDER_NAME`, `LABORDER_ORDERDATE`, `LABORDER_COMPLETIONSTATUS` (ORDCOMP: 1/2/5 open 18,408, 6 canceled 8,806, 3/4 resulted), ordering provider, diagnosis (`IMREDX_CODE` → DX), comment. Orders do not link to LAB_RESULT rows (sample codes match 249 of 477k) | **Yes (live)**: Lab results → Orders (Not resulted / Canceled / All); PDF lists open + canceled |
 | Lab test catalog | `LABCATALOG` (1,873), `hpsystem.LOINC` (93,658) | | Lookup |
 | Procedures / non-lab orders (imaging, referrals, in-house tests) | `PROCEDURES` (89,396) | `PROC_TITLE`, `PROC_CODE`, `PROC_ORDERDATE`, `PROC_COMPLETIONDATE`, `ABNORMAL`, `PROC_COMMENT` | Maybe (not in the current tab list) |
 | Vitals | `VITALS_DATA` (138,170) | `VITAL_DATETIME`, BP, pulse, temperature (+unit), weight, height, `VITAL_PULSE_OX`, `VITAL_PAIN_LEVEL`, respiration, BMI inputs; hide `VITAL_ERRONEOUS_IND = 1` | **Yes (P6 visit detail, P7 tab)** |

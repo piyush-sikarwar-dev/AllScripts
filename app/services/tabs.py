@@ -14,7 +14,7 @@ from app.services.documents import (
     scan_store_configured,
 )
 from app.services.history_service import history_view
-from app.services.labs import build_filters, labs_tab
+from app.services.labs import build_filters, lab_orders_tab, labs_tab
 from app.services.meds import fills_tab, meds_tab
 from app.services.notes_service import notes_tab
 from app.services.notes_service import parse_state as parse_notes_state
@@ -89,11 +89,19 @@ async def tab_context(
             params.get("to", ""),
             params.get("test", ""),
             params.get("view", ""),
+            params.get("status", ""),
         )
-        ctx["labs"], ctx["pager"], ctx["test_names"] = await labs_tab(ref, page, filters)
+        if filters.view == "orders":
+            ctx["orders"], ctx["pager"], ctx["order_counts"] = await lab_orders_tab(
+                ref, page, filters
+            )
+            ctx["labs"], ctx["test_names"] = [], []
+        else:
+            ctx["labs"], ctx["pager"], ctx["test_names"] = await labs_tab(ref, page, filters)
         ctx["filters"] = filters
         state = {
             "view": filters.view,
+            "status": filters.status if filters.view == "orders" else None,
             "test": filters.test,
             "from": filters.date_from,
             "to": filters.date_to,

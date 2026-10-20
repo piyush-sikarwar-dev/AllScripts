@@ -125,3 +125,27 @@ def test_live_pharmacy_fills_merge_repeats(monkeypatch):
     monkeypatch.setattr(emr, "pharmacy_fills", lambda emr_id: [dict(r) for r in rows])
     out = live.pharmacy_fills(1)
     assert [r["fill_id"] for r in out] == [2, 1]
+
+
+def test_lab_orders_view(client):
+    r = client.get(f"/patients/{_key(WITH)}", params={"tab": "labs", "view": "orders"})
+    assert r.status_code == 200 and "Lab orders" in r.text
+    assert "Not resulted (2)" in r.text and "Canceled (1)" in r.text and "All orders (4)" in r.text
+    assert "Lipid panel" in r.text and "Vitamin D, 25-hydroxy" in r.text  # Ordered + Pending
+    assert "Patient to return fasting" in r.text and "E11.9 Type 2 diabetes mellitus" in r.text
+    assert "Hemoglobin A1c" not in r.text and "CBC with differential" not in r.text
+    r = client.get(f"/patients/{_key(WITH)}/tab/labs", params={"view": "orders", "status": "all"},
+                   headers=HTMX)  # fmt: skip
+    assert "Hemoglobin A1c" in r.text and "TSH" in r.text
+    assert "CBC with differential" not in r.text  # erroneous orders never shown
+    assert r.headers["HX-Push-Url"] == f"/patients/{_key(WITH)}?tab=labs&view=orders&status=all"
+    r = client.get(f"/patients/{_key(NOTHING)}", params={"tab": "labs", "view": "orders"})
+    assert "No lab orders waiting for results." in r.text
+
+
+@pytest.mark.anyio
+async def test_pdf_context_lists_open_and_canceled_orders():
+    ref = await resolve(_key(WITH))
+    ctx = await gather(ref, ExportRequest(sections=["labs"]))
+    tests = [o.test for o in ctx["lab_orders"]]
+    assert sorted(tests) == ["Lipid panel", "TSH", "Vitamin D, 25-hydroxy"]

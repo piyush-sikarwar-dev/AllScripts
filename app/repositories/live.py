@@ -1074,3 +1074,11 @@ def pharmacy_fills(emr_id: int) -> list[dict[str, Any]]:
         key=lambda r: (sort_key(r["last_fill_date"]), sort_key(r["written_date"])), reverse=True
     )
     return out
+
+
+@cached
+def lab_orders(emr_id: int) -> list[dict[str, Any]]:
+    """Lab orders with their own status, newest order first."""
+    rows = emr.lab_orders(emr_id)
+    rows.sort(key=lambda r: (sort_key(r["ordered_at"]), r["order_id"]), reverse=True)
+    return rows
