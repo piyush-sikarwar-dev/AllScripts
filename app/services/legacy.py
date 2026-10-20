@@ -508,7 +508,7 @@ def _doc_row(r: dict, note_ids: set[int]) -> LegacyDocRow:
     return LegacyDocRow(
         id=int(r["document_id"]),
         date=date_us(_day(r.get("doc_date") or r.get("scanned_date"))),
-        type=_label_case(r.get("doc_type")) if r.get("doc_type") else "Scanned document",
+        type=_squash(r.get("doc_type")) or "Scanned document",  # as stored (HIPAA, BCBS …)
         pages=max(int(r.get("pages") or 1), 1),
         file_type=_FILE_TYPES.get(ext, ext or EMPTY),
         provider=_provider(r),

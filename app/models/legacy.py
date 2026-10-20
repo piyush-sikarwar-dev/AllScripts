@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel
 
+from app.formatting import EMPTY
 from app.models.common import Pager
 
 
@@ -61,6 +62,11 @@ class LegacyNoteRow(BaseModel):
     facility: str
     has_text: bool
 
+    @property
+    def byline(self) -> str:
+        """'Provider · Facility' without the parts that were not recorded."""
+        return " · ".join(x for x in (self.provider, self.facility) if x and x != EMPTY)
+
 
 class LegacyNotePage(BaseModel):
     rows: list[LegacyNoteRow]
@@ -84,6 +90,11 @@ class LegacyNote(BaseModel):
     provider: str
     facility: str
     text: str | None
+
+    @property
+    def byline(self) -> str:
+        """'Provider · Facility' without the parts that were not recorded."""
+        return " · ".join(x for x in (self.provider, self.facility) if x and x != EMPTY)
 
 
 class LegacyProblem(BaseModel):

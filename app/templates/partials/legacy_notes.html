@@ -35,7 +35,7 @@
           <span class="badge badge--legacy">Pre-2010</span>
         </span>
         <span class="note-row__title">Chart note{% if not n.has_text %} (no text){% endif %}</span>
-        <span class="note-row__sub">{{ n.provider }} · {{ n.facility }}</span>
+        {% if n.byline %}<span class="note-row__sub">{{ n.byline }}</span>{% endif %}
       </a>
     </li>
     {% endfor %}

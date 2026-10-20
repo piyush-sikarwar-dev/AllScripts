@@ -16,7 +16,7 @@
       <form class="note-list__tools" method="get" action="{{ base }}"
             hx-get="{{ base }}/tab/docs" hx-target="#chart-tabs" hx-swap="outerHTML" hx-trigger="change, submit">
         <input type="hidden" name="tab" value="docs">
-        <div class="note-list__sort">
+        <div class="note-list__sort legacy-wide-select">
           <label class="visually-hidden" for="legacy-doc-type">Document type</label>
           <select class="select" id="legacy-doc-type" name="type">
             <option value="">All document types</option>

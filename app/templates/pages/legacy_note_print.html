@@ -13,7 +13,7 @@
   </header>
   <p class="note-view__badge-line"><span class="badge badge--legacy">Pre-2010</span></p>
   <h1 class="print-visit__title">Chart note · {{ note.date }}</h1>
-  <p class="note-view__meta">{{ note.provider }} · {{ note.facility }}{% if note.time %} · {{ note.time }}{% endif %}</p>
+  <p class="note-view__meta">{{ note.byline or "Provider not recorded" }}{% if note.time %} · {{ note.time }}{% endif %}</p>
   {% if note.text %}
   <div class="legacy-note-text">{{ note.text }}</div>
   {% else %}

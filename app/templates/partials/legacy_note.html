@@ -6,7 +6,7 @@
     <div class="note-view__heading">
       <span class="badge badge--legacy">Pre-2010</span>
       <h2 class="note-view__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>Chart note · {{ note.date }}</h2>
-      <p class="note-view__meta">{{ note.provider }} · {{ note.facility }}{% if note.time %} · {{ note.time }}{% endif %}</p>
+      <p class="note-view__meta">{{ note.byline or "Provider not recorded" }}{% if note.time %} · {{ note.time }}{% endif %}</p>
     </div>
   </div>
   {% if note.text %}

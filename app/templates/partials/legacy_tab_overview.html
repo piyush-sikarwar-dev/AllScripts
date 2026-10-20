@@ -45,7 +45,7 @@
       <h2 class="card__title" id="ov-last-note">Last chart note</h2>
       {% if o.last_note %}
       <p class="last-visit__date">{{ o.last_note.date }}</p>
-      <p class="last-visit__meta">{{ o.last_note.provider }} · {{ o.last_note.facility }}</p>
+      {% if o.last_note.byline %}<p class="last-visit__meta">{{ o.last_note.byline }}</p>{% endif %}
       {{ tab_link("notes", "All chart notes") }}
       {% else %}{{ empty_state("No chart notes recorded.", compact=True) }}{% endif %}
     </section>

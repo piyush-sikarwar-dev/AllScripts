@@ -355,11 +355,11 @@ def test_docs_tab_lists_metadata_with_banner(client):
     p = _with_history()
     r = client.get(f"/legacy/{_key(p)}", params={"tab": "docs"})
     assert r.status_code == 200 and 'id="tab-docs"' in r.text
-    assert "4 documents" in r.text and "Outside labs" in r.text and "Insurance card" in r.text
+    assert "4 documents" in r.text and "OUTSIDE LABS" in r.text and "INSURANCE CARD" in r.text
     assert "old image server" in r.text and "TIFF image" in r.text and "JPEG image" in r.text
     assert "scan-page__img" not in r.text
-    r = client.get(f"/legacy/{_key(p)}/tab/docs", params={"type": "Hipaa"}, headers=HTMX)
-    assert "1 document" in r.text and r.headers["HX-Push-Url"].endswith("tab=docs&type=Hipaa")
+    r = client.get(f"/legacy/{_key(p)}/tab/docs", params={"type": "HIPAA"}, headers=HTMX)
+    assert "1 document" in r.text and r.headers["HX-Push-Url"].endswith("tab=docs&type=HIPAA")
 
 
 def test_docs_tab_empty(client):
@@ -419,3 +419,12 @@ def test_overview_empty_patient(client):
     p = next(p for p in PEOPLE if not NOTES[p["person_key"]])
     r = client.get(f"/legacy/{_key(p)}")
     assert r.status_code == 200 and "No chart notes recorded." in r.text
+
+
+def test_note_byline_skips_missing_parts(client):
+    p = _with_notes(3)
+    no_provider = next(n for n in NOTES[p["person_key"]] if n["provider_last"] is None)
+    r = client.get(f"/legacy/{_key(p)}/notes/{no_provider['note_id']}", headers=HTMX)
+    assert "— · —" not in r.text
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "notes"})
+    assert "— · —" not in r.text
