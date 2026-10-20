@@ -119,3 +119,37 @@ class LegacyHistory(BaseModel):
     allergies: list[LegacyAllergy]
     show_voided: bool
     voided_count: int
+
+
+class LegacyMedEntry(BaseModel):
+    date: str
+    status: str
+    sig: str
+    quantity: str
+    refills: str
+    stopped: str
+    provider: str
+
+
+class LegacyMedication(BaseModel):
+    id: int
+    name: str
+    sig: str
+    reason: str
+    comment: str
+    started: str
+    last_update: str
+    stopped: str
+    status: str
+    provider: str
+    quantity: str
+    refills: str
+    voided: bool
+    entries: list[LegacyMedEntry]
+
+
+class LegacyMedications(BaseModel):
+    active: list[LegacyMedication]
+    past: list[LegacyMedication]
+    voided: list[LegacyMedication]
+    show_voided: bool

@@ -77,3 +77,11 @@ def allergies(person_key: int) -> list[dict[str, Any]]:
         r["reactions"] = by_allergy.get(r["allergy_id"], [])
     rows.sort(key=lambda r: (sort_key(r["noted_date"]), r["allergy_id"]), reverse=True)
     return rows
+
+
+@cached
+def medications(person_key: int) -> list[dict[str, Any]]:
+    """Medication entries, oldest first (the service groups them by med_id)."""
+    rows = dmz.legacy_medications(person_key)
+    rows.sort(key=lambda r: (sort_key(r["date_of_service"] or r["date_written"]), r["entry_id"]))
+    return rows

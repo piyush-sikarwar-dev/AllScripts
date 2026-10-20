@@ -2,6 +2,7 @@
 
 import random
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 
 from app.documents.render import rtf_to_text
@@ -193,3 +194,62 @@ def problems(person_key: int) -> list[dict[str, Any]]:
 
 def allergies(person_key: int) -> list[dict[str, Any]]:
     return _history(person_key)[1] if person_key in PEOPLE_BY_KEY else []
+
+
+# (drug, sig frequency, [(status_key, status, group, months after start, stopped?)])
+_MEDS = [
+    (
+        "METFORMIN HCL  TABLET 500 MG",
+        "Twice Daily",
+        [(1, "New Prescription", 1, 0, False), (2, "Continued", 1, 6, False)],
+    ),
+    (
+        "LISINOPRIL  TABLET 10 MG",
+        "Every A.M.",
+        [(1, "New Prescription", 1, 0, False), (11, "Discontinued", 3, 12, True)],
+    ),
+    ("ASPIRIN  TABLET 81 MG", None, [(10, "New History", 1, 0, False)]),
+    ("AMOXICILLIN  CAPSULE 500 MG", "Three Times Daily", [(30, "Entered in Error", 6, 0, False)]),
+]
+
+
+def medications(person_key: int) -> list[dict[str, Any]]:
+    if person_key not in PEOPLE_BY_KEY or (person_key - 5_000) % 4 == 3:
+        return []
+    rows = []
+    for n, (drug, freq, entries) in enumerate(_MEDS):
+        med_id = person_key * 100 + n * 10
+        start = datetime(2004 + n, 2, 1)
+        for e, (status_key, status, group, months, stopped) in enumerate(entries):
+            when = start + timedelta(days=30 * months)
+            rows.append(
+                {
+                    "entry_id": med_id + e,
+                    "med_id": med_id,
+                    "mdrug_name": drug,
+                    "udrug_name": None,
+                    "udrug_strength": None,
+                    "sig_quantity": "1" if freq else None,
+                    "sig_dose_form": None,
+                    "sig_frequency": freq,
+                    "amt_dispensed": Decimal("60.000") if freq else None,
+                    "amt_uom": "TAB" if freq else None,
+                    "num_refills": 2 if freq else None,
+                    "days_supply": 30,
+                    "dispense_as_written": "N",
+                    "date_written": when,
+                    "date_of_service": when,
+                    "stop_date": when if stopped else None,
+                    "last_dose_date": None,
+                    "status_key": status_key,
+                    "status": status,
+                    "status_group": group,
+                    "comments": "Sample comment" if n == 0 and e == 0 else None,
+                    "dx_code": "250.00" if n == 0 else None,
+                    "dx_desc": "DIABETES MELLITUS TYPE II" if n == 0 else None,
+                    "provider_last": "Sample",
+                    "provider_first": "Doctor",
+                    "provider_title": "MD",
+                }
+            )
+    return rows

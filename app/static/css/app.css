@@ -599,6 +599,11 @@ a:hover { color: var(--accent-hover); }
 .legacy-toggle { margin: 0; display: flex; justify-content: flex-end; }
 .cell-strong { font-weight: 500; }
 .legacy-reaction { color: var(--abn-ink); }
+.legacy-med { min-width: 260px; }
+.legacy-history { margin-top: 6px; font-size: 13px; }
+.legacy-history summary { cursor: pointer; color: var(--accent); font-weight: 500; min-height: 24px; }
+.legacy-history__list { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); }
+.legacy-history__list li { margin: 2px 0; }
 .legacy-note-text { margin: 0 0 16px; padding: 14px 16px; background: var(--panel); border-radius: var(--r-ctl);
   font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 

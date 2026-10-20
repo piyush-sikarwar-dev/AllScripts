@@ -8,10 +8,11 @@ import asyncio
 import re
 from collections.abc import Mapping
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 
 from app.config import get_settings
-from app.formatting import EMPTY, age, date_us, initials, or_dash, person_name
+from app.formatting import EMPTY, age, date_us, initials, or_dash, person_name, sort_key
 from app.lookups import label
 from app.lookups.legacy_codes import LegacyCodes, legacy_codes
 from app.models.common import PAGE_SIZE, Pager, clamp_page, paginate
@@ -19,6 +20,9 @@ from app.models.legacy import (
     LegacyAllergy,
     LegacyHeader,
     LegacyHistory,
+    LegacyMedEntry,
+    LegacyMedication,
+    LegacyMedications,
     LegacyNote,
     LegacyNotePage,
     LegacyNoteRow,
@@ -206,6 +210,7 @@ async def get_note(key: str, note_id: int) -> LegacyNote:
 TABS: list[tuple[str, str]] = [
     ("notes", "Chart notes"),
     ("problems", "Problems & allergies"),
+    ("meds", "Medications"),
 ]
 TAB_NAMES = {name for name, _ in TABS}
 TAB_LABELS = dict(TABS)
@@ -274,10 +279,103 @@ async def history(key: str, show_voided: bool = False) -> LegacyHistory:
     )
 
 
+_MED_ACTIVE, _MED_VOIDED = 1, {6, 2}  # Medications.MedicationStatus.PROEHR_Med_Status groups
+
+
+def _squash(*parts: object) -> str:
+    """Join non-empty parts with single spaces (legacy names are padded / double-spaced)."""
+    return " ".join(" ".join(str(p).split()) for p in parts if p is not None and str(p).strip())
+
+
+def _amount(value: object) -> str:
+    if value is None:
+        return ""
+    text = f"{value:f}" if isinstance(value, Decimal) else str(value)
+    return text.rstrip("0").rstrip(".") if "." in text else text
+
+
+def _med_entry(r: dict) -> LegacyMedEntry:
+    refills = r.get("num_refills")
+    return LegacyMedEntry(
+        date=date_us(_day(r.get("date_of_service") or r.get("date_written"))),
+        status=r.get("status") or f"Unknown (code {r.get('status_key')})",
+        sig=_squash(r.get("sig_quantity"), r.get("sig_dose_form"), r.get("sig_frequency")) or EMPTY,
+        quantity=_squash(_amount(r.get("amt_dispensed")), r.get("amt_uom")) or EMPTY,
+        refills=EMPTY if refills is None else str(refills),
+        stopped=date_us(_day(r.get("stop_date"))),
+        provider=_provider(r),
+    )
+
+
+def _medication(rows: list[dict]) -> tuple[LegacyMedication, str]:
+    """One medication from its entries (oldest first) -> (view model, active | past | voided)."""
+    first, last = rows[0], rows[-1]
+    entry = _med_entry(last)
+    name = _squash(last.get("mdrug_name")) or _squash(
+        last.get("udrug_name"), last.get("udrug_strength")
+    )
+    reason = _squash(last.get("dx_desc")) or _squash(last.get("dx_code"))
+    comments = [_squash(r.get("comments")) for r in rows]
+    group = last.get("status_group")
+    stopped = next((r["stop_date"] for r in reversed(rows) if r.get("stop_date")), None)
+    if group in _MED_VOIDED:
+        kind = "voided"
+    elif group == _MED_ACTIVE and stopped is None:
+        kind = "active"
+    else:
+        kind = "past"
+    med = LegacyMedication(
+        id=int(last["med_id"]),
+        name=name or EMPTY,
+        sig=entry.sig,
+        reason=reason,
+        comment="; ".join(dict.fromkeys(c for c in comments if c)),
+        started=date_us(_day(first.get("date_of_service") or first.get("date_written"))),
+        last_update=entry.date,
+        stopped=date_us(_day(stopped)),
+        status=entry.status,
+        provider=entry.provider,
+        quantity=entry.quantity,
+        refills=entry.refills,
+        voided=kind == "voided",
+        entries=[_med_entry(r) for r in reversed(rows)],
+    )
+    return med, kind
+
+
+async def medications(key: str, show_voided: bool = False) -> LegacyMedications:
+    """Medications grouped from their entries: active, discontinued, entered in error."""
+    rows = await call(legacy_repository().medications, person_key(key))
+    chains: dict[int, list[dict]] = {}
+    for r in rows:  # already oldest first
+        chains.setdefault(int(r["med_id"]), []).append(r)
+    groups: dict[str, list[tuple[datetime, LegacyMedication]]] = {
+        "active": [],
+        "past": [],
+        "voided": [],
+    }
+    for entries in chains.values():
+        med, kind = _medication(entries)
+        latest = entries[-1].get("date_of_service") or entries[-1].get("date_written")
+        groups[kind].append((sort_key(latest), med))
+    ordered = {
+        k: [m for _, m in sorted(v, key=lambda x: (x[0], x[1].id), reverse=True)]
+        for k, v in groups.items()
+    }
+    return LegacyMedications(
+        active=ordered["active"],
+        past=ordered["past"],
+        voided=ordered["voided"],
+        show_voided=show_voided,
+    )
+
+
 async def tab_context(key: str, tab: str, params: Mapping[str, str]) -> dict[str, Any]:
     """Everything one tab of the pre-2010 chart needs (full page or HTMX fragment)."""
     if tab == "problems":
         return {"history": await history(key, params.get("voided") == "1")}
+    if tab == "meds":
+        return {"meds": await medications(key, params.get("voided") == "1")}
     page = int(params["page"]) if (params.get("page") or "").isdigit() else 1
     notes = await note_page(key, params.get("year", ""), page)
     raw_note = params.get("note") or ""

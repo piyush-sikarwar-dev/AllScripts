@@ -1,0 +1,90 @@
+{# Pre-2010 chart: medications grouped from their entries (new prescription → continued →
+   discontinued). Each row shows the latest entry; "History" lists every entry. #}
+{% from "components/empty_state.html" import empty_state %}
+{% from "components/badge.html" import badge, voided_badge %}
+{% set m = meds %}
+{% set base = "/legacy/" ~ key %}
+
+{% macro med_table(title, rows, id, empty_text) -%}
+<section class="card table-card" aria-labelledby="{{ id }}">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="{{ id }}">{{ title }}</h2>
+    <p class="table-card__count">{{ rows|length }} {{ "medication" if rows|length == 1 else "medications" }}</p>
+  </div>
+  {% if rows %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Medication</th>
+          <th scope="col">Quantity</th>
+          <th scope="col">Refills</th>
+          <th scope="col">Started</th>
+          <th scope="col">Last update</th>
+          <th scope="col">Stopped</th>
+          <th scope="col">Status</th>
+          <th scope="col">Prescriber</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for med in rows %}
+        <tr>
+          <td class="legacy-med">
+            <span class="cell-strong">{{ med.name }}</span>{% if med.voided %} {{ voided_badge() }}{% endif %}
+            {% if med.sig != "—" %}<span class="cell-sub">{{ med.sig }}</span>{% endif %}
+            {% if med.reason %}<span class="cell-sub">For: {{ med.reason }}</span>{% endif %}
+            {% if med.comment %}<span class="cell-sub">{{ med.comment }}</span>{% endif %}
+            {% if med.entries|length > 1 %}
+            <details class="legacy-history">
+              <summary>History ({{ med.entries|length }} entries)</summary>
+              <ul class="legacy-history__list">
+                {% for e in med.entries %}
+                <li><span class="nowrap">{{ e.date }}</span> · {{ e.status }}
+                  {%- if e.sig != "—" %} · {{ e.sig }}{% endif %}
+                  {%- if e.quantity != "—" %} · Qty {{ e.quantity }}{% endif %}
+                  {%- if e.refills != "—" %} · {{ e.refills }} refills{% endif %}
+                  {%- if e.stopped != "—" %} · stopped {{ e.stopped }}{% endif %}
+                  {%- if e.provider != "—" %} · {{ e.provider }}{% endif %}</li>
+                {% endfor %}
+              </ul>
+            </details>
+            {% endif %}
+          </td>
+          <td class="nowrap">{{ med.quantity }}</td>
+          <td>{{ med.refills }}</td>
+          <td class="nowrap">{{ med.started }}</td>
+          <td class="nowrap">{{ med.last_update }}</td>
+          <td class="nowrap">{{ med.stopped }}</td>
+          <td>{{ med.status }}</td>
+          <td>{{ med.provider }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {{ empty_state(empty_text) }}
+  {% endif %}
+</section>
+{%- endmacro %}
+
+<div class="legacy-stack">
+  {% if m.voided %}
+  <p class="legacy-toggle">
+    {% set target = {"tab": "meds", "voided": None if m.show_voided else "1"} %}
+    <a class="btn btn--secondary btn--sm" href="{{ url_with(base, target) }}"
+       hx-get="{{ url_with(base ~ '/tab/meds', {'voided': target.voided}) }}"
+       hx-target="#chart-tabs" hx-swap="outerHTML">
+      {{- "Hide" if m.show_voided else "Show" }} entered-in-error ({{ m.voided|length }})</a>
+  </p>
+  {% endif %}
+  {% if not (m.active or m.past or m.voided) %}
+  <section class="card">{{ empty_state("No medications recorded in the pre-2010 chart.") }}</section>
+  {% else %}
+  {{ med_table("Active at last pre-2010 update", m.active, "legacy-meds-active", "No medications were active at the last update.") }}
+  {{ med_table("Discontinued", m.past, "legacy-meds-past", "No discontinued medications.") }}
+  {% if m.show_voided and m.voided %}
+  {{ med_table("Entered in error", m.voided, "legacy-meds-voided", "") }}
+  {% endif %}
+  {% endif %}
+</div>

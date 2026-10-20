@@ -240,3 +240,40 @@ def test_live_allergies_attach_reactions(monkeypatch):
     out = live_legacy.allergies(1)
     assert [r["allergy_id"] for r in out] == [2, 1]
     assert out[1]["reactions"] == ["Hives", "Rash"] and out[0]["reactions"] == []
+
+
+def test_meds_tab_groups_entries(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "meds"})
+    assert r.status_code == 200 and 'id="tab-meds"' in r.text
+    assert "Active at last pre-2010 update" in r.text and "Discontinued" in r.text
+    assert r.text.count("METFORMIN HCL TABLET 500 MG") == 1  # two entries, one medication
+    assert "History (2 entries)" in r.text and "New Prescription" in r.text
+    assert "Continued" in r.text and "Twice Daily" in r.text and "60 TAB" in r.text
+    assert "For: DIABETES MELLITUS TYPE II" in r.text
+    assert "AMOXICILLIN" not in r.text and "Show entered-in-error (1)" in r.text
+
+
+def test_meds_tab_voided_and_empty(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}/tab/meds", params={"voided": "1"}, headers=HTMX)
+    assert "AMOXICILLIN" in r.text and "Entered in error" in r.text and "badge--voided" in r.text
+    assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?tab=meds&voided=1"
+    empty = next(p for p in PEOPLE if (p["person_key"] - 5_000) % 4 == 3)
+    r = client.get(f"/legacy/{_key(empty)}", params={"tab": "meds"})
+    assert "No medications recorded in the pre-2010 chart." in r.text
+
+
+def test_med_status_groups():
+    from app.services.legacy import _medication
+
+    base = {"med_id": 1, "mdrug_name": "X  TAB", "date_of_service": datetime(2005, 1, 1)}
+    active, kind = _medication([{**base, "entry_id": 1, "status_group": 1, "status": "Continued"}])
+    assert kind == "active" and active.name == "X TAB"
+    _, kind = _medication([{**base, "entry_id": 1, "status_group": 1,
+                            "stop_date": datetime(2006, 1, 1)}])  # fmt: skip
+    assert kind == "past"
+    _, kind = _medication([{**base, "entry_id": 1, "status_group": 6}])
+    assert kind == "voided"
+    med, kind = _medication([{**base, "entry_id": 1, "status_group": None, "status_key": 55}])
+    assert kind == "past" and med.status == "Unknown (code 55)"
