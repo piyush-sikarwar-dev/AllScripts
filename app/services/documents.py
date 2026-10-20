@@ -33,10 +33,32 @@ def parse_doc_ref(raw: str | None) -> tuple[str, int] | None:
     return kind, int(ident)
 
 
+# Source chips: (key, label). "attachment" files are stored in the database and always viewable;
+# "scan" images need the scan share (SCAN_ROOT).
+SOURCES: list[tuple[str, str]] = [
+    ("", "All"),
+    ("attachment", "Chart attachments"),
+    ("scan", "Scanned"),
+    ("document", "Clinical documents"),
+]
+FORMAT_LABELS = {"tif": "TIFF", "tiff": "TIFF", "jpg": "JPEG", "jpeg": "JPEG", "png": "PNG",
+                 "gif": "GIF", "bmp": "BMP", "pdf": "PDF", "rtf": "Text"}  # fmt: skip
+
+
+def source_chips(rows: list[dict], selected: str) -> list[dict]:
+    counts = {k: sum(1 for d in rows if not k or d["kind"] == k) for k, _ in SOURCES}
+    return [{"key": k, "label": label, "count": counts[k], "selected": k == selected}
+            for k, label in SOURCES if not k or counts[k]]  # fmt: skip
+
+
 async def documents_tab(
-    ref: PatientRef, page: int | None, doc_type: str
-) -> tuple[list[DocumentRow], Pager, list[str], str]:
+    ref: PatientRef, page: int | None, doc_type: str, source: str = ""
+) -> tuple[list[DocumentRow], Pager, list[str], str, str, list[dict]]:
     rows = await call(source_repository().documents, ref.emr_id)
+    source = source if source in {k for k, _ in SOURCES} else ""
+    chips = source_chips(rows, source)
+    if source:
+        rows = [d for d in rows if d["kind"] == source]
     types = sorted({d["type"] for d in rows})
     doc_type = doc_type if doc_type in types else ""
     if doc_type:
@@ -57,12 +79,19 @@ async def documents_tab(
                 viewable=d["kind"] == "document"
                 or (d["kind"] == "attachment" and d.get("format") in VIEWABLE_FORMATS)
                 or bool(store and d["pages"]),
+                file_format=FORMAT_LABELS.get(
+                    d.get("format") or "", (d.get("format") or "").upper()
+                )
+                if d["kind"] == "attachment"
+                else "",
             )
             for d in page_rows
         ],
         pager,
         types,
         doc_type,
+        source,
+        chips,
     )
 
 

@@ -4,7 +4,7 @@
 {% from "components/empty_state.html" import empty_state %}
 {% set base = "/patients/" ~ key %}
 {% if not scan_store_configured %}
-  {{ warning_banner("Scanned page images are not connected yet. Document details are listed below; pages can be viewed once the scan archive is mounted.") }}
+  {{ warning_banner("Scanned page images are not connected yet: scanned documents are listed, and their pages can be viewed once the scan archive is mounted. Chart attachments (PDF, TIFF, JPEG, PNG) are stored in the database and can be viewed now.") }}
 {% endif %}
 <div class="split">
   <section class="card table-card split__list" aria-labelledby="docs-title">
@@ -12,11 +12,23 @@
       <h2 class="table-card__title" id="docs-title">Documents</h2>
       <p class="table-card__count">{{ count_text(pager, "documents") }}</p>
     </div>
+    {% if doc_sources | length > 1 %}
+    <div class="table-card__tools">
+      <nav class="chips" aria-label="Document source">
+        {% for c in doc_sources %}
+        <a class="chip{% if c.selected %} chip--on{% endif %}"{% if c.selected %} aria-current="true"{% endif %}
+           href="{{ url_with(base, {'tab': 'docs', 'src': c.key}) }}"
+           hx-get="{{ url_with(base ~ '/tab/docs', {'src': c.key}) }}" hx-target="#chart-tabs" hx-swap="outerHTML">{{ c.label }} <span class="chip__count">{{ "{:,}".format(c.count) }}</span></a>
+        {% endfor %}
+      </nav>
+    </div>
+    {% endif %}
     {% if doc_types %}
     <div class="table-card__tools">
       <form class="toolbar" method="get" action="{{ base }}"
             hx-get="{{ base }}/tab/docs" hx-target="#chart-tabs" hx-swap="outerHTML" hx-trigger="change, submit">
         <input type="hidden" name="tab" value="docs">
+        {% if doc_source %}<input type="hidden" name="src" value="{{ doc_source }}">{% endif %}
         <div class="field field--wide">
           <label class="field__label" for="doc-type">Type</label>
           <select class="select" id="doc-type" name="type">
@@ -35,11 +47,11 @@
       <li>
         <a class="visit-row{% if selected %} visit-row--selected{% endif %}"
            {%- if selected %} aria-current="true"{% endif %}
-           href="{{ url_with(base, {'tab': 'docs', 'type': doc_type, 'page': pager.page, 'doc': d.kind ~ '-' ~ d.id}) }}"
-           hx-get="{{ url_with(base ~ '/documents/' ~ d.kind ~ '/' ~ d.id, {'type': doc_type, 'page': pager.page}) }}"
+           href="{{ url_with(base, {'tab': 'docs', 'src': doc_source, 'type': doc_type, 'page': pager.page, 'doc': d.kind ~ '-' ~ d.id}) }}"
+           hx-get="{{ url_with(base ~ '/documents/' ~ d.kind ~ '/' ~ d.id, {'src': doc_source, 'type': doc_type, 'page': pager.page}) }}"
            hx-target="#doc-viewer" hx-swap="innerHTML">
           <span class="visit-row__title">{{ d.date }} · {{ d.type }}</span>
-          <span class="visit-row__sub">{{ d.title }}{% if d.kind == "scan" %} · {{ d.pages }} page{{ "s" if d.pages != "1" }}{% endif %} · {{ d.source }}</span>
+          <span class="visit-row__sub">{{ d.title }}{% if d.kind == "scan" %} · {{ d.pages }} page{{ "s" if d.pages != "1" }}{% endif %}{% if d.kind == "attachment" %} · Chart attachment{% if d.file_format %} · {{ d.file_format }}{% endif %}{% endif %} · {{ d.source }}</span>
         </a>
       </li>
       {% endfor %}

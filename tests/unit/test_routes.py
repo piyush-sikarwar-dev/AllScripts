@@ -136,7 +136,7 @@ def test_visit_of_other_patient_is_404(client):
 
 def test_documents_banner_when_scan_root_unset(client):
     r = client.get(f"/patients/{FIRST}", params={"tab": "docs"})
-    assert "Scanned page images are not connected yet." in r.text
+    assert "Scanned page images are not connected yet" in r.text
     assert 'role="note"' in r.text
 
 

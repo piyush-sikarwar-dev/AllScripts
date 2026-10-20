@@ -150,3 +150,20 @@ def test_image_frames():
         to_png(data, 5)
     with pytest.raises(DocumentFormatError):
         frame_count(b"not an image")
+
+
+def test_source_chips_find_attachments(client):
+    key, _ = _with("pdf")
+    r = client.get(f"/patients/{key}", params={"tab": "docs"})
+    assert "Chart attachments" in r.text and 'class="chip' in r.text
+    r = client.get(f"/patients/{key}/tab/docs", params={"src": "attachment"}, headers=HTMX)
+    assert r.status_code == 200 and "src=attachment" in r.headers["HX-Push-Url"]
+    body = r.text.split('id="doc-viewer"')[0]
+    assert "Chart attachment · PDF" in body and "Scanned" in body
+    assert body.count('<a class="visit-row') == sum(
+        1
+        for p in PATIENTS
+        if f"EMR:{p.emr_id}" == key
+        for x in p.documents
+        if x["kind"] == "attachment"
+    )

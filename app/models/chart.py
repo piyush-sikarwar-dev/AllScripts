@@ -176,6 +176,7 @@ class DocumentRow(BaseModel):
     pages: str
     source: SourceLabel
     viewable: bool
+    file_format: str = ""  # chart attachments: "PDF", "TIFF", "JPEG" …
 
 
 class DocumentViewer(BaseModel):

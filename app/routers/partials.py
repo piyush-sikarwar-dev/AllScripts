@@ -535,6 +535,7 @@ async def document_panel(
     page: Annotated[int, Query(ge=1, le=100_000)] = 1,
     docpage: Annotated[int, Query(ge=1, le=100_000)] = 1,
     type: str = "",
+    src: str = "",
 ) -> HTMLResponse:
     if kind not in DOC_KINDS:
         raise HTTPException(status_code=404)
@@ -547,7 +548,7 @@ async def document_panel(
           detail={"kind": kind, "id": doc_id, "page": viewer.page})  # fmt: skip
     push = url_with(
         f"/patients/{ref.patient_key}",
-        {"tab": "docs", "type": type, "page": page, "doc": f"{kind}-{doc_id}",
+        {"tab": "docs", "src": src, "type": type, "page": page, "doc": f"{kind}-{doc_id}",
          "docpage": viewer.page if viewer.page > 1 else None},
     )  # fmt: skip
     return render(

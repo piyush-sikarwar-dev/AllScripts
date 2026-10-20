@@ -92,12 +92,13 @@ async def tab_context(
     elif name == "vitals":
         ctx["vitals"], ctx["pager"] = await vitals_tab(ref, page)
     elif name == "docs":
-        ctx["documents"], ctx["pager"], ctx["doc_types"], doc_type = await documents_tab(
-            ref, page, params.get("type", "")
-        )
-        ctx["doc_type"] = doc_type
+        (ctx["documents"], ctx["pager"], ctx["doc_types"], doc_type, doc_source,
+         ctx["doc_sources"]) = await documents_tab(
+            ref, page, params.get("type", ""), params.get("src", "")
+        )  # fmt: skip
+        ctx["doc_type"], ctx["doc_source"] = doc_type, doc_source
         ctx["scan_store_configured"] = scan_store_configured()
-        state = {"type": doc_type}
+        state = {"type": doc_type, "src": doc_source}
         selected = parse_doc_ref(params.get("doc"))
         if selected is None and ctx["documents"]:
             selected = (ctx["documents"][0].kind, ctx["documents"][0].id)
