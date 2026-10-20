@@ -135,9 +135,15 @@ def test_visit_of_other_patient_is_404(client):
 
 
 def test_documents_banner_when_scan_root_unset(client):
-    r = client.get(f"/patients/{FIRST}", params={"tab": "docs"})
+    with_scans = next(p for p in PATIENTS if any(d["kind"] == "scan" for d in p.documents))
+    r = client.get(f"/patients/EMR:{with_scans.emr_id}", params={"tab": "docs"})
     assert "Scanned page images are not connected yet" in r.text
     assert 'role="note"' in r.text
+    no_scans = next(
+        p for p in PATIENTS if p.documents and not any(d["kind"] == "scan" for d in p.documents)
+    )
+    r = client.get(f"/patients/EMR:{no_scans.emr_id}", params={"tab": "docs"})
+    assert "Scanned page images are not connected yet" not in r.text  # nothing to wait for
 
 
 def test_labs_trend_and_bad_date(client):

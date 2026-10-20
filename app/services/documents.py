@@ -194,9 +194,10 @@ async def document_viewer(ref: PatientRef, kind: str, doc_id: int, page: int) ->
     if pages == 0:
         viewer.unavailable = "This document has no pages in the archive."
     elif not scan_store_configured():
+        noun = "page" if pages == 1 else "pages"
         viewer.unavailable = (
-            "Scanned page images are not connected yet. "
-            "The page will display once the scan archive is mounted."
+            f"The {pages} {noun} of this scanned document are on the scan archive, which is not "
+            "connected yet. They will display here once it is mounted."
         )
     else:
         viewer.image_url = f"/patients/{ref.patient_key}/documents/scan/{doc_id}/pages/{page}"

@@ -3,8 +3,10 @@
 {% from "components/banner.html" import warning_banner %}
 {% from "components/empty_state.html" import empty_state %}
 {% set base = "/patients/" ~ key %}
-{% if not scan_store_configured %}
-  {{ warning_banner("Scanned page images are not connected yet: scanned documents are listed, and their pages can be viewed once the scan archive is mounted. Chart attachments (PDF, TIFF, JPEG, PNG) are stored in the database and can be viewed now.") }}
+{% set has_scans = doc_sources | selectattr("key", "equalto", "scan") | list %}
+{% set has_attachments = doc_sources | selectattr("key", "equalto", "attachment") | list %}
+{% if not scan_store_configured and has_scans %}
+  {{ warning_banner("Scanned page images are not connected yet: scanned documents are listed with their details, and their pages can be viewed once the scan archive is mounted." ~ (" Chart attachments are stored in the database and can be viewed now." if has_attachments else "")) }}
 {% endif %}
 <div class="split">
   <section class="card table-card split__list" aria-labelledby="docs-title">
@@ -12,7 +14,7 @@
       <h2 class="table-card__title" id="docs-title">Documents</h2>
       <p class="table-card__count">{{ count_text(pager, "documents") }}</p>
     </div>
-    {% if doc_sources | length > 1 %}
+    {% if doc_sources | length > 2 %}
     <div class="table-card__tools">
       <nav class="chips" aria-label="Document source">
         {% for c in doc_sources %}

@@ -360,6 +360,15 @@ def visits(emr_id: int, office_only: bool = False) -> list[dict[str, Any]]:
     return [v for v in summaries if v["is_office_visit"]] if office_only else summaries
 
 
+def _note_body(raw: Any) -> str:
+    """Visit note text (NOTES_TEXTDATA): about 5% are stored as RTF (smoke test 2026-10-20);
+    those are converted to plain text so RTF codes never reach the screen or the PDF."""
+    text = (raw or "").strip()
+    if text.startswith("{\\rtf"):
+        return rtf_to_text(text)
+    return text
+
+
 def _document_html(emr_id: int, document_id: int) -> str | None:
     row = emr.document_content(emr_id, document_id)
     if row is None:
@@ -429,7 +438,7 @@ def visit(emr_id: int, contact_id: int) -> dict[str, Any] | None:
             detail["note_documents"].append(meta | {"html": html})
         else:
             detail["other_documents"].append(meta)
-    texts = [(n["note_text"] or "").strip() for n in text_notes]
+    texts = [_note_body(n["note_text"]) for n in text_notes]
     detail["note_text"] = "\n\n".join(t for t in texts if t) or None
     return detail
 
@@ -748,9 +757,9 @@ def encounter(emr_id: int, encounter_id: int) -> dict[str, Any] | None:
         "note_documents": note_documents,
         "other_documents": other_documents,
         "text_notes": [
-            n["note_text"]
+            _note_body(n["note_text"])
             for n in sorted(text_notes, key=lambda n: (sort_key(n["contact_start"]), n["note_id"]))
-            if (n["note_text"] or "").strip()
+            if _note_body(n["note_text"])
         ],
         "vitals": sorted(
             (_vital(v) for v in vitals_rows), key=lambda v: (sort_key(v["date"]), v["id"])

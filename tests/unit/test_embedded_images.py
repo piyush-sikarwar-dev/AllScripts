@@ -88,3 +88,12 @@ def test_pdf_renderer_loads_embedded_pictures():
     except (OSError, ImportError):
         pytest.skip("WeasyPrint/Pango not installed")
     assert pdf.startswith(b"%PDF") and pages == 1 and calls == [(12, 0)]
+
+
+def test_rtf_visit_notes_are_converted_to_text():
+    from app.repositories.live import _note_body
+
+    rtf = r"{\rtf1\ansi{\fonttbl{\f0 Arial;}}\pard Patient seen.\par Plan: continue.\par}"
+    assert _note_body(rtf) == "Patient seen.\nPlan: continue."
+    assert _note_body("  plain text  ") == "plain text"
+    assert _note_body(None) == ""

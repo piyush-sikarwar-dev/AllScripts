@@ -152,14 +152,22 @@ def test_image_frames():
         frame_count(b"not an image")
 
 
+def _with_mixed_sources():
+    for p in PATIENTS:
+        kinds = {d["kind"] for d in p.documents}
+        if "attachment" in kinds and len(kinds) >= 2:
+            return f"EMR:{p.emr_id}"
+    raise AssertionError("no patient with attachments and other documents")
+
+
 def test_source_chips_find_attachments(client):
-    key, _ = _with("pdf")
+    key = _with_mixed_sources()
     r = client.get(f"/patients/{key}", params={"tab": "docs"})
     assert "Chart attachments" in r.text and 'class="chip' in r.text
     r = client.get(f"/patients/{key}/tab/docs", params={"src": "attachment"}, headers=HTMX)
     assert r.status_code == 200 and "src=attachment" in r.headers["HX-Push-Url"]
     body = r.text.split('id="doc-viewer"')[0]
-    assert "Chart attachment · PDF" in body and "Scanned" in body
+    assert "Chart attachment · " in body
     assert body.count('<a class="visit-row') == sum(
         1
         for p in PATIENTS
@@ -167,3 +175,16 @@ def test_source_chips_find_attachments(client):
         for x in p.documents
         if x["kind"] == "attachment"
     )
+
+
+def test_no_chips_when_only_one_kind(client, monkeypatch):
+    from tests.fakes import repository as fake
+
+    p = next(p for p in PATIENTS if any(d["kind"] == "scan" for d in p.documents))
+    original = fake.documents
+    monkeypatch.setattr(
+        fake, "documents", lambda emr_id: [d for d in original(emr_id) if d["kind"] == "scan"]
+    )
+    r = client.get(f"/patients/EMR:{p.emr_id}", params={"tab": "docs"})
+    assert r.status_code == 200 and 'aria-label="Document source"' not in r.text
+    assert "Chart attachments are stored in the database" not in r.text

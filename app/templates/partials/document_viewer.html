@@ -37,7 +37,7 @@
         <img class="scan-page__img" src="{{ v.image_url }}" alt="Page {{ v.page }} of {{ v.pages }}">
       </figure>
     {% endif %}
-    {% if v.pages > 1 %}
+    {% if v.pages > 1 and v.image_url %}
     <nav class="pager pager--viewer" aria-label="Document pages">
       <span>Page {{ v.page }} of {{ v.pages }}</span>
       <span class="pager__buttons">

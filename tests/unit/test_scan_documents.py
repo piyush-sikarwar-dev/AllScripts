@@ -118,7 +118,9 @@ def test_documents_tab_without_scan_root(chart_mode, docs_sql, client, monkeypat
     r = client.get("/patients/EMR:11?tab=docs")
     assert r.status_code == 200
     assert "OUTSIDE LABS" in r.text and "Scanned page images are not connected yet" in r.text
-    assert "Page 1 of 2" in r.text  # viewer metadata still shown
+    assert "2 pages" in r.text  # viewer metadata still shown ...
+    assert "Page 1 of 2" not in r.text  # ... but no page buttons that lead nowhere
+    assert "scan archive, which is not connected yet" in r.text
     assert r.text.count("visit-row__title") == 1  # erroneous scan (status 10) hidden
     assert client.get("/patients/EMR:11/documents/scan/500/pages/1").status_code == 404
 
