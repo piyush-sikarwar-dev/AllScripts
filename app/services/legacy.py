@@ -194,7 +194,9 @@ def _note_type(r: dict) -> str:
 async def note_page(
     key: str, year: str = "", page: int | None = None, note_type: str = ""
 ) -> LegacyNotePage:
-    rows = await call(legacy_repository().notes, person_key(key))
+    pkey = person_key(key)
+    repo = legacy_repository()
+    rows, links = await asyncio.gather(call(repo.notes, pkey), call(repo.note_result_links, pkey))
     years = sorted({_year(r) for r in rows if _year(r)}, reverse=True)
     types = sorted({_note_type(r) for r in rows})
     year = year if year in years else ""
@@ -207,7 +209,10 @@ async def note_page(
     shown, pager = paginate(chosen, clamp_page(page))
     dated = [r["service_date"] for r in rows if r["service_date"]]
     return LegacyNotePage(
-        rows=[_note_row(r) for r in shown],
+        rows=[
+            _note_row(r).model_copy(update={"has_results": int(r["note_id"]) in links})
+            for r in shown
+        ],
         pager=pager,
         years=years,
         year=year,
@@ -228,6 +233,7 @@ async def get_note(key: str, note_id: int) -> LegacyNote:
         raise NotFoundError(f"{key}/{note_id}")
     body = await call(repo.note_text, pkey, note_id) if row["has_text"] else None
     item = _note_row(row)
+    tests, order_ids = await _note_lab_tests(pkey, note_id)
     return LegacyNote(
         id=item.id,
         date=item.date,
@@ -236,7 +242,25 @@ async def get_note(key: str, note_id: int) -> LegacyNote:
         provider=item.provider,
         facility=item.facility,
         text=(body or {}).get("text") or None,
+        lab_tests=tests,
+        lab_order_ids=order_ids,
     )
+
+
+async def _note_lab_tests(pkey: int, note_id: int) -> tuple[list[LegacyLabTest], list[int]]:
+    """The lab tests (with results) a chart note reports, and the lab orders they belong to."""
+    repo = legacy_repository()
+    links = await call(repo.note_result_links, pkey)
+    test_ids = links.get(note_id) or []
+    if not test_ids:
+        return [], []
+    orders = await call(repo.lab_reports, pkey)
+    codes = legacy_codes()
+    by_id = {
+        int(t["test_id"]): (t, int(o["order_id"])) for o in orders for t in o.get("tests") or []
+    }
+    found = [by_id[t] for t in dict.fromkeys(test_ids) if t in by_id]
+    return [_lab_test(t, codes) for t, _ in found], list(dict.fromkeys(o for _, o in found))
 
 
 # Tabs of the pre-2010 chart, in display order.

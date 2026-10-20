@@ -147,3 +147,12 @@ def lab_reports(person_key: int) -> list[dict[str, Any]]:
         o["tests"] = tests_by_order.get(o["order_id"], [])
     orders.sort(key=lambda o: (sort_key(_order_date(o)), o["order_id"]), reverse=True)
     return orders
+
+
+@cached
+def note_result_links(person_key: int) -> dict[int, list[int]]:
+    """Chart note id → the lab test ids (Orders.LabTests.systestorderno) that note reports."""
+    links: dict[int, list[int]] = {}
+    for r in dmz.legacy_note_result_links(person_key):
+        links.setdefault(int(r["note_id"]), []).append(int(r["test_id"]))
+    return links

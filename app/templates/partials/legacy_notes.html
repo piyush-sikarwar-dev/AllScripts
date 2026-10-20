@@ -45,7 +45,7 @@
          hx-target="#note-detail" hx-indicator="#note-detail" hx-swap="innerHTML">
         <span class="note-row__meta">
           <span>{{ n.date }}{% if n.time %} · {{ n.time }}{% endif %}</span>
-          <span class="badge badge--legacy">Pre-2010</span>
+          {% if n.has_results %}<span class="badge badge--neutral">Lab results</span>{% else %}<span class="badge badge--legacy">Pre-2010</span>{% endif %}
         </span>
         <span class="note-row__title">{{ n.type }}</span>
         {% if n.byline %}<span class="note-row__sub">{{ n.byline }}</span>{% endif %}

@@ -1,6 +1,9 @@
-{# One pre-2010 chart note: the RTF converted to plain text, shown as written. #}
+{# One pre-2010 chart note: the RTF converted to plain text, shown as written, and the lab results
+   the note reports (result notes such as ORDER MANAGEMENT RESULT have no text of their own). #}
 {% from "components/empty_state.html" import empty_state %}
 {% from "components/icons.html" import icon %}
+{% from "components/legacy_lab_report.html" import lab_tests %}
+{% set base = "/legacy/" ~ key %}
 <article class="note-view">
   <div class="note-view__head">
     <div class="note-view__heading">
@@ -11,12 +14,24 @@
   </div>
   {% if note.text %}
   <div class="legacy-note-text">{{ note.text }}</div>
-  {% else %}
+  {% endif %}
+  {% if note.lab_tests %}
+  <section class="legacy-note-labs" aria-label="Lab results in this note">
+    <h3 class="legacy-note-labs__title">Lab results</h3>
+    {{ lab_tests(note.lab_tests) }}
+  </section>
+  {% endif %}
+  {% if not note.text and not note.lab_tests %}
     {{ empty_state("This note's text is not available in the pre-2010 archive.", compact=True) }}
   {% endif %}
-  {% if note.text %}
+  {% if note.text or note.lab_tests %}
   <div class="note-view__actions">
-    <a class="btn btn--secondary" href="/legacy/{{ key }}/notes/{{ note.id }}/print" target="_blank" rel="noopener">{{ icon("print") }}Print note</a>
+    <a class="btn btn--secondary" href="{{ base }}/notes/{{ note.id }}/print" target="_blank" rel="noopener">{{ icon("print") }}Print note</a>
+    {% for order_id in note.lab_order_ids %}
+    <a class="btn btn--secondary" href="{{ url_with(base, {'tab': 'labs', 'view': 'reports', 'order': order_id}) }}"
+       hx-get="{{ url_with(base ~ '/tab/labs', {'view': 'reports', 'order': order_id}) }}"
+       hx-target="#chart-tabs" hx-swap="outerHTML">Open lab report{% if note.lab_order_ids|length > 1 %} {{ loop.index }}{% endif %}</a>
+    {% endfor %}
   </div>
   {% endif %}
 </article>

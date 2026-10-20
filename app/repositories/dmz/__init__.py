@@ -26,6 +26,7 @@ LEGACY_LAB_RESULTS = "dmz/legacy_lab_results.sql"
 LEGACY_LAB_RESULT_COMMENTS = "dmz/legacy_lab_result_comments.sql"
 LEGACY_LAB_TASK_COMMENTS = "dmz/legacy_lab_task_comments.sql"
 LEGACY_LAB_DIAGNOSES = "dmz/legacy_lab_diagnoses.sql"
+LEGACY_NOTE_RESULT_LINKS = "dmz/legacy_note_result_links.sql"
 
 
 def like_prefix(value: str | None) -> str | None:
@@ -120,3 +121,7 @@ def legacy_lab_task_comments(person_key: int) -> list[dict[str, Any]]:
 
 def legacy_lab_diagnoses(person_key: int) -> list[dict[str, Any]]:
     return run_query(Source.DMZ, LEGACY_LAB_DIAGNOSES, {"person_key": person_key})
+
+
+def legacy_note_result_links(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_NOTE_RESULT_LINKS, {"person_key": person_key})

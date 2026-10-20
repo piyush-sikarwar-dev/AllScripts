@@ -439,3 +439,17 @@ def lab_reports(person_key: int) -> list[dict[str, Any]]:
         )
     orders.sort(key=lambda o: o["service_date"], reverse=True)
     return orders
+
+
+def note_result_links(person_key: int) -> dict[int, list[int]]:
+    """Result notes (ORDER MANAGEMENT RESULT) report the tests of the patient's first lab order."""
+    orders = lab_reports(person_key)
+    if not orders:
+        return {}
+    first = sorted(orders, key=lambda o: o["service_date"])[0]
+    test_ids = [t["test_id"] for t in first["tests"]]
+    return {
+        n["note_id"]: test_ids
+        for n in NOTES.get(person_key, [])
+        if n["note_type"] == "ORDER MANAGEMENT RESULT"
+    }

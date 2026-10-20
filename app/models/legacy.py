@@ -62,6 +62,7 @@ class LegacyNoteRow(BaseModel):
     provider: str
     facility: str
     has_text: bool
+    has_results: bool = False
 
     @property
     def byline(self) -> str:
@@ -99,6 +100,8 @@ class LegacyNote(BaseModel):
     provider: str
     facility: str
     text: str | None
+    lab_tests: list["LegacyLabTest"] = []
+    lab_order_ids: list[int] = []
 
     @property
     def byline(self) -> str:
@@ -324,3 +327,6 @@ class LegacyLabReports(BaseModel):
         values: dict[str, object] = {"tab": "labs", "year": self.year, "page": self.pager.page}
         values.update(override)
         return {k: v for k, v in values.items() if v not in (None, "")}
+
+
+LegacyNote.model_rebuild()

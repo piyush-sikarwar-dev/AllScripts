@@ -83,9 +83,12 @@ Opening the Overview loads every tab's data in parallel, so later tab switches c
 - `conv.cac_chrt_rtf` (242,438): `note_text` RTF, normally one row per note (joined in `rownum`
   order), converted to plain text with `rtf_to_text`. Field results are kept; field instructions,
   headers, footers and font tables are dropped.
+- Note type: `cac_chrt_header.mrc_key` → `Encounters.MRC.name` (277 types), shown as stored as the
+  note title, with a type filter.
 - 22,552 notes have no text row. **All of them are "ORDER MANAGEMENT RESULT" notes, and every one is
-  linked to lab results** (`Encounters.NoteResultLink`). Their content is the lab result itself, which is
-  not shown yet (§7, items 1 and 3). They are listed as "Chart note (no text)".
+  linked to lab results** (`Encounters.NoteResultLink`, `legacy_note_result_links.sql`). Opening one
+  shows those results (the same tables as the Labs tab) and an "Open lab report" button; the list marks
+  them with a *Lab results* badge.
 - Many notes contain a literal drive-letter path (`X:\..\..\…`) that the old system printed into the
   text. It is real note content and is shown as written.
 - 449 notes are dated before 2002 and 252 after 2010-08-27 (data-entry outliers); they are shown as
@@ -123,7 +126,26 @@ Opening the Overview loads every tab's data in parallel, so later tab switches c
 - `PatientMedicationRemarks` (10,427) is identical to `PatientMedications.comments` in every row, so
   only `comments` is read.
 
-### 4.6 Lab results and Vitals
+### 4.6 Lab results: Lab reports (default view)
+- `Orders.LabOrders` (24,232, `patkey` indexed) → `Orders.LabTests` (95,366) → `conv.cac_results`
+  (364,065; every result reaches a patient).
+- Order: `orderno`, ordering provider (`drordering` → `conv.drmast`), facility (`faccode` →
+  `conv.facmast`), `comments`; order / service / result dates from `dbo.Resultsmigratetbl` (one row per
+  order, 99.7% of orders).
+- Test: name from `Orders.Tests.testname` (e.g. "TSH - 004259"), collected date and test comments from
+  `dbo.TestResultOrdertbl`, diagnoses from `conv.cac_diaglink` → `conv.dxmast`.
+- Result: `labresname`, `resultvalue`, `uom`, `reflow` / `refhigh`, `abnormalflags` (the lab's own flag;
+  computed only when blank), `status` (`result_status` in `config/legacy_codes.yaml`: F / C / 1 Final,
+  P / 2 Preliminary, E Entered in error), `comments`.
+- Comment lines: `conv.cac_rescom` (61,787); staff follow-up comments: `Orders.TaskQueueComments`
+  (`order_or_result_no` = `sysresultno`; the author login is not read).
+- Screen: list of reports (date, tests, result count, abnormal count, provider), year filter, paging;
+  the selected report shows the order facts and each test's results table with comments.
+- SQL: `legacy_lab_orders.sql`, `legacy_lab_tests.sql`, `legacy_lab_results.sql`,
+  `legacy_lab_result_comments.sql`, `legacy_lab_task_comments.sql`, `legacy_lab_diagnoses.sql`.
+- About 1,885 orders have no results (ordered, nothing came back); they show "No results were recorded".
+
+### 4.7 Lab results ("Recorded values" view) and Vitals
 - Both tabs read `conv.cac_patclin_item` (589,381) + `conv.cac_clin_refitem.name` (the
   clinical-value flowsheet). Rows with `error_flag = 'Y'` are left out (none today).
 - **Vitals** are the item names listed under `vital_items` in `config/legacy_codes.yaml`: VS-BLOOD
@@ -135,10 +157,10 @@ Opening the Overview loads every tab's data in parallel, so later tab switches c
 - Skipped: `GENERIC-*` and `HEALTH MAINT-*` items. These are template fields (date, time and phone
   entries) that mean nothing on their own; the phone entries contain phone numbers.
 - Where the value came from a chart note, **Open note** opens it.
-- This flowsheet has **no units** for lab values. The full lab system with units, flags and orders
-  has not been built yet (§7, item 1).
+- This flowsheet has **no units** for lab values; it is the second view of the Labs tab
+  ("Recorded values"), and the default only for patients without lab reports.
 
-### 4.7 Documents
+### 4.8 Documents
 - `dbo.ScannedImages` (171,253): `DocDate`, `MRCName` (document type, shown as stored, e.g. HIPAA,
   OUTSIDE LABS), `ipages`, `FileExt` (TIF 168,971 / JPG 2,282), `drno`, `noteid`. Every scanned
   document is linked to a chart note.
@@ -188,9 +210,9 @@ Ordered by usefulness to a records request.
 
 | # | Information | Tables (rows) | What it adds | Recommendation |
 |---|---|---|---|---|
-| 1 | **Lab orders and results (full lab system)** | `Orders.LabOrders` (24,232, `patkey`), `Orders.LabTests` (95,366), `conv.cac_results` (364,065), `conv.cac_rescom` (61,787 result comments), `Orders.TaskQueueComments` (49,814 order/result comments), `conv.cac_diaglink` (120,846 order diagnoses), `conv.cac_specimens` (91,669) | Results with **units** (89%), reference ranges (99.8%), lab abnormal flags (H 28k, L 19k, A 281), status (final/preliminary), the ordering provider, order date, fasting, the diagnosis for each order, and result comments. The chain `cac_results.systestordered → LabTests.systestorderno → LabOrders.sysorderno → patkey` reaches a patient for **all 364,065 results** (5,231 patients). | **Build next.** Either replace the flowsheet labs or show both (orders and results as the main view, the flowsheet as "Lab values recorded in notes"). |
-| 2 | **Chart note type** | `Encounters.MRC` (277) via `cac_chrt_header.mrc_key` | Every note currently says "Chart note". Real types: DEC FOLLOW-UP VISIT (33k), ORDER MANAGEMENT RESULT (22.5k), OUTSIDE LABS (22k), NURSE PHONE CALL (19k), DEC CONSULT (5.9k), letters, insurance cards, HIPAA and more. | **Small, high value.** Show the type as the note title and add a type filter. |
-| 3 | Note ↔ lab result link | `Encounters.NoteResultLink` (89,968; 22,552 notes) | The 22,552 "ORDER MANAGEMENT RESULT" notes have no text: their content *is* these results. Linking them shows the results inside the note instead of "no text". | Build with #1. |
+| 1 | ~~Lab orders and results~~ **Done** (Labs tab → Lab reports) | `Orders.LabOrders` (24,232, `patkey`), `Orders.LabTests` (95,366), `conv.cac_results` (364,065), `conv.cac_rescom` (61,787 result comments), `Orders.TaskQueueComments` (49,814 order/result comments), `conv.cac_diaglink` (120,846 order diagnoses), `conv.cac_specimens` (91,669) | Results with **units** (89%), reference ranges (99.8%), lab abnormal flags (H 28k, L 19k, A 281), status (final/preliminary), the ordering provider, order date, fasting, the diagnosis for each order, and result comments. The chain `cac_results.systestordered → LabTests.systestorderno → LabOrders.sysorderno → patkey` reaches a patient for **all 364,065 results** (5,231 patients). | **Build next.** Either replace the flowsheet labs or show both (orders and results as the main view, the flowsheet as "Lab values recorded in notes"). |
+| 2 | ~~Chart note type~~ **Done** (note title + filter) | `Encounters.MRC` (277) via `cac_chrt_header.mrc_key` | Every note currently says "Chart note". Real types: DEC FOLLOW-UP VISIT (33k), ORDER MANAGEMENT RESULT (22.5k), OUTSIDE LABS (22k), NURSE PHONE CALL (19k), DEC CONSULT (5.9k), letters, insurance cards, HIPAA and more. | **Small, high value.** Show the type as the note title and add a type filter. |
+| 3 | ~~Note ↔ lab result link~~ **Done** (result notes show their results) | `Encounters.NoteResultLink` (89,968; 22,552 notes) | The 22,552 "ORDER MANAGEMENT RESULT" notes have no text: their content *is* these results. Linking them shows the results inside the note instead of "no text". | Build with #1. |
 | 4 | More demographics | `conv.person`: `marstat` (7,877 filled), `race` (7,000), work phone `warea`/`wphone`/`wext` (6,015), `entrydate` | Marital status, race, work phone and the date the chart was created. `email`, `alias` and `confidential` are empty. Codes need decoding (no lookup table seen yet). | Add to the header or an "About" card; decode via config. |
 | 5 | Primary provider and facility | `conv.patgroup` (23,874): `drno` (21,997 filled), `faccode` (19,759) | Who the patient's doctor was and which office. `fvisit`, `lvisit` and `chart_no` are empty. | Add to the header. |
 | 6 | Patient account notes | `conv.patnotes` (8,548; 5,861 patients; type CLRT) | Front-desk account notes (`notetext`, entry date, user). Administrative, may include billing remarks. | **Ask the clinic** whether these belong in a medical-records release. |

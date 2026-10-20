@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {# Printable pre-2010 chart note. No sidebar; the print dialog opens automatically. #}
+{% from "components/legacy_lab_report.html" import lab_tests %}
 {% block title %}Print pre-2010 note · {{ header.name }}{% endblock %}
 {% block head %}<script src="{{ static_url('/static/js/print-auto.js') }}" defer></script>{% endblock %}
 {% block body %}
@@ -16,7 +17,12 @@
   <p class="note-view__meta">{{ note.byline or "Provider not recorded" }}{% if note.time %} · {{ note.time }}{% endif %}</p>
   {% if note.text %}
   <div class="legacy-note-text">{{ note.text }}</div>
-  {% else %}
+  {% endif %}
+  {% if note.lab_tests %}
+  <h2 class="legacy-note-labs__title">Lab results</h2>
+  {{ lab_tests(note.lab_tests) }}
+  {% endif %}
+  {% if not note.text and not note.lab_tests %}
   <p class="muted">This note's text is not available in the pre-2010 archive.</p>
   {% endif %}
   <p class="print-visit__footer">From the pre-2010 legacy chart · Printed by {{ user.full_name }} · {{ printed_at }}</p>

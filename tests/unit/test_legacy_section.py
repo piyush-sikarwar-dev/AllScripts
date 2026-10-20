@@ -85,15 +85,6 @@ def test_note_text_is_converted_from_rtf(client):
     assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?tab=notes&note={note['note_id']}"
 
 
-def test_note_without_text_shows_empty_state(client):
-    p, note = next(
-        (p, n) for p in PEOPLE for n in NOTES[p["person_key"]] if n["note_id"] not in TEXTS
-    )
-    r = client.get(f"/legacy/{_key(p)}/notes/{note['note_id']}", headers=HTMX)
-    assert r.status_code == 200 and "not available in the pre-2010 archive" in r.text
-    assert "Print note" not in r.text
-
-
 def test_note_of_another_patient_is_404(client):
     a, b = [p for p in PEOPLE if NOTES[p["person_key"]]][:2]
     other = NOTES[b["person_key"]][0]["note_id"]
@@ -536,3 +527,45 @@ def test_live_lab_reports_assembly(monkeypatch):
     assert test["results"][0]["lab_comments"] == ["a", "b"]
     assert test["results"][1]["staff_comments"][0]["comment"] == "called"
     assert test["diagnoses"][0]["dx_code"] == "250.00"
+
+
+def _result_note(p: dict) -> dict:
+    return next(n for n in NOTES[p["person_key"]] if n["note_type"] == "ORDER MANAGEMENT RESULT")
+
+
+def _history_patient_with_result_note() -> dict:
+    return next(
+        p for p in PEOPLE
+        if (p["person_key"] - 5_000) % 4 != 3
+        and any(n["note_type"] == "ORDER MANAGEMENT RESULT" for n in NOTES[p["person_key"]])
+    )  # fmt: skip
+
+
+def test_result_note_shows_its_lab_results(client):
+    p = _history_patient_with_result_note()
+    note = _result_note(p)
+    r = client.get(f"/legacy/{_key(p)}/notes/{note['note_id']}", headers=HTMX)
+    assert r.status_code == 200 and "ORDER MANAGEMENT RESULT · " in r.text
+    assert "Lab results" in r.text and "Potassium, Serum" in r.text and "mmol/L" in r.text
+    assert "not available in the pre-2010 archive" not in r.text
+    order_id = p["person_key"] * 100  # the first (2005) order
+    assert f"tab=labs&amp;view=reports&amp;order={order_id}" in r.text
+    assert "Open lab report" in r.text
+    r = client.get(f"/legacy/{_key(p)}/notes/{note['note_id']}/print")
+    assert "Potassium, Serum" in r.text and "print-auto.js" in r.text
+
+
+def test_notes_list_marks_result_notes(client):
+    p = _history_patient_with_result_note()
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "notes", "type": "ORDER MANAGEMENT RESULT"})
+    assert 'badge--neutral">Lab results' in r.text
+
+
+def test_note_without_text_or_results_still_says_so(client, monkeypatch):
+    import tests.fakes.legacy as fake
+
+    monkeypatch.setattr(fake, "note_result_links", lambda person_key: {})
+    p = _history_patient_with_result_note()
+    note = _result_note(p)
+    r = client.get(f"/legacy/{_key(p)}/notes/{note['note_id']}", headers=HTMX)
+    assert "not available in the pre-2010 archive" in r.text and "Print note" not in r.text
