@@ -59,6 +59,21 @@ def _build() -> tuple[list[dict[str, Any]], dict[int, list[dict[str, Any]]], dic
                 "home_area": "555",
                 "home_phone": f"01{i:05d}",
                 "legacy_id": f"L{key}",
+                "alias": None,
+                "street3": None,
+                "marital_status": "MSWD"[i % 4],
+                "race": ["C", "B", "", "H"][i % 4],
+                "work_area": "555" if i % 2 == 0 else None,
+                "work_phone": f"02{i:05d}" if i % 2 == 0 else None,
+                "work_ext": "12" if i == 0 else None,
+                "email": None,
+                "patient_type": "44",
+                "chart_created": datetime(2002, 1 + i % 12, 2),
+                "provider_last": "Sample" if i % 3 else None,
+                "provider_first": "Doctor" if i % 3 else None,
+                "provider_title": "MD" if i % 3 else None,
+                "office": "Main Street Clinic" if i % 3 else None,
+                "has_photo": 1 if i % 2 == 0 else 0,
             }
         )
         rows = []
@@ -453,3 +468,89 @@ def note_result_links(person_key: int) -> dict[int, list[int]]:
         for n in NOTES.get(person_key, [])
         if n["note_type"] == "ORDER MANAGEMENT RESULT"
     }
+
+
+# A tiny valid JPEG (1x1 grey pixel) used as every fake patient's photo.
+_PHOTO = bytes.fromhex(
+    "ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707070909080a0c140d0c0b0b0c1912"
+    "130f141d1a1f1e1d1a1c1c20242e2720222c231c1c2837292c30313434341f27393d38323c2e333432ffc0000b080001"
+    "000101011100ffc4001f0000010501010101010100000000000000000102030405060708090a0bffc400b51000020103"
+    "03020403050504040000017d01020300041105122131410613516107227114328191a1082342b1c11552d1f024336272"
+    "82090a161718191a25262728292a3435363738393a434445464748494a535455565758595a636465666768696a737475"
+    "767778797a838485868788898a92939495969798999aa2a3a4a5a6a7a8a9aab2b3b4b5b6b7b8b9bac2c3c4c5c6c7c8c9"
+    "cad2d3d4d5d6d7d8d9dae1e2e3e4e5e6e7e8e9eaf1f2f3f4f5f6f7f8f9faffda0008010100003f00fbd3ffd9"
+)
+
+
+def _has_history(person_key: int) -> bool:
+    return person_key in PEOPLE_BY_KEY and (person_key - 5_000) % 4 != 3
+
+
+def about(person_key: int) -> dict[str, Any]:
+    if not _has_history(person_key):
+        return {"external_ids": [], "pharmacies": [], "consent": None}
+    return {
+        "external_ids": [{"ext_id": f"X{person_key}", "alt_id": f"A{person_key}", "source": "1",
+                          "recorded_at": datetime(2008, 5, 1)}],
+        "pharmacies": [
+            {"kind": "preferred", "name": "Sample Pharmacy", "street1": "1 Example Rd",
+             "street2": None, "city": "Sampletown", "state": "NY", "zip": "00000",
+             "phone_area": "555", "phone": "030-0000", "fax_area": None, "fax": None},
+            {"kind": "mail order", "name": "Example Mail Rx", "street1": None, "street2": None,
+             "city": None, "state": None, "zip": None, "phone_area": None, "phone": None,
+             "fax_area": None, "fax": None},
+        ],
+        "consent": {"general_consent": "Y", "demographics_consent": "N", "insurance_consent": "Y",
+                    "medical_history_consent": None},
+    }  # fmt: skip
+
+
+def photo(person_key: int) -> bytes | None:
+    p = PEOPLE_BY_KEY.get(person_key)
+    return _PHOTO if p and p["has_photo"] else None
+
+
+# (category code, item, glossary text, chart text)
+_PAST_HISTORY = [
+    (24, "Hypertension", "Hypertension, diagnosed 1998", "HTN"),
+    (20, "Appendectomy", "Appendectomy 1985", "Appy"),
+    (23, "Mother", "Mother: diabetes", "Mother - DM"),
+    (25, "Tobacco", "Never smoker", "Non-smoker"),
+    (18, "Colonoscopy", "Colonoscopy 2004 normal", "Colo nl"),
+]
+
+
+def past_history(person_key: int) -> list[dict[str, Any]]:
+    if not _has_history(person_key):
+        return []
+    note_ids = [n["note_id"] for n in NOTES.get(person_key, [])]
+    return [
+        {"layout_key": n, "row_no": n, "category_code": cat, "code": f"K{n}", "item": item,
+         "glossary_text": text, "chart_text": chart, "recorded_at": datetime(2004, 6, 1),
+         "note_id": note_ids[0] if note_ids else None, "provider_last": "Sample",
+         "provider_first": "Doctor", "provider_title": "MD"}
+        for n, (cat, item, text, chart) in enumerate(_PAST_HISTORY)
+    ]  # fmt: skip
+
+
+def procedures(person_key: int) -> list[dict[str, Any]]:
+    if not _has_history(person_key):
+        return []
+    return [
+        {"procedure_id": person_key, "code": "45378", "desc1": "COLONOSCOPY DIAGNOSTIC",
+         "desc2": None, "short_desc": "COLONOSCOPY", "date_of_service": datetime(2004, 3, 3),
+         "stop_date": None, "status": "Performed", "comment": None, "provider_last": "Sample",
+         "provider_first": "Doctor", "provider_title": "MD"}
+    ]  # fmt: skip
+
+
+def account_notes(person_key: int) -> list[dict[str, Any]]:
+    if not _has_history(person_key):
+        return []
+    return [
+        {"order_no": 2, "note_type": "CLRT", "entered_at": datetime(2007, 1, 5),
+         "edited_at": datetime(2007, 2, 1), "text": "Sample account note: prefers morning calls.",
+         "alert": "Y"},
+        {"order_no": 1, "note_type": "CLRT", "entered_at": datetime(2003, 3, 9), "edited_at": None,
+         "text": "Sample account note: new address on file.", "alert": "N"},
+    ]  # fmt: skip

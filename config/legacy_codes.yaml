@@ -40,3 +40,20 @@ result_status:
   "2": Preliminary
   E: Entered in error
 result_voided: ["E"]
+
+# conv.person.marstat / race / pattype (no lookup tables in the legacy database).
+marital_status:
+  M: Married
+  S: Single
+  W: Widowed
+  D: Divorced
+race:
+  # TODO: confirm X, Z, I with the clinic (2, 2 and 1 patients).
+  C: White
+  B: Black or African American
+  H: Hispanic
+  A: Asian
+  N: Native American
+  O: Other
+# TODO: patient type codes (44, 45, 4I, 43 …) are practice-defined; add labels when known.
+patient_type: {}

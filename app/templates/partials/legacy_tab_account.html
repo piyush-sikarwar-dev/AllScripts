@@ -1,0 +1,29 @@
+{# Pre-2010 chart: account notes (conv.patnotes) — front-desk notes on the patient's account.
+   "Pop-up alert" marks notes the old system showed whenever the chart was opened. #}
+{% from "components/empty_state.html" import empty_state %}
+<section class="card table-card" aria-labelledby="legacy-account-title">
+  <div class="table-card__head">
+    <h2 class="table-card__title" id="legacy-account-title">Account notes</h2>
+    <p class="table-card__count">{{ account_notes|length }} {{ "note" if account_notes|length == 1 else "notes" }}</p>
+  </div>
+  {% if account_notes %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr><th scope="col">Entered</th><th scope="col">Note</th><th scope="col">Last edited</th></tr>
+      </thead>
+      <tbody>
+        {% for n in account_notes %}
+        <tr>
+          <td class="nowrap">{{ n.date }}</td>
+          <td><span class="legacy-hx-text">{{ n.text }}</span>{% if n.alert %}<span class="badge badge--abn legacy-alert">Pop-up alert</span>{% endif %}</td>
+          <td class="nowrap">{{ n.edited }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {{ empty_state("No account notes in the pre-2010 chart.") }}
+  {% endif %}
+</section>

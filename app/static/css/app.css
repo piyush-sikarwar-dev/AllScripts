@@ -625,6 +625,13 @@ a:hover { color: var(--accent-hover); }
 .legacy-lab-comment { margin: 4px 0; font-size: 13px; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
 .legacy-lab-comment__label { font-weight: 500; }
 .legacy-note-labs { margin-bottom: 16px; }
+.avatar--photo { object-fit: cover; background: var(--legacy-bg); }
+.legacy-facts--plain { background: transparent; padding: 0; margin: 0 0 6px; }
+.legacy-subtitle { margin: 16px 0 8px; font-size: 14px; font-weight: 600; }
+.banner--info { background: var(--accent-soft); border: 1px solid var(--border); border-radius: var(--r-card);
+  padding: 12px 16px; font-size: 14px; color: var(--accent-ink); }
+.legacy-hx-text { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
+.legacy-alert { font-weight: 600; }
 .legacy-note-labs__title { margin: 0; font-size: 16px; font-weight: 600; }
 .legacy-note-text { margin: 0 0 16px; padding: 14px 16px; background: var(--panel); border-radius: var(--r-ctl);
   font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }

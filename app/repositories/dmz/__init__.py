@@ -27,6 +27,13 @@ LEGACY_LAB_RESULT_COMMENTS = "dmz/legacy_lab_result_comments.sql"
 LEGACY_LAB_TASK_COMMENTS = "dmz/legacy_lab_task_comments.sql"
 LEGACY_LAB_DIAGNOSES = "dmz/legacy_lab_diagnoses.sql"
 LEGACY_NOTE_RESULT_LINKS = "dmz/legacy_note_result_links.sql"
+LEGACY_PHOTO = "dmz/legacy_photo.sql"
+LEGACY_EXTERNAL_IDS = "dmz/legacy_external_ids.sql"
+LEGACY_PHARMACIES = "dmz/legacy_pharmacies.sql"
+LEGACY_CONSENT = "dmz/legacy_consent.sql"
+LEGACY_PAST_HISTORY = "dmz/legacy_past_history.sql"
+LEGACY_PROCEDURES = "dmz/legacy_procedures.sql"
+LEGACY_ACCOUNT_NOTES = "dmz/legacy_account_notes.sql"
 
 
 def like_prefix(value: str | None) -> str | None:
@@ -125,3 +132,32 @@ def legacy_lab_diagnoses(person_key: int) -> list[dict[str, Any]]:
 
 def legacy_note_result_links(person_key: int) -> list[dict[str, Any]]:
     return run_query(Source.DMZ, LEGACY_NOTE_RESULT_LINKS, {"person_key": person_key})
+
+
+def legacy_photo(person_key: int) -> bytes | None:
+    rows = run_query(Source.DMZ, LEGACY_PHOTO, {"person_key": person_key})
+    return bytes(rows[0]["photo"]) if rows and rows[0]["photo"] else None
+
+
+def legacy_external_ids(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_EXTERNAL_IDS, {"person_key": person_key})
+
+
+def legacy_pharmacies(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_PHARMACIES, {"person_key": person_key})
+
+
+def legacy_consent(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_CONSENT, {"person_key": person_key})
+
+
+def legacy_past_history(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_PAST_HISTORY, {"person_key": person_key})
+
+
+def legacy_procedures(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_PROCEDURES, {"person_key": person_key})
+
+
+def legacy_account_notes(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_ACCOUNT_NOTES, {"person_key": person_key})

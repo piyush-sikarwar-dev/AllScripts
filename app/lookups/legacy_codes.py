@@ -18,6 +18,16 @@ class LegacyCodes(BaseModel):
     skip_item_prefixes: list[str] = []
     result_status: dict[str, str] = {}
     result_voided: list[str] = []
+    marital_status: dict[str, str] = {}
+    race: dict[str, str] = {}
+    patient_type: dict[str, str] = {}
+
+    def coded(self, table: str, code: str | None) -> str:
+        """Label for a demographics code ('—' when blank, 'Unknown (code X)' when unmapped)."""
+        code = (code or "").strip()
+        if not code:
+            return "—"
+        return getattr(self, table).get(code, f"Unknown (code {code})")
 
     def result_status_label(self, code: str | None) -> str:
         code = (code or "").strip()

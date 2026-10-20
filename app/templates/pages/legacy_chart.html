@@ -9,7 +9,11 @@
 
 <section class="chart-header" aria-labelledby="patient-name">
   <div class="chart-header__main">
+    {% if header.photo_url %}
+    <img class="avatar avatar--photo" src="{{ header.photo_url }}" alt="Photo of {{ header.name }} on file in the pre-2010 chart">
+    {% else %}
     <span class="avatar avatar--legacy" aria-hidden="true">{{ header.initials }}</span>
+    {% endif %}
     <div class="chart-header__body">
       <div class="chart-header__name">
         <h1 class="chart-header__title" id="patient-name">{{ header.name }}</h1>
@@ -23,7 +27,12 @@
       </p>
       <p class="meta-line">
         <span><span class="meta-line__label">Phone</span> {{ header.phone }}</span>
+        {% if header.work_phone != "—" %}<span><span class="meta-line__label">Work</span> {{ header.work_phone }}</span>{% endif %}
         <span><span class="meta-line__label">Address</span> {{ header.address }}</span>
+      </p>
+      <p class="meta-line">
+        <span><span class="meta-line__label">Primary provider</span> {{ header.provider }}</span>
+        <span><span class="meta-line__label">Office</span> {{ header.office }}</span>
       </p>
     </div>
   </div>

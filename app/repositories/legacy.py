@@ -156,3 +156,45 @@ def note_result_links(person_key: int) -> dict[int, list[int]]:
     for r in dmz.legacy_note_result_links(person_key):
         links.setdefault(int(r["note_id"]), []).append(int(r["test_id"]))
     return links
+
+
+@cached
+def about(person_key: int) -> dict[str, Any]:
+    """External IDs, pharmacies and consent flags of the legacy patient."""
+    ids, pharmacies, consent = parallel(
+        lambda: dmz.legacy_external_ids(person_key),
+        lambda: dmz.legacy_pharmacies(person_key),
+        lambda: dmz.legacy_consent(person_key),
+    )
+    return {
+        "external_ids": ids,
+        "pharmacies": pharmacies,
+        "consent": consent[0] if consent else None,
+    }
+
+
+def photo(person_key: int) -> bytes | None:
+    return dmz.legacy_photo(person_key)
+
+
+@cached
+def past_history(person_key: int) -> list[dict[str, Any]]:
+    """Past history entries, newest first (then in chart order)."""
+    rows = dmz.legacy_past_history(person_key)
+    rows.sort(key=lambda r: (sort_key(r["recorded_at"]), -(r["row_no"] or 0)), reverse=True)
+    return rows
+
+
+@cached
+def procedures(person_key: int) -> list[dict[str, Any]]:
+    rows = dmz.legacy_procedures(person_key)
+    rows.sort(key=lambda r: (sort_key(r["date_of_service"]), r["procedure_id"]), reverse=True)
+    return rows
+
+
+@cached
+def account_notes(person_key: int) -> list[dict[str, Any]]:
+    """Account notes, newest first."""
+    rows = dmz.legacy_account_notes(person_key)
+    rows.sort(key=lambda r: (sort_key(r["entered_at"]), r["order_no"] or 0), reverse=True)
+    return rows

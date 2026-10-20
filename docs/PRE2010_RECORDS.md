@@ -55,10 +55,17 @@ The DMZ engine itself uses the same read-only SQL login as EMR and Ntier (`DMZ_D
 | `GET /legacy/{key}/documents/{doc_id}` | Document viewer fragment. |
 | `GET /legacy/{key}/documents/{doc_id}/pages/{n}` | One scanned page as PNG. Only works when `LEGACY_SCAN_ROOT` is set. |
 
-**Header:** name (with suffix), *Pre-2010* badge, *Deceased* badge, DOB and age, sex, legacy ID
-(`patid`), home phone, address.
+**Header:** photo (or initials), name (with suffix), *Pre-2010* badge, *Deceased* badge, DOB and age,
+sex, legacy ID (`patid`), home and work phone, address, primary provider and office (`conv.patgroup`).
 
-**Tabs:** Overview · Chart notes · Problems & allergies · Medications · Lab results · Vitals · Documents.
+**Overview "About this patient":** marital status, race (codes in `config/legacy_codes.yaml`), work
+phone, email, alias, primary provider, office, patient type (codes not yet labelled: shown as
+"Unknown (code N)"), chart created date, external IDs (`conv.pat_ext_info`), pharmacies
+(`conv.cac_pat_pharm_pref` → `conv.pharmmast`), consent (`Patient.Consent`). When a current EMR
+patient has the same last name, first name and date of birth, a "Possible match in current records"
+banner links to them; the records are never linked or merged.
+
+**Tabs:** Overview · Chart notes · Problems & allergies · Medications · Lab results · Vitals · Past history · Documents · Account notes.
 
 ---
 
@@ -213,15 +220,15 @@ Ordered by usefulness to a records request.
 | 1 | ~~Lab orders and results~~ **Done** (Labs tab → Lab reports) | `Orders.LabOrders` (24,232, `patkey`), `Orders.LabTests` (95,366), `conv.cac_results` (364,065), `conv.cac_rescom` (61,787 result comments), `Orders.TaskQueueComments` (49,814 order/result comments), `conv.cac_diaglink` (120,846 order diagnoses), `conv.cac_specimens` (91,669) | Results with **units** (89%), reference ranges (99.8%), lab abnormal flags (H 28k, L 19k, A 281), status (final/preliminary), the ordering provider, order date, fasting, the diagnosis for each order, and result comments. The chain `cac_results.systestordered → LabTests.systestorderno → LabOrders.sysorderno → patkey` reaches a patient for **all 364,065 results** (5,231 patients). | **Build next.** Either replace the flowsheet labs or show both (orders and results as the main view, the flowsheet as "Lab values recorded in notes"). |
 | 2 | ~~Chart note type~~ **Done** (note title + filter) | `Encounters.MRC` (277) via `cac_chrt_header.mrc_key` | Every note currently says "Chart note". Real types: DEC FOLLOW-UP VISIT (33k), ORDER MANAGEMENT RESULT (22.5k), OUTSIDE LABS (22k), NURSE PHONE CALL (19k), DEC CONSULT (5.9k), letters, insurance cards, HIPAA and more. | **Small, high value.** Show the type as the note title and add a type filter. |
 | 3 | ~~Note ↔ lab result link~~ **Done** (result notes show their results) | `Encounters.NoteResultLink` (89,968; 22,552 notes) | The 22,552 "ORDER MANAGEMENT RESULT" notes have no text: their content *is* these results. Linking them shows the results inside the note instead of "no text". | Build with #1. |
-| 4 | More demographics | `conv.person`: `marstat` (7,877 filled), `race` (7,000), work phone `warea`/`wphone`/`wext` (6,015), `entrydate` | Marital status, race, work phone and the date the chart was created. `email`, `alias` and `confidential` are empty. Codes need decoding (no lookup table seen yet). | Add to the header or an "About" card; decode via config. |
-| 5 | Primary provider and facility | `conv.patgroup` (23,874): `drno` (21,997 filled), `faccode` (19,759) | Who the patient's doctor was and which office. `fvisit`, `lvisit` and `chart_no` are empty. | Add to the header. |
-| 6 | Patient account notes | `conv.patnotes` (8,548; 5,861 patients; type CLRT) | Front-desk account notes (`notetext`, entry date, user). Administrative, may include billing remarks. | **Ask the clinic** whether these belong in a medical-records release. |
-| 7 | Patient photo | `conv.cac_pat_photo` (4,658; about 107 KB each) | A photo for identity checks. | Optional: show in the header avatar. |
-| 8 | Past history (medical / surgical / family / social) | `dbo.Gloss_base` (80,602; about 5.9k patients; category codes 23, 25, 24, 20, 18) | History entries with text. The category codes match EMR `HX_DIAGNOSIS` categories, and the table carries EMR ids (`hxdiagnosis_id`, `EncounterID`). It looks like a staging table for history that was already moved into EMR. | Check a count-only overlap with EMR `HX_DIAGNOSIS` first; show it only if it is not already in EMR. |
-| 9 | Preferred pharmacy | `conv.cac_pat_pharm_pref` (4,201) → `conv.cac_erx_pharm` | Patient's pharmacy. | Low priority. |
-| 10 | External IDs (for linking to EMR) | `conv.pat_ext_info` (25,335; 23,323 patients): `ext_id`, `alt_id` | The best candidate for linking DMZ patients to EMR patients (counts-only match test still to do). | Use for a "Possible match in current records" hint, never an automatic merge. |
+| 4 | ~~More demographics~~ **Done** (header + Overview "About this patient") | `conv.person`: `marstat` (7,877 filled), `race` (7,000), work phone `warea`/`wphone`/`wext` (6,015), `entrydate` | Marital status, race, work phone and the date the chart was created. `email`, `alias` and `confidential` are empty. Codes need decoding (no lookup table seen yet). | Add to the header or an "About" card; decode via config. |
+| 5 | ~~Primary provider and facility~~ **Done** (header) | `conv.patgroup` (23,874): `drno` (21,997 filled), `faccode` (19,759) | Who the patient's doctor was and which office. `fvisit`, `lvisit` and `chart_no` are empty. | Add to the header. |
+| 6 | ~~Patient account notes~~ **Done** (Account notes tab; pop-up alerts marked) | `conv.patnotes` (8,548; 5,861 patients; type CLRT) | Front-desk account notes (`notetext`, entry date, user). Administrative, may include billing remarks. | **Ask the clinic** whether these belong in a medical-records release. |
+| 7 | ~~Patient photo~~ **Done** (header; JPEG via `/legacy/{key}/photo`) | `conv.cac_pat_photo` (4,658; about 107 KB each) | A photo for identity checks. | Optional: show in the header avatar. |
+| 8 | ~~Past history~~ **Done** (Past history tab, grouped with EMR category labels) | `dbo.Gloss_base` (80,602; about 5.9k patients; category codes 23, 25, 24, 20, 18) | History entries with text. The category codes match EMR `HX_DIAGNOSIS` categories, and the table carries EMR ids (`hxdiagnosis_id`, `EncounterID`). It looks like a staging table for history that was already moved into EMR. | Check a count-only overlap with EMR `HX_DIAGNOSIS` first; show it only if it is not already in EMR. |
+| 9 | ~~Preferred pharmacy~~ **Done** (About card; only 191 of 4,201 preferred-pharmacy keys resolve to a named pharmacy in `conv.pharmmast`) | `conv.cac_pat_pharm_pref` (4,201) → `conv.cac_erx_pharm` | Patient's pharmacy. | Low priority. |
+| 10 | ~~External IDs~~ **Done** (About card) + "Possible match in current records" banner (same last name, first name and DOB in EMR; a hint, never linked) | `conv.pat_ext_info` (25,335; 23,323 patients): `ext_id`, `alt_id` | The best candidate for linking DMZ patients to EMR patients (counts-only match test still to do). | Use for a "Possible match in current records" hint, never an automatic merge. |
 | 11 | Structured note content | `Encounters.TemplateData` (1,953,232), `Encounters.ChartGlossaries` (1,296,089) | The same content as the RTF note text, broken into template items (glossary, meds, sig, labs, assessment). | No: the RTF text already shows it. |
-| 12 | Procedures, consent | `Procedures.PatientProcedures` (9 rows, 8 patients), `Patient.Consent` (11) | Almost empty. | No (or a small list if requested). |
+| 12 | ~~Procedures, consent~~ **Done** (Past history tab; About card) | `Procedures.PatientProcedures` (9 rows, 8 patients), `Patient.Consent` (11) | Almost empty. | No (or a small list if requested). |
 | — | Immunizations, separate vitals table | `Immunizations.PatientImmunizations`, `Vitals.Vitals` | **Empty** (0 rows). | Nothing to show. |
 
 **Not part of the chart (never shown):** migration bookkeeping (`conv.MigrationLog`, `*WorkTable`,

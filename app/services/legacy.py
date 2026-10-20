@@ -16,16 +16,21 @@ from app.documents.images import cached_png
 from app.documents.render import DocumentFormatError
 from app.documents.store import DocumentUnavailableError, get_legacy_store
 from app.formatting import EMPTY, age, date_us, initials, or_dash, person_name, sort_key
-from app.lookups import label
+from app.lookups import get_lookups, label
 from app.lookups.legacy_codes import LegacyCodes, legacy_codes
 from app.models.common import PAGE_SIZE, Pager, clamp_page, paginate
 from app.models.legacy import (
+    LegacyAbout,
+    LegacyAccountNote,
     LegacyAllergy,
     LegacyDocPage,
     LegacyDocRow,
     LegacyDocViewer,
+    LegacyFact,
     LegacyHeader,
     LegacyHistory,
+    LegacyHxEntry,
+    LegacyHxGroup,
     LegacyLabComment,
     LegacyLabOrder,
     LegacyLabOrderRow,
@@ -34,6 +39,7 @@ from app.models.legacy import (
     LegacyLabResult,
     LegacyLabRow,
     LegacyLabTest,
+    LegacyMatch,
     LegacyMedEntry,
     LegacyMedication,
     LegacyMedications,
@@ -43,13 +49,16 @@ from app.models.legacy import (
     LegacyOverview,
     LegacyOverviewItem,
     LegacyPage,
+    LegacyPastHistory,
+    LegacyPharmacy,
     LegacyProblem,
+    LegacyProcedure,
     LegacyRow,
     LegacySearch,
     LegacyVitalsPage,
     LegacyVitalsRow,
 )
-from app.repositories import legacy_repository
+from app.repositories import legacy_repository, source_repository
 from app.services import NotFoundError, call
 from app.services.patients import parse_dob, parse_name_query
 
@@ -90,7 +99,8 @@ def _phone(area: str | None, number: str | None) -> str:
 
 
 def _address(p: dict) -> str:
-    street = ", ".join(s.strip() for s in (p.get("street1"), p.get("street2")) if s and s.strip())
+    streets = (p.get("street1"), p.get("street2"), p.get("street3"))
+    street = ", ".join(s.strip() for s in streets if s and s.strip())
     state_zip = " ".join(part for part in (p.get("state"), p.get("zip")) if part)
     city_line = ", ".join(part for part in (p.get("city"), state_zip) if part)
     return ", ".join(part for part in (street, city_line) if part) or EMPTY
@@ -165,8 +175,12 @@ async def get_header(key: str) -> LegacyHeader:
         sex=label("sex", p["sex"]),
         legacy_id=or_dash(p["legacy_id"]),
         phone=_phone(p.get("home_area"), p.get("home_phone")),
+        work_phone=_work_phone(p),
         address=_address(p),
         deceased=_deceased(p.get("deceased")),
+        provider=_provider(p),
+        office=or_dash(p.get("office")),
+        photo_url=f"/legacy/{key}/photo" if p.get("has_photo") else None,
     )
 
 
@@ -271,7 +285,9 @@ TABS: list[tuple[str, str]] = [
     ("meds", "Medications"),
     ("labs", "Lab results"),
     ("vitals", "Vitals"),
+    ("history", "Past history"),
     ("docs", "Documents"),
+    ("account", "Account notes"),
 ]
 TAB_NAMES = {name for name, _ in TABS}
 TAB_LABELS = dict(TABS)
@@ -643,15 +659,19 @@ async def overview(key: str) -> LegacyOverview:
     last chart note, and how many records each tab holds."""
     pkey = person_key(key)
     repo = legacy_repository()
-    hist, meds, notes, items, docs, reports = await asyncio.gather(
+    hist, meds, notes, items, docs, reports, about_card = await asyncio.gather(
         history(key),
         medications(key),
         call(repo.notes, pkey),
         _items(key),
         call(repo.documents, pkey),
         call(repo.lab_reports, pkey),
+        about(key),
     )
     labs_rows, vital_rows, _ = items
+    hx_rows, proc_rows, acct_rows = await asyncio.gather(
+        call(repo.past_history, pkey), call(repo.procedures, pkey), call(repo.account_notes, pkey)
+    )
     last = _note_row(notes[0]) if notes else None
     return LegacyOverview(
         problems=[
@@ -669,6 +689,7 @@ async def overview(key: str) -> LegacyOverview:
             for m in meds.active
         ],
         last_note=last,
+        about=about_card,
         counts={
             "notes": len(notes),
             "problems": len(hist.problems) + len(hist.allergies),
@@ -676,6 +697,8 @@ async def overview(key: str) -> LegacyOverview:
             "labs": len(reports) or len(labs_rows),  # lab reports, else recorded values
             "vitals": len({r["service_datetime"] for r in vital_rows}),
             "docs": len(docs),
+            "history": len(hx_rows) + len(proc_rows),
+            "account": len(acct_rows),
         },
     )
 
@@ -815,10 +838,175 @@ async def labs_context(key: str, params: Mapping[str, str], page_no: int) -> dic
     return {"lab_view": view, "labs": values}
 
 
+def _work_phone(p: dict) -> str:
+    phone = _phone(p.get("work_area"), p.get("work_phone"))
+    ext = (p.get("work_ext") or "").strip()
+    return f"{phone} ext. {ext}" if ext and phone != EMPTY else phone
+
+
+_CONSENT = (
+    ("general_consent", "General"),
+    ("demographics_consent", "Demographics"),
+    ("insurance_consent", "Insurance"),
+    ("medical_history_consent", "Medical history"),
+)
+
+
+def _yes_no(value: object) -> str:
+    v = str(value or "").strip().upper()
+    return {"Y": "Yes", "N": "No"}.get(v, EMPTY if not v else f"Unknown (code {v})")
+
+
+def _pharmacy(r: dict) -> LegacyPharmacy:
+    return LegacyPharmacy(
+        kind=str(r.get("kind") or "").capitalize(),
+        name=_squash(r.get("name")) or EMPTY,
+        address=_address({"street1": r.get("street1"), "street2": r.get("street2"),
+                          "city": r.get("city"), "state": r.get("state"), "zip": r.get("zip")}),
+        phone=_phone(r.get("phone_area"), r.get("phone")),
+        fax=_phone(r.get("fax_area"), r.get("fax")),
+    )  # fmt: skip
+
+
+async def possible_matches(p: dict) -> list[LegacyMatch]:
+    """Current (EMR) patients with the same last name, first name and date of birth. A hint for
+    staff only; the two records are never linked or merged."""
+    dob = _day(p.get("dob"))
+    last, first = (p.get("last_name") or "").strip(), (p.get("first_name") or "").strip()
+    if dob is None or not last or not first:
+        return []
+    rows, _ = await call(
+        source_repository().search_patients,
+        last_name=last, first_name=first, dob=dob, chart_id=None, offset=0, limit=5,
+    )  # fmt: skip
+    return [
+        LegacyMatch(
+            key=f"EMR:{r['emr_id']}",
+            name=person_name(r["last_name"], r["first_name"], r.get("middle_initial")),
+            dob=date_us(_day(r["dob"])),
+            chart_id=or_dash(r.get("chart_id")),
+        )
+        for r in rows
+        if (r.get("last_name") or "").strip().upper() == last.upper()
+        and (r.get("first_name") or "").strip().upper() == first.upper()
+    ]
+
+
+async def about(key: str) -> LegacyAbout:
+    """Everything else known about the legacy patient: demographics, external IDs, pharmacies,
+    consent, and possible matches in the current records."""
+    pkey = person_key(key)
+    repo = legacy_repository()
+    p, extra = await asyncio.gather(call(repo.patient, pkey), call(repo.about, pkey))
+    if p is None:
+        raise NotFoundError(key)
+    codes = legacy_codes()
+    facts = [
+        LegacyFact(label="Marital status",
+                   value=codes.coded("marital_status", p.get("marital_status"))),
+        LegacyFact(label="Race", value=codes.coded("race", p.get("race"))),
+        LegacyFact(label="Work phone", value=_work_phone(p)),
+        LegacyFact(label="Email", value=or_dash(p.get("email"))),
+        LegacyFact(label="Also known as", value=or_dash(p.get("alias"))),
+        LegacyFact(label="Primary provider", value=_provider(p)),
+        LegacyFact(label="Office", value=or_dash(p.get("office"))),
+        LegacyFact(label="Patient type", value=codes.coded("patient_type", p.get("patient_type"))),
+        LegacyFact(label="Chart created", value=date_us(_day(p.get("chart_created")))),
+    ]  # fmt: skip
+    ids = []
+    for r in extra["external_ids"]:
+        parts = [x for x in (_squash(r.get("ext_id")), _squash(r.get("alt_id"))) if x]
+        if parts:
+            ids.append(" / ".join(dict.fromkeys(parts)))
+    consent = extra["consent"] or {}
+    consent_facts = [
+        LegacyFact(label=label, value=_yes_no(consent.get(col))) for col, label in _CONSENT
+    ] if consent else []  # fmt: skip
+    return LegacyAbout(
+        facts=facts,
+        external_ids=list(dict.fromkeys(ids)),
+        pharmacies=[_pharmacy(r) for r in extra["pharmacies"]],
+        consent=consent_facts,
+        matches=await possible_matches(p),
+    )
+
+
+_HX_GROUP_ORDER = {"problem": 0, "surgical": 1, "family": 2, "social": 3, "allergy": 4, "other": 5}
+
+
+async def past_history(key: str) -> LegacyPastHistory:
+    """Past medical / surgical / family / social history (grouped by category) and procedures."""
+    pkey = person_key(key)
+    repo = legacy_repository()
+    rows, procs, notes = await asyncio.gather(
+        call(repo.past_history, pkey), call(repo.procedures, pkey), call(repo.notes, pkey)
+    )
+    note_ids = {int(n["note_id"]) for n in notes}
+    lookups = get_lookups()
+    groups: dict[str, tuple[int, list[LegacyHxEntry]]] = {}
+    for r in rows:  # newest first
+        cat = lookups.history_category(r.get("category_code"))
+        text = _text_lines(r.get("glossary_text"))
+        chart = _text_lines(r.get("chart_text"))
+        entry = LegacyHxEntry(
+            item=_squash(r.get("item")) or EMPTY,
+            text=text,
+            chart_text=chart if chart and chart != text else "",
+            code=_squash(r.get("code")),
+            date=date_us(_day(r.get("recorded_at"))),
+            provider=_provider(r),
+            note_id=_note_link(r.get("note_id"), note_ids),
+        )
+        order = _HX_GROUP_ORDER.get(str(cat.group), 9)
+        groups.setdefault(cat.label, (order, []))[1].append(entry)
+    ordered = sorted(groups.items(), key=lambda kv: (kv[1][0], kv[0]))
+    return LegacyPastHistory(
+        groups=[LegacyHxGroup(label=label, entries=entries) for label, (_, entries) in ordered],
+        procedures=[
+            LegacyProcedure(
+                name=_squash(r.get("desc1"), r.get("desc2")) or _squash(r.get("short_desc"))
+                or or_dash(r.get("code")),
+                code=or_dash(r.get("code")),
+                date=date_us(_day(r.get("date_of_service"))),
+                stopped=date_us(_day(r.get("stop_date"))),
+                status=_squash(r.get("status")) or EMPTY,
+                provider=_provider(r),
+                comment=_squash(r.get("comment")),
+            )
+            for r in procs
+        ],
+    )  # fmt: skip
+
+
+async def account_notes(key: str) -> list[LegacyAccountNote]:
+    rows = await call(legacy_repository().account_notes, person_key(key))
+    return [
+        LegacyAccountNote(
+            date=date_us(_day(r.get("entered_at"))),
+            edited=date_us(_day(r.get("edited_at"))),
+            text=_text_lines(r.get("text")) or EMPTY,
+            alert=(r.get("alert") or "").strip().upper() == "Y",
+        )
+        for r in rows
+    ]
+
+
+async def patient_photo(key: str) -> bytes:
+    """The legacy patient's photo; only JPEG bytes are served."""
+    data = await call(legacy_repository().photo, person_key(key))
+    if not data or not data.startswith(b"\xff\xd8\xff"):
+        raise NotFoundError(f"{key}/photo")
+    return data
+
+
 async def tab_context(key: str, tab: str, params: Mapping[str, str]) -> dict[str, Any]:
     """Everything one tab of the pre-2010 chart needs (full page or HTMX fragment)."""
     if tab == "overview":
         return {"overview": await overview(key)}
+    if tab == "history":
+        return {"past": await past_history(key)}
+    if tab == "account":
+        return {"account_notes": await account_notes(key)}
     if tab == "problems":
         return {"history": await history(key, params.get("voided") == "1")}
     if tab == "meds":

@@ -27,6 +27,7 @@ from app.services.legacy import (
     lab_order,
     legacy_enabled,
     note_page,
+    patient_photo,
     search_patients,
     tab_context,
 )
@@ -278,3 +279,15 @@ async def legacy_lab_order(
         {"key": key, "order": order, "partial": True},
         headers={"HX-Push-Url": url_with(f"/legacy/{key}", state, order=order_id)},
     )
+
+
+@router.get("/legacy/{key}/photo")
+async def legacy_photo(request: Request, background: BackgroundTasks, key: str) -> Response:
+    """The legacy patient's photo (JPEG), shown in the chart header."""
+    try:
+        data = await patient_photo(key)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    audit(request, background, "view_document", patient_key=key,
+          detail={"section": "legacy", "kind": "photo"})  # fmt: skip
+    return Response(content=data, media_type="image/jpeg")

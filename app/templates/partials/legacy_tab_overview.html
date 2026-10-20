@@ -51,13 +51,48 @@
     </section>
   </div>
 
+  {% set a = o.about %}
+  {% if a.matches %}
+  <div class="banner--info" role="note">
+    <strong>Possible match in current records:</strong>
+    {% for m in a.matches %}
+    <a class="cell-link" href="/patients/{{ m.key }}">{{ m.name }}</a> (DOB {{ m.dob }}, chart ID <span class="mono">{{ m.chart_id }}</span>){% if not loop.last %};{% endif %}
+    {% endfor %}
+    — same name and date of birth. These records are not linked; confirm before treating them as the same person.
+  </div>
+  {% endif %}
+
+  <section class="card" aria-labelledby="ov-about">
+    <h2 class="card__title" id="ov-about">About this patient</h2>
+    <dl class="legacy-facts legacy-facts--plain">
+      {% for f in a.facts %}<div><dt>{{ f.label }}</dt><dd>{{ f.value }}</dd></div>{% endfor %}
+      <div><dt>External IDs</dt><dd class="mono">{{ a.external_ids|join(", ") if a.external_ids else "—" }}</dd></div>
+    </dl>
+    {% if a.pharmacies %}
+    <h3 class="legacy-subtitle">Pharmacies</h3>
+    <ul class="item-list">
+      {% for ph in a.pharmacies %}
+      <li><span class="item-list__name">{{ ph.name }} <span class="badge badge--neutral">{{ ph.kind }}</span></span>
+        <span class="item-list__detail">{{ ph.address }}{% if ph.phone != "—" %} · Phone {{ ph.phone }}{% endif %}{% if ph.fax != "—" %} · Fax {{ ph.fax }}{% endif %}</span></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if a.consent %}
+    <h3 class="legacy-subtitle">Consent on file</h3>
+    <dl class="legacy-facts legacy-facts--plain">
+      {% for f in a.consent %}<div><dt>{{ f.label }}</dt><dd>{{ f.value }}</dd></div>{% endfor %}
+    </dl>
+    {% endif %}
+  </section>
+
   <section class="card" aria-labelledby="ov-contents">
     <h2 class="card__title" id="ov-contents">In this pre-2010 chart</h2>
     <ul class="legacy-counts">
       {% for name, label, noun in [
           ("notes", "Chart notes", "notes"), ("problems", "Problems & allergies", "entries"),
           ("meds", "Medications", "medications"), ("labs", "Lab results", "reports or values"),
-          ("vitals", "Vitals", "readings"), ("docs", "Documents", "scanned documents")] %}
+          ("vitals", "Vitals", "readings"), ("history", "Past history", "entries"),
+          ("docs", "Documents", "scanned documents"), ("account", "Account notes", "notes")] %}
       <li>
         <a class="legacy-counts__link" href="{{ url_with(base, {'tab': name}) }}"
            hx-get="{{ base }}/tab/{{ name }}" hx-target="#chart-tabs" hx-swap="outerHTML">

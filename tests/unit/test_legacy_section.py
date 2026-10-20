@@ -569,3 +569,70 @@ def test_note_without_text_or_results_still_says_so(client, monkeypatch):
     note = _result_note(p)
     r = client.get(f"/legacy/{_key(p)}/notes/{note['note_id']}", headers=HTMX)
     assert "not available in the pre-2010 archive" in r.text and "Print note" not in r.text
+
+
+def test_header_photo_provider_office_work_phone(client):
+    p = PEOPLE[0]  # i = 0: photo, work phone with extension, no primary provider
+    r = client.get(f"/legacy/{_key(p)}")
+    assert f'src="/legacy/{_key(p)}/photo"' in r.text and "avatar--photo" in r.text
+    assert "(555) 020-0000 ext. 12" in r.text and "Primary provider" in r.text
+    p1 = PEOPLE[1]  # no photo, has provider and office
+    r = client.get(f"/legacy/{_key(p1)}")
+    assert "avatar--legacy" in r.text and "Main Street Clinic" in r.text
+
+
+def test_photo_route(client):
+    img = client.get(f"/legacy/{_key(PEOPLE[0])}/photo")
+    assert img.status_code == 200 and img.headers["content-type"] == "image/jpeg"
+    assert img.content.startswith(b"\xff\xd8\xff")
+    assert client.get(f"/legacy/{_key(PEOPLE[1])}/photo").status_code == 404
+
+
+def test_overview_about_card(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}")
+    assert "About this patient" in r.text and "Married" in r.text and "White" in r.text
+    assert f"X{p['person_key']} / A{p['person_key']}" in r.text
+    assert "Sample Pharmacy" in r.text and "Mail order" in r.text and "(555) 030-0000" in r.text
+    assert "Consent on file" in r.text and "Medical history" in r.text
+    assert "Unknown (code 44)" in r.text  # patient type has no labels yet
+    assert "Possible match" not in r.text  # fake EMR patients have other names
+
+
+def test_possible_match_in_current_records(client, monkeypatch):
+    import tests.fakes.repository as emr_fake
+
+    p = _with_history()
+    row = {"emr_id": 4242, "last_name": p["last_name"], "first_name": p["first_name"],
+           "middle_initial": None, "dob": p["dob"].date(), "chart_id": "C-1"}  # fmt: skip
+    monkeypatch.setattr(emr_fake, "search_patients", lambda **kw: ([row], 1))
+    r = client.get(f"/legacy/{_key(p)}")
+    assert "Possible match in current records" in r.text and 'href="/patients/EMR:4242"' in r.text
+    assert "not linked" in r.text
+
+
+def test_past_history_tab(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "history"})
+    assert r.status_code == 200 and 'id="tab-history"' in r.text
+    for label in ("Problem List/Past Medical", "Past Surgical", "Family", "Social",
+                  "Health Maintenance"):  # fmt: skip
+        assert label in r.text
+    assert r.text.index("Problem List/Past Medical") < r.text.index("Past Surgical")
+    assert "Appendectomy 1985" in r.text and "As charted: Appy" in r.text
+    assert "COLONOSCOPY DIAGNOSTIC" in r.text and "Performed" in r.text and "45378" in r.text
+    empty = next(p for p in PEOPLE if (p["person_key"] - 5_000) % 4 == 3)
+    r = client.get(f"/legacy/{_key(empty)}", params={"tab": "history"})
+    assert "No past history recorded" in r.text and "No procedures recorded" in r.text
+
+
+def test_account_notes_tab(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}/tab/account", headers=HTMX)
+    assert r.status_code == 200 and "prefers morning calls" in r.text
+    assert "Pop-up alert" in r.text and r.text.count("Pop-up alert") == 1
+    assert r.text.index("prefers morning calls") < r.text.index("new address on file")
+    assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?tab=account"
+    empty = next(p for p in PEOPLE if (p["person_key"] - 5_000) % 4 == 3)
+    r = client.get(f"/legacy/{_key(empty)}", params={"tab": "account"})
+    assert "No account notes in the pre-2010 chart." in r.text

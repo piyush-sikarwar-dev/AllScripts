@@ -50,8 +50,12 @@ class LegacyHeader(BaseModel):
     sex: str
     legacy_id: str
     phone: str
+    work_phone: str
     address: str
     deceased: bool
+    provider: str
+    office: str
+    photo_url: str | None
 
 
 class LegacyNoteRow(BaseModel):
@@ -267,6 +271,7 @@ class LegacyOverview(BaseModel):
     medications: list[LegacyOverviewItem]
     last_note: LegacyNoteRow | None
     counts: dict[str, int]
+    about: "LegacyAbout"
 
 
 class LegacyLabComment(BaseModel):
@@ -330,3 +335,71 @@ class LegacyLabReports(BaseModel):
 
 
 LegacyNote.model_rebuild()
+
+
+class LegacyFact(BaseModel):
+    label: str
+    value: str
+
+
+class LegacyPharmacy(BaseModel):
+    kind: str
+    name: str
+    address: str
+    phone: str
+    fax: str
+
+
+class LegacyMatch(BaseModel):
+    key: str
+    name: str
+    dob: str
+    chart_id: str
+
+
+class LegacyAbout(BaseModel):
+    facts: list[LegacyFact]
+    external_ids: list[str]
+    pharmacies: list[LegacyPharmacy]
+    consent: list[LegacyFact]
+    matches: list[LegacyMatch]
+
+
+class LegacyHxEntry(BaseModel):
+    item: str
+    text: str
+    chart_text: str
+    code: str
+    date: str
+    provider: str
+    note_id: int | None
+
+
+class LegacyHxGroup(BaseModel):
+    label: str
+    entries: list[LegacyHxEntry]
+
+
+class LegacyProcedure(BaseModel):
+    name: str
+    code: str
+    date: str
+    stopped: str
+    status: str
+    provider: str
+    comment: str
+
+
+class LegacyPastHistory(BaseModel):
+    groups: list[LegacyHxGroup]
+    procedures: list[LegacyProcedure]
+
+
+class LegacyAccountNote(BaseModel):
+    date: str
+    edited: str
+    text: str
+    alert: bool
+
+
+LegacyOverview.model_rebuild()
