@@ -110,7 +110,7 @@ async def _tab(request: Request, background: BackgroundTasks, key: str, tab: str
 
 @router.get("/legacy/{key}", response_class=HTMLResponse)
 async def legacy_chart(
-    request: Request, background: BackgroundTasks, key: str, user: User, tab: str = "notes"
+    request: Request, background: BackgroundTasks, key: str, user: User, tab: str = "overview"
 ) -> HTMLResponse:
     try:
         header = await get_header(key)
@@ -133,7 +133,7 @@ async def legacy_tab(
 ) -> HTMLResponse:
     ctx = await _tab(request, background, key, name)
     params = {k: v for k, v in _validated(request.query_params).items()}
-    push = url_with(f"/legacy/{key}", {"tab": None if name == "notes" else name, **params})
+    push = url_with(f"/legacy/{key}", {"tab": None if name == "overview" else name, **params})
     return render(
         request,
         "partials/legacy_tab_frame.html",
@@ -178,7 +178,7 @@ async def legacy_note(
     audit(request, background, "view_note", patient_key=key,
           detail={"section": "legacy", "note": opened.id})  # fmt: skip
     params = {k: v for k, v in (("year", year), ("page", page)) if v not in ("", 1)}
-    push = url_with(f"/legacy/{key}", params, note=note_id)
+    push = url_with(f"/legacy/{key}", {"tab": "notes", **params}, note=note_id)
     return render(
         request,
         "partials/legacy_note.html",

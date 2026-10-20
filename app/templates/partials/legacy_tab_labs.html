@@ -58,7 +58,7 @@
           <td class="mono">{{ r.result }}</td>
           <td class="mono nowrap">{{ r.range }}</td>
           <td>{% if r.flag %}{{ flag_badge(r.flag) }}{% endif %}</td>
-          <td>{% if r.note_id %}<a class="cell-link" href="{{ base }}?note={{ r.note_id }}"
+          <td>{% if r.note_id %}<a class="cell-link" href="{{ base }}?tab=notes&amp;note={{ r.note_id }}"
                 hx-get="{{ base }}/tab/notes?note={{ r.note_id }}" hx-target="#chart-tabs" hx-swap="outerHTML">Open note</a>{% endif %}</td>
         </tr>
         {% endfor %}

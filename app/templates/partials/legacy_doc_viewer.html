@@ -36,7 +36,7 @@
   {% endif %}
   {% if v.note_id %}
   <div class="note-view__actions">
-    <a class="btn btn--secondary" href="{{ base }}?note={{ v.note_id }}"
+    <a class="btn btn--secondary" href="{{ base }}?tab=notes&amp;note={{ v.note_id }}"
        hx-get="{{ base }}/tab/notes?note={{ v.note_id }}" hx-target="#chart-tabs" hx-swap="outerHTML">Open chart note</a>
   </div>
   {% endif %}

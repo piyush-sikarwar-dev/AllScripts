@@ -72,7 +72,7 @@ class LegacyNotePage(BaseModel):
     last_date: str
 
     def params(self, **override: object) -> dict[str, object]:
-        values: dict[str, object] = {"year": self.year, "page": self.pager.page}
+        values: dict[str, object] = {"tab": "notes", "year": self.year, "page": self.pager.page}
         values.update(override)
         return {k: v for k, v in values.items() if v not in (None, "")}
 
@@ -231,3 +231,16 @@ class LegacyDocPage(BaseModel):
         values: dict[str, object] = {"tab": "docs", "type": self.type, "page": self.pager.page}
         values.update(override)
         return {k: v for k, v in values.items() if v not in (None, "")}
+
+
+class LegacyOverviewItem(BaseModel):
+    name: str
+    detail: str
+
+
+class LegacyOverview(BaseModel):
+    problems: list[LegacyOverviewItem]
+    allergies: list[LegacyOverviewItem]
+    medications: list[LegacyOverviewItem]
+    last_note: LegacyNoteRow | None
+    counts: dict[str, int]

@@ -5,7 +5,7 @@
     {% set is_active = name == tab %}
     <a role="tab" id="tab-{{ name }}" class="tab{% if is_active %} tab--active{% endif %}"
        aria-selected="{{ 'true' if is_active else 'false' }}" aria-controls="tab-panel"
-       href="{{ url_with('/legacy/' ~ key, {'tab': None if name == 'notes' else name}) }}"
+       href="{{ url_with('/legacy/' ~ key, {'tab': None if name == 'overview' else name}) }}"
        hx-get="/legacy/{{ key }}/tab/{{ name }}" hx-target="#chart-tabs" hx-swap="outerHTML"
        {%- if is_active and partial %} data-focus-on-load{% endif %}>{{ label }}</a>
     {% endfor %}

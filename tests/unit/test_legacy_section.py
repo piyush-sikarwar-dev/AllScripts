@@ -62,7 +62,7 @@ def test_legacy_patients_never_appear_in_current_patient_list(client):
 
 def test_chart_header_and_first_note_open(client):
     p = _with_notes(3)
-    r = client.get(f"/legacy/{_key(p)}")
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "notes"})
     assert r.status_code == 200
     assert p["last_name"] in r.text and p["legacy_id"] in r.text
     assert "Chart notes" in r.text and "badge--legacy" in r.text
@@ -82,7 +82,7 @@ def test_note_text_is_converted_from_rtf(client):
     assert "Assessment:" in body and "Condition stable." in body
     assert "\\" not in body and "Sample header" not in body and "DATE" not in body
     assert "01/01/2005" in body  # field result kept, field instruction dropped
-    assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?note={note['note_id']}"
+    assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?tab=notes&note={note['note_id']}"
 
 
 def test_note_without_text_shows_empty_state(client):
@@ -98,7 +98,8 @@ def test_note_of_another_patient_is_404(client):
     a, b = [p for p in PEOPLE if NOTES[p["person_key"]]][:2]
     other = NOTES[b["person_key"]][0]["note_id"]
     assert client.get(f"/legacy/{_key(a)}/notes/{other}", headers=HTMX).status_code == 404
-    assert client.get(f"/legacy/{_key(a)}", params={"note": other}).status_code == 404
+    params = {"tab": "notes", "note": other}
+    assert client.get(f"/legacy/{_key(a)}", params=params).status_code == 404
 
 
 def test_bad_and_unknown_keys_are_404(client):
@@ -121,7 +122,7 @@ def test_year_filter_and_paging(client):
     in_year = sum(1 for n in rows if str(n["service_date"].year) == year)
     assert r.status_code == 200 and f"in {year}" in r.text
     assert r.text.count("data-list-row") == min(in_year, 25)
-    assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?year={year}"
+    assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?tab=notes&year={year}"
     r = client.get(f"/legacy/{_key(p)}/notes", params={"year": "1890"}, headers=HTMX)
     assert r.text.count("data-list-row") == min(len(rows), 25)  # unknown year → all
 
@@ -136,7 +137,7 @@ def test_print_page(client):
 
 def test_views_are_audited_without_phi(client):
     p = _with_notes(3)
-    client.get(f"/legacy/{_key(p)}")
+    client.get(f"/legacy/{_key(p)}", params={"tab": "notes"})
     client.get("/legacy/rows", params={"q": p["last_name"]}, headers=HTMX)
     with new_session() as db:
         rows = db.scalars(select(AuditLog)).all()
@@ -397,3 +398,24 @@ def test_doc_page_404_without_store(client):
     p = _with_history()
     doc = p["person_key"] * 10
     assert client.get(f"/legacy/{_key(p)}/documents/{doc}/pages/1").status_code == 404
+
+
+def test_overview_is_default_tab(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}")
+    assert r.status_code == 200 and 'id="tab-overview"' in r.text
+    assert 'id="tab-overview" class="tab tab--active"' in r.text
+    assert "Active problems" in r.text and "DIABETES MELLITUS TYPE II" in r.text
+    assert "ALLERGIC RHINITIS NOS" not in r.text  # entered in error
+    assert "HYPERLIPIDEMIA" not in r.text  # inactive
+    assert "PENICILLIN" in r.text and "Hives, Rash" in r.text and "PEANUTS" not in r.text
+    assert "METFORMIN HCL TABLET 500 MG" in r.text and "LISINOPRIL" not in r.text
+    assert "Last chart note" in r.text and "All chart notes" in r.text
+    assert "In this pre-2010 chart" in r.text and f'href="/legacy/{_key(p)}?tab=labs"' in r.text
+    assert "Pre-2010 overview" in r.text  # page title
+
+
+def test_overview_empty_patient(client):
+    p = next(p for p in PEOPLE if not NOTES[p["person_key"]])
+    r = client.get(f"/legacy/{_key(p)}")
+    assert r.status_code == 200 and "No chart notes recorded." in r.text

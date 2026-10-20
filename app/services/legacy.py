@@ -34,6 +34,8 @@ from app.models.legacy import (
     LegacyNote,
     LegacyNotePage,
     LegacyNoteRow,
+    LegacyOverview,
+    LegacyOverviewItem,
     LegacyPage,
     LegacyProblem,
     LegacyRow,
@@ -218,6 +220,7 @@ async def get_note(key: str, note_id: int) -> LegacyNote:
 
 # Tabs of the pre-2010 chart, in display order.
 TABS: list[tuple[str, str]] = [
+    ("overview", "Overview"),
     ("notes", "Chart notes"),
     ("problems", "Problems & allergies"),
     ("meds", "Medications"),
@@ -590,8 +593,51 @@ async def document_page_png(key: str, doc_id: int, page: int) -> bytes:
         raise NotFoundError(f"{key}/document/{doc_id}/{page}") from exc
 
 
+async def overview(key: str) -> LegacyOverview:
+    """Summary cards: active problems, allergies, medications active at the last update, the
+    last chart note, and how many records each tab holds."""
+    pkey = person_key(key)
+    repo = legacy_repository()
+    hist, meds, notes, items, docs = await asyncio.gather(
+        history(key),
+        medications(key),
+        call(repo.notes, pkey),
+        _items(key),
+        call(repo.documents, pkey),
+    )
+    labs_rows, vital_rows, _ = items
+    last = _note_row(notes[0]) if notes else None
+    return LegacyOverview(
+        problems=[
+            LegacyOverviewItem(name=p.name, detail=f"Onset {p.onset}" if p.onset != EMPTY else "")
+            for p in hist.problems
+            if p.active
+        ],
+        allergies=[
+            LegacyOverviewItem(name=a.allergen, detail="" if a.reactions == EMPTY else a.reactions)
+            for a in hist.allergies
+            if a.active
+        ],
+        medications=[
+            LegacyOverviewItem(name=m.name, detail="" if m.sig == EMPTY else m.sig)
+            for m in meds.active
+        ],
+        last_note=last,
+        counts={
+            "notes": len(notes),
+            "problems": len(hist.problems) + len(hist.allergies),
+            "meds": len(meds.active) + len(meds.past),
+            "labs": len(labs_rows),
+            "vitals": len({r["service_datetime"] for r in vital_rows}),
+            "docs": len(docs),
+        },
+    )
+
+
 async def tab_context(key: str, tab: str, params: Mapping[str, str]) -> dict[str, Any]:
     """Everything one tab of the pre-2010 chart needs (full page or HTMX fragment)."""
+    if tab == "overview":
+        return {"overview": await overview(key)}
     if tab == "problems":
         return {"history": await history(key, params.get("voided") == "1")}
     if tab == "meds":

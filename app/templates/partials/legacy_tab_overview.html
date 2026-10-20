@@ -1,0 +1,71 @@
+{# Pre-2010 chart overview: the same four cards as the current chart, plus what each tab holds. #}
+{% from "components/empty_state.html" import empty_state %}
+{% set o = overview %}
+{% set base = "/legacy/" ~ key %}
+{% macro tab_link(name, label) -%}
+<a class="btn btn--secondary btn--sm" href="{{ url_with(base, {'tab': name}) }}"
+   hx-get="{{ base }}/tab/{{ name }}" hx-target="#chart-tabs" hx-swap="outerHTML">{{ label }}</a>
+{%- endmacro %}
+<div class="legacy-stack">
+  <div class="card-grid">
+    <section class="card" aria-labelledby="ov-problems">
+      <h2 class="card__title" id="ov-problems">Active problems</h2>
+      {% if o.problems %}
+      <ul class="item-list">
+        {% for item in o.problems %}
+        <li><span class="item-list__name">{{ item.name }}</span><span class="item-list__detail">{{ item.detail }}</span></li>
+        {% endfor %}
+      </ul>
+      {% else %}{{ empty_state("No active problems recorded.", compact=True) }}{% endif %}
+    </section>
+
+    <section class="card" aria-labelledby="ov-allergies">
+      <h2 class="card__title" id="ov-allergies">Allergies</h2>
+      {% if o.allergies %}
+      <ul class="item-list">
+        {% for item in o.allergies %}
+        <li><span class="item-list__name">{{ item.name }}</span><span class="item-list__detail item-list__detail--abn">{{ item.detail }}</span></li>
+        {% endfor %}
+      </ul>
+      {% else %}{{ empty_state("No active allergies recorded.", compact=True) }}{% endif %}
+    </section>
+
+    <section class="card" aria-labelledby="ov-meds">
+      <h2 class="card__title" id="ov-meds">Medications at last update</h2>
+      {% if o.medications %}
+      <ul class="item-list">
+        {% for item in o.medications %}
+        <li><span class="item-list__name">{{ item.name }}</span><span class="item-list__detail">{{ item.detail }}</span></li>
+        {% endfor %}
+      </ul>
+      {% else %}{{ empty_state("No medications were active at the last update.", compact=True) }}{% endif %}
+    </section>
+
+    <section class="card" aria-labelledby="ov-last-note">
+      <h2 class="card__title" id="ov-last-note">Last chart note</h2>
+      {% if o.last_note %}
+      <p class="last-visit__date">{{ o.last_note.date }}</p>
+      <p class="last-visit__meta">{{ o.last_note.provider }} · {{ o.last_note.facility }}</p>
+      {{ tab_link("notes", "All chart notes") }}
+      {% else %}{{ empty_state("No chart notes recorded.", compact=True) }}{% endif %}
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="ov-contents">
+    <h2 class="card__title" id="ov-contents">In this pre-2010 chart</h2>
+    <ul class="legacy-counts">
+      {% for name, label, noun in [
+          ("notes", "Chart notes", "notes"), ("problems", "Problems & allergies", "entries"),
+          ("meds", "Medications", "medications"), ("labs", "Lab results", "results"),
+          ("vitals", "Vitals", "readings"), ("docs", "Documents", "scanned documents")] %}
+      <li>
+        <a class="legacy-counts__link" href="{{ url_with(base, {'tab': name}) }}"
+           hx-get="{{ base }}/tab/{{ name }}" hx-target="#chart-tabs" hx-swap="outerHTML">
+          <span class="legacy-counts__value">{{ "{:,}".format(o.counts[name]) }}</span>
+          <span class="legacy-counts__label">{{ label }}<span class="visually-hidden"> ({{ noun }})</span></span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>

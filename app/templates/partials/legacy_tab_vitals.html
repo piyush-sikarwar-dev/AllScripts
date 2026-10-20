@@ -30,7 +30,7 @@
           <td class="mono nowrap">{{ r.height }}</td>
           <td class="mono">{{ r.bmi }}</td>
           <td class="mono nowrap">{{ r.waist }}</td>
-          <td>{% if r.note_id %}<a class="cell-link" href="{{ base }}?note={{ r.note_id }}"
+          <td>{% if r.note_id %}<a class="cell-link" href="{{ base }}?tab=notes&amp;note={{ r.note_id }}"
                 hx-get="{{ base }}/tab/notes?note={{ r.note_id }}" hx-target="#chart-tabs" hx-swap="outerHTML">Open note</a>{% endif %}</td>
         </tr>
         {% endfor %}
