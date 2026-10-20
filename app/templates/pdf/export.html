@@ -225,6 +225,18 @@
   </tbody>
 </table>
 {% else %}<p class="empty">No medications recorded.</p>{% endif %}
+<h2>Pharmacy fill history (Surescripts)</h2>
+{% if fills %}
+<table>
+  <thead><tr><th>Filled</th><th>Medication</th><th>Quantity</th><th>Instructions</th><th>Prescribed</th><th>Pharmacy</th><th>Refills</th></tr></thead>
+  <tbody>
+    {% for f in fills %}
+    <tr><td>{{ f.filled }}</td><td>{{ f.medication }}</td><td>{{ f.quantity }}</td><td>{{ f.instructions }}</td>
+      <td>{{ f.prescribed }}{% if f.prescriber != "—" %}<br><span class="muted">{{ f.prescriber }}</span>{% endif %}</td><td>{{ f.pharmacy }}</td><td>{{ f.refills }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="empty">No pharmacy fills in the selected period.</p>{% endif %}
 {% endif %}
 
 {% if "labs" in sections %}

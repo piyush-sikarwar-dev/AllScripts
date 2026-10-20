@@ -139,6 +139,17 @@ class MedicationRow(BaseModel):
     source: SourceLabel
 
 
+class PharmacyFillRow(BaseModel):
+    filled: str
+    medication: str
+    quantity: str
+    instructions: str
+    prescribed: str
+    prescriber: str
+    pharmacy: str
+    refills: str
+
+
 class LabRow(BaseModel):
     date: str
     test: str

@@ -123,7 +123,7 @@ Key columns: `TITLE`, `SOURCE`/`SOURCE_CODE` (code system and code), `ONSET_DATE
 | Prescriptions | `MEDICATIONS` (161,965) | `MED_TITLE`, `MED_DOSE`, `MED_DOSEUNIT`, `MED_ROUTE`, `MED_FREQUENCY`, `MED_INTAKE`, `MED_STARTDATE`, `MED_ENDDATE` (+ masks), `MED_STATUS` (1/2/3/6, not decoded), `MED_REFILLS`, `MED_QUANTITY` | **Yes (live: Overview; P7 tab)** |
 | Medication history (patient-reported / reconciled) | `HX_MEDICATION` (181,404) | `TITLE`, `DOSE`, `ROUTE`, `FREQUENCY`, `START_DATE`, `END_DATE`, `ACTIVITY_CODE` | **Yes (live; P7)** |
 | Refills / e-prescribing messages | `REFILL` (34,054), `ERXMESSAGE` (239,576), `EMED_REFILL_REQUEST` (37,418; **`PATIENT_SSN` NEVER**) | | No |
-| Pharmacy fill history from Surescripts | `RXHUB_MED_HISTORY` (203,880) | | Maybe |
+| Pharmacy fill history from Surescripts | `RXHUB_MED_HISTORY` (203,880) via `RXHUB_REQUEST.PATIENT_ID` (6,529 patients) | drug, strength, qty, days supply, sig, written / last fill date, prescriber, pharmacy, refills | **Yes (live)**: Medications → Pharmacy fills; PDF Medications section |
 
 ### 3.7 Labs, procedures and vitals
 

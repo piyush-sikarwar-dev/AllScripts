@@ -31,7 +31,7 @@ from app.services.appointments import all_appointments, appointment_row
 from app.services.chart_header import get_header
 from app.services.history_service import selected_entries_for_pdf
 from app.services.labs import lab_row
-from app.services.meds import med_row, medication_items
+from app.services.meds import fill_row, med_row, medication_items, pharmacy_fills
 from app.services.notes_service import note_detail, note_index, parse_note_ref
 from app.services.patient_details import patient_details
 from app.services.patients import parse_dob as parse_us_date
@@ -231,6 +231,8 @@ async def gather(ref: PatientRef, req: ExportRequest) -> dict[str, Any]:
         ctx["problem_groups"] = await problem_groups(ref)
     if "meds" in req.sections:
         ctx["meds"] = [med_row(m) for m in await medication_items(ref, active_only=False)]
+        fills = [f for f in await pharmacy_fills(ref) if _in_range(f["last_fill_date"], req)]
+        ctx["fills"] = [fill_row(f) for f in fills]
     if "labs" in req.sections:
         labs = [r for r in await call(repo.labs, ref.emr_id) if _in_range(r["date"], req)]
         labs.sort(key=lambda r: (sort_key(r["date"]), r["test"]), reverse=True)

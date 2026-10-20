@@ -6,11 +6,11 @@
 <section class="card table-card" aria-labelledby="meds-title">
   <div class="table-card__head">
     <h2 class="table-card__title" id="meds-title">Medications</h2>
-    <p class="table-card__count">{{ count_text(pager, "medications") }}</p>
+    <p class="table-card__count">{{ count_text(pager, "fills" if med_filter == "fills" else "medications") }}</p>
   </div>
   <div class="table-card__tools">
     <nav class="segmented" aria-label="Medication filter">
-      {% for value, label in [("active", "Active"), ("all", "All")] %}
+      {% for value, label in [("active", "Active"), ("all", "All"), ("fills", "Pharmacy fills")] %}
       <a class="segmented__item{% if med_filter == value %} segmented__item--active{% endif %}"
          {%- if med_filter == value %} aria-current="true"{% endif %}
          href="{{ url_with(base, {'tab': 'meds', 'filter': value}) }}"
@@ -18,7 +18,36 @@
       {% endfor %}
     </nav>
   </div>
-  {% if meds %}
+  {% if med_filter == "fills" %}
+  <p class="table-card__note">What pharmacies actually dispensed, as reported by Surescripts{% if fills_checked != "—" %} (last checked {{ fills_checked }}){% endif %}. Medication names are shown as the pharmacy sent them.</p>
+  {% if fills %}
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr><th scope="col">Filled</th><th scope="col">Medication</th><th scope="col">Quantity</th>
+            <th scope="col">Instructions</th><th scope="col">Prescribed</th><th scope="col">Pharmacy</th>
+            <th scope="col">Refills</th></tr>
+      </thead>
+      <tbody>
+        {% for f in fills %}
+        <tr>
+          <td class="nowrap">{{ f.filled }}</td>
+          <td><span class="cell-strong">{{ f.medication }}</span></td>
+          <td class="nowrap">{{ f.quantity }}</td>
+          <td>{{ f.instructions }}</td>
+          <td class="nowrap">{{ f.prescribed }}{% if f.prescriber != "—" %}<span class="cell-sub">{{ f.prescriber }}</span>{% endif %}</td>
+          <td>{{ f.pharmacy }}</td>
+          <td>{{ f.refills }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager_nav(pager, base, base ~ "/tab/meds", "#chart-tabs", dict(state, tab="meds")) }}
+  {% else %}
+    {{ empty_state("No pharmacy fill history from Surescripts.") }}
+  {% endif %}
+  {% elif meds %}
   <div class="table-scroll">
     <table class="table">
       <thead>

@@ -94,3 +94,34 @@ def test_pdf_demographics_section(client):
     for heading in ("Insurance", "Emergency contacts", "Guarantor", "Care team", "Consents"):
         assert heading in text, heading
     assert "Old Sample" in text and "(archived)" in text and "Not Hispanic or Latino" in text
+
+
+def test_pharmacy_fills_view(client):
+    r = client.get(f"/patients/{_key(WITH)}", params={"tab": "meds", "filter": "fills"})
+    assert r.status_code == 200 and "Pharmacy fills" in r.text
+    assert "Surescripts" in r.text and "last checked 05/01/2023" in r.text
+    assert "METFORMIN HCL 500 MG TABLET" in r.text and "500 MG 500 MG" not in r.text
+    assert "Qty 60 · 30-day supply" in r.text and "SAMPLE PHARMACY #12" in r.text
+    assert "DOCTOR, SAMPLE" in r.text and "Showing 6 of 6" in r.text
+    assert r.text.index("06/01/2022") < r.text.index("02/01/2022")  # newest fill first
+    r = client.get(f"/patients/{_key(WITH)}/tab/meds", params={"filter": "fills"}, headers=HTMX)
+    assert r.headers["HX-Push-Url"] == f"/patients/{_key(WITH)}?tab=meds&filter=fills"
+    r = client.get(f"/patients/{_key(NOTHING)}", params={"tab": "meds", "filter": "fills"})
+    assert "No pharmacy fill history from Surescripts." in r.text
+
+
+def test_live_pharmacy_fills_merge_repeats(monkeypatch):
+    from datetime import date
+
+    from app.repositories import emr, live
+
+    base = {"drug_name": "X 5 MG", "strength": "5 MG", "quantity": 30, "pharmacy": "P",
+            "written_date": date(2020, 1, 1), "checked_at": None}  # fmt: skip
+    rows = [
+        {**base, "fill_id": 1, "last_fill_date": date(2020, 2, 1)},
+        {**base, "fill_id": 2, "last_fill_date": date(2020, 3, 1)},
+        {**base, "fill_id": 3, "last_fill_date": date(2020, 2, 1)},  # same fill, later request
+    ]
+    monkeypatch.setattr(emr, "pharmacy_fills", lambda emr_id: [dict(r) for r in rows])
+    out = live.pharmacy_fills(1)
+    assert [r["fill_id"] for r in out] == [2, 1]

@@ -520,3 +520,39 @@ def patient_details(emr_id: int, ntier_id: int | None) -> dict:
 
 def patient_photo(emr_id: int) -> bytes | None:
     return _FAKE_PHOTO if _index(emr_id) % 2 == 0 and _index(emr_id) % 6 != 5 else None
+
+
+_FILLS = [
+    ("METFORMIN HCL 500 MG TABLET", "500 MG", 60, 30, "TAKE 1 TABLET BY MOUTH TWICE DAILY", "2"),
+    ("LISINOPRIL 10 MG TABLET", "10 MG", 30, 30, None, "5"),
+    ("AMOXICILLIN 500 MG CAPSULE", "500 MG", 30, 10, "TAKE 1 CAPSULE THREE TIMES DAILY", None),
+]
+
+
+def pharmacy_fills(emr_id: int) -> list[dict]:
+    i = _index(emr_id)
+    if i % 6 == 5:
+        return []
+    rows = []
+    for n, (drug, strength, qty, days, sig, refills) in enumerate(_FILLS):
+        for k in range(2):  # two fills of each prescription
+            rows.append(
+                {
+                    "fill_id": emr_id * 100 + n * 10 + k,
+                    "checked_at": datetime(2023, 5, 1, 14, 0, tzinfo=UTC),
+                    "drug_name": drug,
+                    "strength": strength,
+                    "quantity": qty,
+                    "quantity_unit": "   ",
+                    "days_supply": days,
+                    "sig": sig,
+                    "refills": refills,
+                    "substitutions": 0,
+                    "written_date": date(2022, 1 + n, 5),
+                    "last_fill_date": date(2022, 2 + n + k * 2, 1),
+                    "prescriber": "DOCTOR, SAMPLE" if n != 1 else None,
+                    "pharmacy": "SAMPLE PHARMACY #12",
+                }
+            )
+    rows.sort(key=lambda r: (r["last_fill_date"], r["written_date"]), reverse=True)
+    return rows

@@ -1053,3 +1053,24 @@ def patient_details(emr_id: int, ntier_id: int | None) -> dict[str, Any]:
 
 def patient_photo(emr_id: int) -> bytes | None:
     return emr.patient_photo(emr_id)
+
+
+def _fill_key(r: dict[str, Any]) -> tuple:
+    return tuple(
+        str(r.get(k) or "").strip().upper()
+        for k in ("drug_name", "strength", "quantity", "written_date", "last_fill_date", "pharmacy")
+    )
+
+
+@cached
+def pharmacy_fills(emr_id: int) -> list[dict[str, Any]]:
+    """Surescripts fill history, newest fill first, exact repeats (from later requests) merged."""
+    rows = sorted(emr.pharmacy_fills(emr_id), key=lambda r: r["fill_id"])
+    unique: dict[tuple, dict[str, Any]] = {}
+    for r in rows:
+        unique.setdefault(_fill_key(r), r)
+    out = list(unique.values())
+    out.sort(
+        key=lambda r: (sort_key(r["last_fill_date"]), sort_key(r["written_date"])), reverse=True
+    )
+    return out

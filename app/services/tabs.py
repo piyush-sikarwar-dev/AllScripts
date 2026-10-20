@@ -15,7 +15,7 @@ from app.services.documents import (
 )
 from app.services.history_service import history_view
 from app.services.labs import build_filters, labs_tab
-from app.services.meds import meds_tab
+from app.services.meds import fills_tab, meds_tab
 from app.services.notes_service import notes_tab
 from app.services.notes_service import parse_state as parse_notes_state
 from app.services.overview import overview
@@ -77,6 +77,9 @@ async def tab_context(
         ctx.update(history_state=view.state, history_rail=view.rail, history_rows=view.rows,
                    history_detail=view.detail)  # fmt: skip
         state = view.state.params(tab=None)
+    elif name == "meds" and params.get("filter") == "fills":
+        ctx["fills"], ctx["pager"], ctx["fills_checked"] = await fills_tab(ref, page)
+        state = {"filter": "fills"}
     elif name == "meds":
         ctx["meds"], ctx["pager"], med_filter = await meds_tab(ref, page, params.get("filter", ""))
         state = {"filter": med_filter}

@@ -10,6 +10,7 @@ PATIENT_SEARCH = "emr/patient_search.sql"
 LAST_VISITS = "emr/last_visit_for_patients.sql"
 MRNS = "emr/mrn_for_patients.sql"
 PATIENT_HEADER_FULL = "emr/patient_header_full.sql"
+PHARMACY_FILLS = "emr/pharmacy_fills.sql"
 PATIENT_INSURANCES = "emr/patient_insurances.sql"
 PATIENT_PROFILE = "emr/patient_profile.sql"
 PATIENT_RACE = "emr/patient_race.sql"
@@ -428,3 +429,7 @@ def patient_consents(emr_id: int) -> list[dict[str, Any]]:
 def patient_photo(emr_id: int) -> bytes | None:
     rows = run_query(Source.EMR, PATIENT_PHOTO, {"emr_id": emr_id})
     return bytes(rows[0]["photo"]) if rows and rows[0]["photo"] else None
+
+
+def pharmacy_fills(emr_id: int) -> list[dict[str, Any]]:
+    return run_query(Source.EMR, PHARMACY_FILLS, {"emr_id": emr_id})
