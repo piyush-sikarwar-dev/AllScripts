@@ -178,3 +178,65 @@ def test_legacy_sql_never_selects_ssn():
     for path in SQL_DIR.glob("legacy_*.sql"):
         sql = path.read_text().lower()
         assert "ssno" not in sql.replace("ssno is never selected", "") and "select *" not in sql
+
+
+def _with_history() -> dict:
+    return next(p for p in PEOPLE if (p["person_key"] - 5_000) % 4 != 3)
+
+
+def test_tab_bar_and_unknown_tab(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}")
+    assert 'id="tab-notes"' in r.text and 'id="tab-problems"' in r.text
+    assert f'href="/legacy/{_key(p)}?tab=problems"' in r.text
+    assert client.get(f"/legacy/{_key(p)}", params={"tab": "visits"}).status_code == 404
+    assert client.get(f"/legacy/{_key(p)}/tab/nope", headers=HTMX).status_code == 404
+
+
+def test_problems_tab(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "problems"})
+    assert r.status_code == 200 and "Pre-2010 problems &amp; allergies" in r.text
+    assert "DIABETES MELLITUS TYPE II" in r.text and "250.00" in r.text
+    assert "Active" in r.text and "Inactive" in r.text
+    assert "ALLERGIC RHINITIS NOS" not in r.text  # entered in error: hidden by default
+    assert "Show entered-in-error (2)" in r.text
+    assert "Hives, Rash" in r.text and "Drug" in r.text and "Severe" in r.text
+    assert "LATEX" not in r.text and "Not Available" not in r.text
+
+
+def test_problems_tab_show_voided_and_htmx(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}/tab/problems", params={"voided": "1"}, headers=HTMX)
+    assert r.status_code == 200 and 'id="chart-tabs"' in r.text
+    assert "ALLERGIC RHINITIS NOS" in r.text and "LATEX" in r.text
+    assert "badge--voided" in r.text and "Hide entered-in-error" in r.text
+    assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?tab=problems&voided=1"
+
+
+def test_problems_tab_empty(client):
+    p = next(p for p in PEOPLE if (p["person_key"] - 5_000) % 4 == 3)
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "problems"})
+    assert "No problems recorded in the pre-2010 chart." in r.text
+    assert "No allergies recorded in the pre-2010 chart." in r.text
+    assert "entered-in-error" not in r.text
+
+
+def test_problem_status_unknown_code():
+    from app.lookups.legacy_codes import legacy_codes
+
+    assert legacy_codes().problem_status_label(12) == "Active"
+    assert legacy_codes().problem_status_label(77) == "Unknown (code 77)"
+
+
+def test_live_allergies_attach_reactions(monkeypatch):
+    rows = [
+        {"allergy_id": 1, "noted_date": datetime(2004, 1, 1)},
+        {"allergy_id": 2, "noted_date": datetime(2006, 1, 1)},
+    ]
+    reactions = [{"allergy_id": 1, "reaction": "Hives"}, {"allergy_id": 1, "reaction": "Rash"}]
+    monkeypatch.setattr(live_legacy.dmz, "legacy_allergies", lambda k: [dict(r) for r in rows])
+    monkeypatch.setattr(live_legacy.dmz, "legacy_allergy_reactions", lambda k: reactions)
+    out = live_legacy.allergies(1)
+    assert [r["allergy_id"] for r in out] == [2, 1]
+    assert out[1]["reactions"] == ["Hives", "Rash"] and out[0]["reactions"] == []

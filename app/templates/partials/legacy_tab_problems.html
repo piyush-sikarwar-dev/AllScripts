@@ -1,0 +1,99 @@
+{# Pre-2010 chart: problem list (ICD-9) and allergies. Entered-in-error rows only with the toggle. #}
+{% from "components/empty_state.html" import empty_state %}
+{% from "components/badge.html" import badge, voided_badge %}
+{% set h = history %}
+{% set base = "/legacy/" ~ key %}
+<div class="legacy-stack">
+  {% if h.voided_count %}
+  <p class="legacy-toggle">
+    {% set target = {"tab": "problems", "voided": None if h.show_voided else "1"} %}
+    <a class="btn btn--secondary btn--sm" href="{{ url_with(base, target) }}"
+       hx-get="{{ url_with(base ~ '/tab/problems', {'voided': target.voided}) }}"
+       hx-target="#chart-tabs" hx-swap="outerHTML">
+      {{- "Hide" if h.show_voided else "Show" }} entered-in-error ({{ h.voided_count }})</a>
+  </p>
+  {% endif %}
+
+  <section class="card table-card" aria-labelledby="legacy-problems-title">
+    <div class="table-card__head">
+      <h2 class="table-card__title" id="legacy-problems-title">Problems</h2>
+      <p class="table-card__count">{{ h.problems|length }} {{ "problem" if h.problems|length == 1 else "problems" }}</p>
+    </div>
+    {% if h.problems %}
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Problem</th>
+            <th scope="col">ICD-9</th>
+            <th scope="col">Onset</th>
+            <th scope="col">Resolved</th>
+            <th scope="col">Status</th>
+            <th scope="col">Provider</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in h.problems %}
+          <tr>
+            <td>
+              <span class="cell-strong">{{ p.name }}</span>
+              {% if p.voided %} {{ voided_badge() }}{% endif %}
+              {% if p.comment %}<span class="cell-sub">{{ p.comment }}</span>{% endif %}
+            </td>
+            <td class="mono nowrap">{{ p.code }}</td>
+            <td class="nowrap">{{ p.onset }}</td>
+            <td class="nowrap">{{ p.resolved }}</td>
+            <td>{% if p.active %}{{ badge(p.status, "emr") }}{% else %}{{ p.status }}{% endif %}</td>
+            <td>{{ p.provider }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      {{ empty_state("No problems recorded in the pre-2010 chart.") }}
+    {% endif %}
+  </section>
+
+  <section class="card table-card" aria-labelledby="legacy-allergies-title">
+    <div class="table-card__head">
+      <h2 class="table-card__title" id="legacy-allergies-title">Allergies</h2>
+      <p class="table-card__count">{{ h.allergies|length }} {{ "allergy" if h.allergies|length == 1 else "allergies" }}</p>
+    </div>
+    {% if h.allergies %}
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Allergen</th>
+            <th scope="col">Category</th>
+            <th scope="col">Reaction</th>
+            <th scope="col">Severity</th>
+            <th scope="col">Status</th>
+            <th scope="col">Noted</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in h.allergies %}
+          <tr>
+            <td>
+              <span class="cell-strong">{{ a.allergen }}</span>
+              {% if a.voided %} {{ voided_badge() }}{% endif %}
+              {% if a.detail %}<span class="cell-sub">{{ a.detail }}</span>{% endif %}
+              {% if a.comment %}<span class="cell-sub">{{ a.comment }}</span>{% endif %}
+            </td>
+            <td>{{ a.category }}</td>
+            <td class="legacy-reaction">{{ a.reactions }}</td>
+            <td>{{ a.severity }}</td>
+            <td>{% if a.active %}{{ badge(a.status, "emr") }}{% else %}{{ a.status }}{% endif %}</td>
+            <td class="nowrap">{{ a.noted }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      {{ empty_state("No allergies recorded in the pre-2010 chart.") }}
+    {% endif %}
+  </section>
+</div>

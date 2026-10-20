@@ -4,6 +4,7 @@ Full pages and their HTMX fragments live together here; every fragment pushes th
 full-page URL so reloads and shared links work without HTMX.
 """
 
+from collections.abc import Mapping
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
@@ -15,12 +16,16 @@ from app.formatting import date_us, time_local, to_clinic_time
 from app.repositories.appdb import utcnow
 from app.services import NotFoundError
 from app.services.legacy import (
+    TAB_LABELS,
+    TAB_NAMES,
+    TABS,
     build_search,
     get_header,
     get_note,
     legacy_enabled,
     note_page,
     search_patients,
+    tab_context,
 )
 from app.templating import render, url_with
 
@@ -80,35 +85,59 @@ async def legacy_rows(
     )
 
 
+def _validated(params: Mapping[str, str]) -> dict[str, str]:
+    """Only the known state parameters, length-capped (they are echoed into URLs)."""
+    keep = ("year", "page", "note", "voided")
+    return {k: params[k][:12] for k in keep if params.get(k)}
+
+
+async def _tab(request: Request, background: BackgroundTasks, key: str, tab: str) -> dict:
+    if tab not in TAB_NAMES:
+        raise HTTPException(status_code=404)
+    try:
+        ctx = await tab_context(key, tab, _validated(request.query_params))
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    audit(request, background, "view_tab", patient_key=key,
+          detail={"section": "legacy", "tab": tab})  # fmt: skip
+    if ctx.get("note"):
+        audit(request, background, "view_note", patient_key=key,
+              detail={"section": "legacy", "note": ctx["note"].id})  # fmt: skip
+    return ctx
+
+
 @router.get("/legacy/{key}", response_class=HTMLResponse)
 async def legacy_chart(
-    request: Request,
-    background: BackgroundTasks,
-    key: str,
-    user: User,
-    year: str = "",
-    page: Page = 1,
-    note: NoteId | None = None,
+    request: Request, background: BackgroundTasks, key: str, user: User, tab: str = "notes"
 ) -> HTMLResponse:
     try:
         header = await get_header(key)
-        notes = await note_page(key, year, page)
-        if note is None and notes.rows:
-            note = notes.rows[0].id
-        opened = await get_note(key, note) if note is not None else None
     except NotFoundError as exc:
         raise HTTPException(status_code=404) from exc
+    ctx = await _tab(request, background, key, tab)
     audit(request, background, "view_patient", patient_key=key,
-          detail={"section": "legacy", "tab": "notes"})  # fmt: skip
-    if opened:
-        audit(request, background, "view_note", patient_key=key,
-              detail={"section": "legacy", "note": opened.id})  # fmt: skip
+          detail={"section": "legacy", "tab": tab})  # fmt: skip
     return render(
         request,
         "pages/legacy_chart.html",
-        {"user": user, "nav": "legacy", "header": header, "key": key,
-         "notes": notes, "note": opened},
+        {"user": user, "nav": "legacy", "header": header, "key": key, "tab": tab,
+         "tabs": TABS, "tab_labels": TAB_LABELS, **ctx},
     )  # fmt: skip
+
+
+@router.get("/legacy/{key}/tab/{name}", response_class=HTMLResponse)
+async def legacy_tab(
+    request: Request, background: BackgroundTasks, key: str, name: str
+) -> HTMLResponse:
+    ctx = await _tab(request, background, key, name)
+    params = {k: v for k, v in _validated(request.query_params).items()}
+    push = url_with(f"/legacy/{key}", {"tab": None if name == "notes" else name, **params})
+    return render(
+        request,
+        "partials/legacy_tab_frame.html",
+        {"key": key, "tab": name, "tabs": TABS, "partial": True, **ctx},
+        headers={"HX-Push-Url": push},
+    )
 
 
 @router.get("/legacy/{key}/notes", response_class=HTMLResponse)

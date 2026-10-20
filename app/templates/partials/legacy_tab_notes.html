@@ -1,0 +1,14 @@
+{% from "components/empty_state.html" import empty_state %}
+<div class="notes__cols">
+  <section class="card note-list" aria-labelledby="legacy-notes-title">
+    <h2 class="visually-hidden" id="legacy-notes-title">Chart notes</h2>
+    {% with selected = note.id if note else None %}{% include "partials/legacy_notes.html" %}{% endwith %}
+  </section>
+  <section class="card note-detail" id="note-detail" aria-label="Chart note" aria-live="polite">
+    {% if note %}
+      {% with partial = False %}{% include "partials/legacy_note.html" %}{% endwith %}
+    {% else %}
+      {{ empty_state("No chart notes recorded in the pre-2010 chart.") }}
+    {% endif %}
+  </section>
+</div>

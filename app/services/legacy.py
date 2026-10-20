@@ -4,19 +4,26 @@ Reads only the DMZ legacy chart (via `legacy_repository()`); it never touches th
 PM chart, and the current chart never reads from here (CLAUDE.md §4.3, FEATURE_LEGACY_DMZ).
 """
 
+import asyncio
 import re
+from collections.abc import Mapping
 from datetime import date, datetime
+from typing import Any
 
 from app.config import get_settings
 from app.formatting import EMPTY, age, date_us, initials, or_dash, person_name
 from app.lookups import label
+from app.lookups.legacy_codes import LegacyCodes, legacy_codes
 from app.models.common import PAGE_SIZE, Pager, clamp_page, paginate
 from app.models.legacy import (
+    LegacyAllergy,
     LegacyHeader,
+    LegacyHistory,
     LegacyNote,
     LegacyNotePage,
     LegacyNoteRow,
     LegacyPage,
+    LegacyProblem,
     LegacyRow,
     LegacySearch,
 )
@@ -193,3 +200,87 @@ async def get_note(key: str, note_id: int) -> LegacyNote:
         facility=item.facility,
         text=(body or {}).get("text") or None,
     )
+
+
+# Tabs of the pre-2010 chart, in display order.
+TABS: list[tuple[str, str]] = [
+    ("notes", "Chart notes"),
+    ("problems", "Problems & allergies"),
+]
+TAB_NAMES = {name for name, _ in TABS}
+TAB_LABELS = dict(TABS)
+
+
+def _label_case(value: str | None) -> str:
+    """'ENTERED IN ERROR' → 'Entered in error' (legacy lookup labels are stored in capitals)."""
+    value = (value or "").strip()
+    return value[:1].upper() + value[1:].lower() if value.isupper() else value or EMPTY
+
+
+def _problem(r: dict, codes: LegacyCodes) -> LegacyProblem:
+    desc = " ".join(p for p in (r.get("dx_desc1"), r.get("dx_desc2")) if p and p.strip())
+    status_key = r.get("status_key")
+    return LegacyProblem(
+        id=int(r["problem_id"]),
+        name=desc or (r.get("provisional") or "").strip() or or_dash(r.get("dx_code")),
+        code=or_dash(r.get("dx_code")),
+        onset=date_us(_day(r.get("onset_date"))),
+        resolved=date_us(_day(r.get("stop_date"))),
+        status=codes.problem_status_label(status_key),
+        provider=_provider(r),
+        comment=(r.get("comment") or "").strip(),
+        active=codes.problem_status.get(status_key or -1) == "Active",
+        voided=status_key in codes.problem_voided,
+    )
+
+
+def _allergy(r: dict, codes: LegacyCodes) -> LegacyAllergy:
+    allergen = (r.get("allergen") or "").strip()
+    detail = (r.get("allergen_desc") or "").strip()
+    severity = (r.get("severity") or "").strip()
+    status_key = r.get("status_key")
+    voided = status_key in codes.allergy_voided or (r.get("active_flag") or "") == "E"
+    return LegacyAllergy(
+        id=int(r["allergy_id"]),
+        allergen=allergen or detail or EMPTY,
+        detail=detail if detail and detail.upper() != allergen.upper() else "",
+        category=_label_case(r.get("category")),
+        reactions=", ".join(r.get("reactions") or []) or EMPTY,
+        severity=EMPTY if not severity or severity in codes.severity_blank else severity,
+        status=_label_case(r.get("status")) if r.get("status") else f"Unknown (code {status_key})",
+        noted=date_us(_day(r.get("noted_date"))),
+        provider=_provider(r),
+        comment=(r.get("comment") or "").strip(),
+        active=status_key == 1 and not voided,
+        voided=voided,
+    )
+
+
+async def history(key: str, show_voided: bool = False) -> LegacyHistory:
+    pkey = person_key(key)
+    repo = legacy_repository()
+    prob_rows, alrg_rows = await asyncio.gather(
+        call(repo.problems, pkey), call(repo.allergies, pkey)
+    )
+    codes = legacy_codes()
+    probs = [_problem(r, codes) for r in prob_rows]
+    alrgs = [_allergy(r, codes) for r in alrg_rows]
+    voided = sum(1 for x in [*probs, *alrgs] if x.voided)
+    if not show_voided:
+        probs = [p for p in probs if not p.voided]
+        alrgs = [a for a in alrgs if not a.voided]
+    return LegacyHistory(
+        problems=probs, allergies=alrgs, show_voided=show_voided, voided_count=voided
+    )
+
+
+async def tab_context(key: str, tab: str, params: Mapping[str, str]) -> dict[str, Any]:
+    """Everything one tab of the pre-2010 chart needs (full page or HTMX fragment)."""
+    if tab == "problems":
+        return {"history": await history(key, params.get("voided") == "1")}
+    page = int(params["page"]) if (params.get("page") or "").isdigit() else 1
+    notes = await note_page(key, params.get("year", ""), page)
+    raw_note = params.get("note") or ""
+    note_id = int(raw_note) if raw_note.isdigit() else (notes.rows[0].id if notes.rows else None)
+    note = await get_note(key, note_id) if note_id is not None else None
+    return {"notes": notes, "note": note}

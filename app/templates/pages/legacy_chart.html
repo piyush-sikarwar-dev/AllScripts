@@ -2,8 +2,7 @@
 {# Pre-2010 legacy chart (DMZ). Separate from the current chart: own header, own tabs, own URLs. #}
 {% from "components/badge.html" import source_badge, badge %}
 {% from "components/icons.html" import icon %}
-{% from "components/empty_state.html" import empty_state %}
-{% block title %}{{ header.name }} · Pre-2010 chart notes{% endblock %}
+{% block title %}{{ header.name }} · Pre-2010 {{ tab_labels[tab]|lower }}{% endblock %}
 {% block main_class %}main--chart{% endblock %}
 {% block content %}
 <a class="back-link" href="/legacy">{{ icon("arrow-left") }}Back to pre-2010 records</a>
@@ -30,25 +29,5 @@
   </div>
 </section>
 
-<div class="chart-tabs">
-  <div class="tabs" role="tablist" aria-label="Pre-2010 chart sections">
-    <a role="tab" id="tab-legacy-notes" class="tab tab--active" aria-selected="true"
-       aria-controls="tab-panel" href="/legacy/{{ key }}">Chart notes</a>
-  </div>
-  <section id="tab-panel" class="tab-panel" role="tabpanel" aria-labelledby="tab-legacy-notes">
-    <div class="notes__cols">
-      <section class="card note-list" aria-labelledby="legacy-notes-title">
-        <h2 class="visually-hidden" id="legacy-notes-title">Chart notes</h2>
-        {% with selected = note.id if note else None %}{% include "partials/legacy_notes.html" %}{% endwith %}
-      </section>
-      <section class="card note-detail" id="note-detail" aria-label="Chart note" aria-live="polite">
-        {% if note %}
-          {% with partial = False %}{% include "partials/legacy_note.html" %}{% endwith %}
-        {% else %}
-          {{ empty_state("No chart notes recorded in the pre-2010 chart.") }}
-        {% endif %}
-      </section>
-    </div>
-  </section>
-</div>
+{% include "partials/legacy_tab_frame.html" %}
 {% endblock %}

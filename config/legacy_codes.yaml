@@ -1,0 +1,17 @@
+# Pre-2010 (DMZ) chart: codes that have no lookup table in the legacy database.
+# Unknown codes display as "Unknown (code N)".
+
+problem_status:
+  # TODO: confirm with clinic. conv.cac_pat_prob.prob_stat_key has no lookup table; these follow
+  # the allergy status keys (conv.cac_alrg_status: 1 Active, 11 Inactive, 30 Entered in error).
+  # 12 holds 92% of rows and never has a stop date; 11 sometimes has one.
+  12: Active
+  11: Inactive
+  30: Entered in error
+
+# Status keys shown only when "Show entered-in-error" is on (with a Voided badge).
+problem_voided: [30]
+allergy_voided: [30, 999]
+
+# Severity text that means "not recorded" (shown as a dash).
+severity_blank: ["Not Available"]

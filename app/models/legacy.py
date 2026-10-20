@@ -84,3 +84,38 @@ class LegacyNote(BaseModel):
     provider: str
     facility: str
     text: str | None
+
+
+class LegacyProblem(BaseModel):
+    id: int
+    name: str
+    code: str
+    onset: str
+    resolved: str
+    status: str
+    provider: str
+    comment: str
+    active: bool
+    voided: bool
+
+
+class LegacyAllergy(BaseModel):
+    id: int
+    allergen: str
+    detail: str
+    category: str
+    reactions: str
+    severity: str
+    status: str
+    noted: str
+    provider: str
+    comment: str
+    active: bool
+    voided: bool
+
+
+class LegacyHistory(BaseModel):
+    problems: list[LegacyProblem]
+    allergies: list[LegacyAllergy]
+    show_voided: bool
+    voided_count: int

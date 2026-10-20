@@ -13,6 +13,9 @@ LEGACY_PATIENT_SEARCH = "dmz/legacy_patient_search.sql"
 LEGACY_PATIENT = "dmz/legacy_patient.sql"
 LEGACY_NOTES = "dmz/legacy_notes.sql"
 LEGACY_NOTE_TEXT = "dmz/legacy_note_text.sql"
+LEGACY_PROBLEMS = "dmz/legacy_problems.sql"
+LEGACY_ALLERGIES = "dmz/legacy_allergies.sql"
+LEGACY_ALLERGY_REACTIONS = "dmz/legacy_allergy_reactions.sql"
 
 
 def like_prefix(value: str | None) -> str | None:
@@ -53,3 +56,15 @@ def legacy_notes(person_key: int) -> list[dict[str, Any]]:
 
 def legacy_note_text(person_key: int, note_id: int) -> list[dict[str, Any]]:
     return run_query(Source.DMZ, LEGACY_NOTE_TEXT, {"person_key": person_key, "note_id": note_id})
+
+
+def legacy_problems(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_PROBLEMS, {"person_key": person_key})
+
+
+def legacy_allergies(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_ALLERGIES, {"person_key": person_key})
+
+
+def legacy_allergy_reactions(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_ALLERGY_REACTIONS, {"person_key": person_key})

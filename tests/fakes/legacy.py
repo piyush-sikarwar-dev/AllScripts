@@ -125,3 +125,71 @@ def note_text(person_key: int, note_id: int) -> dict[str, Any] | None:
         return None
     return {"note_id": note_id, "service_date": row["service_date"],
             "text": rtf_to_text(TEXTS[note_id])}  # fmt: skip
+
+
+_PROBLEMS = [
+    ("250.00", "DIABETES MELLITUS TYPE II", 12),
+    ("401.9", "HYPERTENSION NOS", 12),
+    ("272.4", "HYPERLIPIDEMIA NEC/NOS", 11),
+    ("477.9", "ALLERGIC RHINITIS NOS", 30),
+]
+_ALLERGIES = [
+    ("PENICILLIN", "DRUG", 1, "ACTIVE", "Severe", ["Hives", "Rash"]),
+    ("SULFA", "DRUG", 1, "ACTIVE", "Not Available", []),
+    ("PEANUTS", "FOOD", 11, "INACTIVE", None, ["Swelling"]),
+    ("LATEX", None, 30, "ENTERED IN ERROR", "Mild", []),
+]
+
+
+def _history(person_key: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    i = person_key - 5_000
+    if i % 4 == 3:  # some legacy patients have no problems or allergies
+        return [], []
+    probs = [
+        {
+            "problem_id": person_key * 10 + n,
+            "dx_code": code,
+            "dx_desc1": desc,
+            "dx_desc2": None,
+            "provisional": None,
+            "comment": "Sample comment" if n == 0 else None,
+            "onset_date": datetime(2003 + n, 3, 1),
+            "stop_date": datetime(2008, 1, 1) if status == 11 else None,
+            "status_key": status,
+            "recorded_at": datetime(2003 + n, 3, 1, 10, 0),
+            "provider_last": "Sample",
+            "provider_first": "Doctor",
+            "provider_title": "MD",
+        }
+        for n, (code, desc, status) in enumerate(_PROBLEMS)
+    ]
+    alrgs = [
+        {
+            "allergy_id": person_key * 10 + n,
+            "allergen": name,
+            "allergen_desc": name,
+            "category": cat,
+            "status_key": status_key,
+            "status": status,
+            "active_flag": "E" if status_key == 30 else "Y",
+            "severity": severity,
+            "comment": None,
+            "noted_date": datetime(2004, 1 + n, 1),
+            "provider_last": None,
+            "provider_first": None,
+            "provider_title": None,
+            "reactions": list(reactions),
+        }
+        for n, (name, cat, status_key, status, severity, reactions) in enumerate(_ALLERGIES)
+    ]
+    probs.sort(key=lambda r: r["onset_date"], reverse=True)
+    alrgs.sort(key=lambda r: r["noted_date"], reverse=True)
+    return probs, alrgs
+
+
+def problems(person_key: int) -> list[dict[str, Any]]:
+    return _history(person_key)[0] if person_key in PEOPLE_BY_KEY else []
+
+
+def allergies(person_key: int) -> list[dict[str, Any]]:
+    return _history(person_key)[1] if person_key in PEOPLE_BY_KEY else []

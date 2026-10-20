@@ -9,6 +9,7 @@ from typing import Any
 from app.documents.render import rtf_to_text
 from app.formatting import sort_key
 from app.repositories import dmz
+from app.repositories.base import parallel
 from app.repositories.cache import cached
 
 
@@ -51,3 +52,28 @@ def note_text(person_key: int, note_id: int) -> dict[str, Any] | None:
         "service_date": rows[0]["service_date"],
         "text": "\n\n".join(p for p in parts if p),
     }
+
+
+@cached
+def problems(person_key: int) -> list[dict[str, Any]]:
+    """Problem list, newest onset first."""
+    rows = dmz.legacy_problems(person_key)
+    rows.sort(key=lambda r: (sort_key(r["onset_date"]), r["problem_id"]), reverse=True)
+    return rows
+
+
+@cached
+def allergies(person_key: int) -> list[dict[str, Any]]:
+    """Allergies (newest first), each with its list of recorded reactions."""
+    rows, reactions = parallel(
+        lambda: dmz.legacy_allergies(person_key),
+        lambda: dmz.legacy_allergy_reactions(person_key),
+    )
+    by_allergy: dict[int, list[str]] = {}
+    for r in reactions:
+        if r["reaction"]:
+            by_allergy.setdefault(r["allergy_id"], []).append(r["reaction"])
+    for r in rows:
+        r["reactions"] = by_allergy.get(r["allergy_id"], [])
+    rows.sort(key=lambda r: (sort_key(r["noted_date"]), r["allergy_id"]), reverse=True)
+    return rows
