@@ -251,6 +251,22 @@ class ChartSql(FakeSql):
                 },
             ],
             emr.HX_MEDICATIONS: [],
+            emr.REMINDERS: [
+                {
+                    "reminder_id": 1,
+                    "due_at": datetime(2023, 9, 1, 12, tzinfo=UTC),
+                    "subject": "Sample reminder",
+                    "priority": 2,
+                    "completed": 0,
+                    "completed_at": None,
+                    "entered_at": None,
+                    "erroneous": 0,
+                    "entered_last": None,
+                    "entered_first": None,
+                    "completed_last": None,
+                    "completed_first": None,
+                }
+            ],
             emr.PATIENT_INSURANCES: [
                 {
                     "policy_id": 1,
@@ -398,9 +414,19 @@ def chart_mode(monkeypatch, real_mode):
                  "expiration_date": None, "copay": None, "holder_last": None, "holder_first": None,
                  "holder_middle": None, "holder_dob": None}  # fmt: skip
 
+    referral = {"referral_id": 1, "referral_date": date(2019, 4, 2), "expires": None,
+                "status": "A", "is_external": True, "authorization_number": "AUTH-9",
+                "precert_number": None, "visits_authorized": None, "notes": None,
+                "from_last": "Referrer", "from_first": "Sample", "from_suffix": None,
+                "to_last": None, "to_first": None, "to_suffix": None, "carrier": None}  # fmt: skip
+
     def ntier_rows(source, sql_name, params=None, **_k):
         if sql_name == ntier.PATIENT_POLICIES:
             return [pm_policy]
+        if sql_name == ntier.INCOMING_REFERRALS:
+            return [referral]
+        if sql_name == ntier.INCOMING_REFERRAL_DIAGNOSES:
+            return []
         return [{"patient_number": "P1", "account_number": "A-900"}]
 
     monkeypatch.setattr(ntier, "run_query", ntier_rows)
@@ -446,6 +472,8 @@ def test_real_chart_header_and_overview(chart_mode, client):
     assert "White" in html and "Not Hispanic or Latino" in html and "Married" in html
     assert "Health-care proxy" in html and "Primary care physician" in html and "HIPAA" in html
     assert "Sample PM Carrier" in html  # PM policies via the Ntier link
+    assert "Sample reminder" in html and "High priority" in html
+    assert "AUTH-9" in html and "Referrer, Sample" in html and "Active" in html
 
 
 def test_not_connected_error_renders_friendly_page(chart_mode, client, monkeypatch):
