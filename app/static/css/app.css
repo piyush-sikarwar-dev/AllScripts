@@ -593,6 +593,11 @@ a:hover { color: var(--accent-hover); }
 .htmx-request.loading-region, .htmx-request .loading-region { opacity: .6; transition: opacity .15s; }
 
 /* ---------- Print ---------- */
+/* Pre-2010 records (separate legacy section) */
+.avatar--legacy { background: var(--legacy-bg); color: var(--legacy-ink); }
+.legacy-note-text { margin: 0 0 16px; padding: 14px 16px; background: var(--panel); border-radius: var(--r-ctl);
+  font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+
 @media print {
   body { background: #FFFFFF; }
   .sidebar, .tabs, .chart-header__actions, .back-link, .pager, .toolbar, .skip-link, .no-print { display: none !important; }

@@ -17,7 +17,7 @@ from app.config import get_settings
 from app.crosswalk.check import check_crosswalk
 from app.middleware import SecurityMiddleware
 from app.repositories.live import NotConnectedError
-from app.routers import auth, export, health, pages, partials
+from app.routers import auth, export, health, legacy, pages, partials
 from app.templating import is_htmx, render
 
 log = logging.getLogger("app")
@@ -59,6 +59,7 @@ def create_app() -> FastAPI:
     app.include_router(partials.router)
     app.include_router(export.router)
     app.include_router(pages.router)
+    app.include_router(legacy.router)  # separate pre-2010 section (FEATURE_LEGACY_DMZ)
 
     @app.exception_handler(LoginRequiredError)
     async def login_required(request: Request, _exc: LoginRequiredError) -> Response:

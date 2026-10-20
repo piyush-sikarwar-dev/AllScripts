@@ -1,0 +1,22 @@
+{# One pre-2010 chart note: the RTF converted to plain text, shown as written. #}
+{% from "components/empty_state.html" import empty_state %}
+{% from "components/icons.html" import icon %}
+<article class="note-view">
+  <div class="note-view__head">
+    <div class="note-view__heading">
+      <span class="badge badge--legacy">Pre-2010</span>
+      <h2 class="note-view__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>Chart note · {{ note.date }}</h2>
+      <p class="note-view__meta">{{ note.provider }} · {{ note.facility }}{% if note.time %} · {{ note.time }}{% endif %}</p>
+    </div>
+  </div>
+  {% if note.text %}
+  <div class="legacy-note-text">{{ note.text }}</div>
+  {% else %}
+    {{ empty_state("This note's text is not available in the pre-2010 archive.", compact=True) }}
+  {% endif %}
+  {% if note.text %}
+  <div class="note-view__actions">
+    <a class="btn btn--secondary" href="/legacy/{{ key }}/notes/{{ note.id }}/print" target="_blank" rel="noopener">{{ icon("print") }}Print note</a>
+  </div>
+  {% endif %}
+</article>

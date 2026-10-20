@@ -18,3 +18,14 @@ def source_repository() -> ModuleType:
     from app.repositories import live
 
     return live
+
+
+def legacy_repository() -> ModuleType:
+    """Separate pre-2010 (DMZ) chart: tests/fakes/legacy.py or app/repositories/legacy.py."""
+    if get_settings().use_fake_data:
+        from tests.fakes import legacy
+
+        return legacy
+    from app.repositories import legacy
+
+    return legacy

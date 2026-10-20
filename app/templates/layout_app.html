@@ -12,10 +12,12 @@
       </div>
     </div>
     <nav class="nav" aria-label="Main">
-      {% for key, label, href, icon_name in [
+      {% set links = [
           ("dashboard", "Dashboard", "/patients", "dashboard"),
           ("patients", "Patients", "/patients#patient-search", "patients"),
           ("release", "Release log", "/release-log", "release")] %}
+      {% if legacy_enabled() %}{% set links = links + [("legacy", "Pre-2010 records", "/legacy", "archive")] %}{% endif %}
+      {% for key, label, href, icon_name in links %}
       <a class="nav-link{% if nav == key %} nav-link--active{% endif %}" href="{{ href }}"
          {%- if nav == key %} aria-current="page"{% endif %}>{{ icon(icon_name) }}{{ label }}</a>
       {% endfor %}

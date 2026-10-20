@@ -1,0 +1,33 @@
+{% extends "layout_app.html" %}
+{% from "components/input.html" import field %}
+{% from "components/icons.html" import icon %}
+{% from "components/banner.html" import warning_banner %}
+{% block title %}Pre-2010 records{% endblock %}
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">Pre-2010 records</h1>
+  <p class="page-subtitle">The legacy chart from before the Allscripts EHR (2002 – 2010), kept separate from current patient records.</p>
+</header>
+
+{{ warning_banner("These charts come from the older system and are not linked to current EHR patients. Confirm the name and date of birth before relying on a record.") }}
+
+{% set s = results.search %}
+<section class="card search-card" id="legacy-search" aria-labelledby="legacy-search-title">
+  <h2 class="card__title" id="legacy-search-title">Find a pre-2010 patient</h2>
+  <form class="toolbar" method="get" action="/legacy" role="search"
+        hx-get="/legacy/rows" hx-target="#legacy-results" hx-swap="innerHTML"
+        hx-trigger="input delay:300ms, submit">
+    {{ field("q", "Search by name", value=s.q, placeholder="Last, First", cls="field--wide") }}
+    {{ field("dob", "Date of birth", value=s.dob, placeholder="MM/DD/YYYY", inputmode="numeric",
+             error=s.errors.get("dob"), error_slot=True) }}
+    {{ field("legacy_id", "Legacy patient ID", value=s.legacy_id, error=s.errors.get("legacy_id"), error_slot=True) }}
+    <div class="toolbar__actions">
+      <button type="submit" class="btn btn--primary">{{ icon("search") }}Search</button>
+    </div>
+  </form>
+</section>
+
+<div id="legacy-results" aria-live="polite">
+  {% include "partials/legacy_rows.html" %}
+</div>
+{% endblock %}

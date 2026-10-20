@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{# Printable pre-2010 chart note. No sidebar; the print dialog opens automatically. #}
+{% block title %}Print pre-2010 note · {{ header.name }}{% endblock %}
+{% block head %}<script src="{{ static_url('/static/js/print-auto.js') }}" defer></script>{% endblock %}
+{% block body %}
+<main class="print-visit">
+  <header class="print-visit__patient">
+    <p class="print-visit__name">{{ header.name }}</p>
+    <p class="meta-line">
+      <span><span class="meta-line__label">DOB</span> {{ header.dob }}</span>
+      <span><span class="meta-line__label">Legacy ID</span> <span class="mono">{{ header.legacy_id }}</span></span>
+    </p>
+  </header>
+  <p class="note-view__badge-line"><span class="badge badge--legacy">Pre-2010</span></p>
+  <h1 class="print-visit__title">Chart note · {{ note.date }}</h1>
+  <p class="note-view__meta">{{ note.provider }} · {{ note.facility }}{% if note.time %} · {{ note.time }}{% endif %}</p>
+  {% if note.text %}
+  <div class="legacy-note-text">{{ note.text }}</div>
+  {% else %}
+  <p class="muted">This note's text is not available in the pre-2010 archive.</p>
+  {% endif %}
+  <p class="print-visit__footer">From the pre-2010 legacy chart · Printed by {{ user.full_name }} · {{ printed_at }}</p>
+  <p class="print-visit__screen-note no-print">The print dialog opens automatically. <button type="button" class="btn btn--secondary btn--sm" data-action="print">Print again</button></p>
+</main>
+{% endblock %}

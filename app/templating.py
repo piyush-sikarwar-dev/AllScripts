@@ -50,6 +50,9 @@ templates.env.globals["url_with"] = url_with
 templates.env.filters["embed_images"] = embed_images
 templates.env.globals["static_url"] = static_url
 templates.env.globals["clinic_name"] = lambda: get_settings().clinic_name
+templates.env.globals["legacy_enabled"] = lambda: (
+    get_settings().feature_legacy_dmz or get_settings().use_fake_data
+)
 
 
 def is_htmx(request: Request) -> bool:
