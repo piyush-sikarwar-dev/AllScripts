@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 
 from app.audit import audit
 from app.auth import CurrentUser, current_user
@@ -20,6 +20,8 @@ from app.services.legacy import (
     TAB_NAMES,
     TABS,
     build_search,
+    document_page_png,
+    document_viewer,
     get_header,
     get_note,
     legacy_enabled,
@@ -87,7 +89,7 @@ async def legacy_rows(
 
 def _validated(params: Mapping[str, str]) -> dict[str, str]:
     """Only the known state parameters, length-capped (they are echoed into URLs)."""
-    keep = ("year", "page", "note", "voided", "test")
+    keep = ("year", "page", "note", "voided", "test", "type", "doc", "docpage")
     return {k: params[k][:60] for k in keep if params.get(k)}
 
 
@@ -204,3 +206,47 @@ async def legacy_note_print(
         {"key": key, "header": header, "note": opened, "user": user,
          "printed_at": f"{date_us(printed)} {time_local(printed)}"},
     )  # fmt: skip
+
+
+@router.get("/legacy/{key}/documents/{doc_id}", response_class=HTMLResponse)
+async def legacy_document(
+    request: Request,
+    background: BackgroundTasks,
+    key: str,
+    doc_id: int,
+    docpage: Page = 1,
+    type: str = "",
+    page: Page = 1,
+) -> HTMLResponse:
+    """Viewer panel for one scanned document (HTMX); pushes the full-page URL."""
+    try:
+        viewer = await document_viewer(key, doc_id, docpage)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    detail = {"section": "legacy", "kind": "scan", "id": doc_id, "page": viewer.page}
+    audit(request, background, "view_document", patient_key=key, detail=detail)
+    state = {"tab": "docs", "type": type[:60], "page": page}
+    push = url_with(
+        f"/legacy/{key}", state, doc=doc_id, docpage=viewer.page if viewer.page > 1 else None
+    )
+    return render(
+        request,
+        "partials/legacy_doc_viewer.html",
+        {"key": key, "viewer": viewer, "state": state, "partial": True},
+        headers={"HX-Push-Url": push},
+    )
+
+
+@router.get("/legacy/{key}/documents/{doc_id}/pages/{page_no}")
+async def legacy_document_page(
+    request: Request, background: BackgroundTasks, key: str, doc_id: int, page_no: int
+) -> Response:
+    """One page of a pre-2010 scan as PNG (only when LEGACY_SCAN_ROOT is configured)."""
+    try:
+        png = await document_page_png(key, doc_id, page_no)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404) from exc
+    audit(request, background, "view_document", patient_key=key,
+          detail={"section": "legacy", "kind": "scan", "id": doc_id, "page": page_no,
+                  "image": True})  # fmt: skip
+    return Response(content=png, media_type="image/png")

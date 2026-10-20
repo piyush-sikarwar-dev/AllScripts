@@ -93,3 +93,15 @@ def clinical_items(person_key: int) -> list[dict[str, Any]]:
     rows = dmz.legacy_clinical_items(person_key)
     rows.sort(key=lambda r: (sort_key(r["service_datetime"]), r["item_id"]), reverse=True)
     return rows
+
+
+@cached
+def documents(person_key: int) -> list[dict[str, Any]]:
+    """Scanned documents, newest document date first."""
+    rows = dmz.legacy_documents(person_key)
+    rows.sort(key=lambda r: (sort_key(r["doc_date"]), r["document_id"]), reverse=True)
+    return rows
+
+
+def document_file(person_key: int, document_id: int) -> dict[str, Any] | None:
+    return dmz.legacy_document_file(person_key, document_id)

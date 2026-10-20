@@ -197,3 +197,37 @@ class LegacyVitalsRow(BaseModel):
 class LegacyVitalsPage(BaseModel):
     rows: list[LegacyVitalsRow]
     pager: Pager
+
+
+class LegacyDocRow(BaseModel):
+    id: int
+    date: str
+    type: str
+    pages: int
+    file_type: str
+    provider: str
+    note_id: int | None
+
+
+class LegacyDocViewer(BaseModel):
+    id: int
+    title: str
+    meta: str
+    page: int
+    pages: int
+    image_url: str | None
+    note_id: int | None
+
+
+class LegacyDocPage(BaseModel):
+    rows: list[LegacyDocRow]
+    pager: Pager
+    types: list[str]
+    type: str
+    store_ready: bool
+    viewer: LegacyDocViewer | None
+
+    def params(self, **override: object) -> dict[str, object]:
+        values: dict[str, object] = {"tab": "docs", "type": self.type, "page": self.pager.page}
+        values.update(override)
+        return {k: v for k, v in values.items() if v not in (None, "")}

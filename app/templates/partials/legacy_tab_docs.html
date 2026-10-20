@@ -1,0 +1,82 @@
+{# Pre-2010 chart: scanned documents (list + viewer). Pages show only when LEGACY_SCAN_ROOT points
+   at a copy of the old image share; otherwise the list (type, date, pages) and a banner. #}
+{% from "components/empty_state.html" import empty_state %}
+{% from "components/banner.html" import warning_banner %}
+{% set d = docs %}
+{% set base = "/legacy/" ~ key %}
+{% set state = d.params(page=d.pager.page) %}
+<div class="legacy-stack">
+  {% if d.rows and not d.store_ready %}
+  {{ warning_banner("Scanned pages from the pre-2010 system are kept on its old image server, which this viewer cannot reach yet. Every scanned document is listed with its type, date and page count; the pages will display once the files are copied over.") }}
+  {% endif %}
+  <div class="notes__cols">
+    <section class="card note-list" aria-labelledby="legacy-docs-title">
+      <h2 class="visually-hidden" id="legacy-docs-title">Scanned documents</h2>
+      {% if d.types|length > 1 %}
+      <form class="note-list__tools" method="get" action="{{ base }}"
+            hx-get="{{ base }}/tab/docs" hx-target="#chart-tabs" hx-swap="outerHTML" hx-trigger="change, submit">
+        <input type="hidden" name="tab" value="docs">
+        <div class="note-list__sort">
+          <label class="visually-hidden" for="legacy-doc-type">Document type</label>
+          <select class="select" id="legacy-doc-type" name="type">
+            <option value="">All document types</option>
+            {% for t in d.types %}
+            <option value="{{ t }}"{% if t == d.type %} selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <noscript><button type="submit" class="btn btn--secondary">Apply</button></noscript>
+      </form>
+      {% endif %}
+      <div class="note-list__results">
+        <p class="note-list__context">{{ "{:,}".format(d.pager.total) }} {{ "document" if d.pager.total == 1 else "documents" }}{% if d.type %} · {{ d.type }}{% endif %}</p>
+        {% if d.rows %}
+        <ul class="note-list__rows" data-list>
+          {% for r in d.rows %}
+          {% set is_selected = d.viewer and d.viewer.id == r.id %}
+          <li>
+            <a class="note-row{% if is_selected %} note-row--selected{% endif %}" data-list-row
+               {%- if is_selected %} aria-current="true"{% endif %}
+               href="{{ url_with(base, state, doc=r.id) }}"
+               hx-get="{{ url_with(base ~ '/documents/' ~ r.id, {'type': d.type, 'page': d.pager.page}) }}"
+               hx-target="#legacy-doc-viewer" hx-indicator="#legacy-doc-viewer" hx-swap="innerHTML">
+              <span class="note-row__meta">
+                <span>{{ r.date }}</span>
+                <span class="badge badge--legacy">Pre-2010</span>
+              </span>
+              <span class="note-row__title">{{ r.type }}</span>
+              <span class="note-row__sub">{{ r.pages }} page{{ "s" if r.pages != 1 }} · {{ r.file_type }}{% if r.provider != "—" %} · {{ r.provider }}{% endif %}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% if d.pager.pages > 1 %}
+        <nav class="pager note-list__pager" aria-label="Document pages">
+          <span>Page {{ d.pager.page }} of {{ d.pager.pages }}</span>
+          <span class="pager__buttons">
+            {% for label, n, enabled in [("‹ Previous", d.pager.page - 1, d.pager.has_prev), ("Next ›", d.pager.page + 1, d.pager.has_next)] %}
+              {% if enabled %}
+              <a class="btn btn--secondary btn--sm" href="{{ url_with(base, d.params(page=n)) }}"
+                 hx-get="{{ url_with(base ~ '/tab/docs', d.params(page=n, tab=None)) }}"
+                 hx-target="#chart-tabs" hx-swap="outerHTML">{{ label }}</a>
+              {% else %}
+              <span class="btn btn--secondary btn--sm" aria-disabled="true">{{ label }}</span>
+              {% endif %}
+            {% endfor %}
+          </span>
+        </nav>
+        {% endif %}
+        {% else %}
+          {{ empty_state("No scanned documents in the pre-2010 chart.") }}
+        {% endif %}
+      </div>
+    </section>
+    <section class="card note-detail" id="legacy-doc-viewer" aria-label="Document" aria-live="polite">
+      {% if d.viewer %}
+        {% with viewer = d.viewer, partial = False %}{% include "partials/legacy_doc_viewer.html" %}{% endwith %}
+      {% else %}
+        {{ empty_state("Select a document to see it.") }}
+      {% endif %}
+    </section>
+  </div>
+</div>

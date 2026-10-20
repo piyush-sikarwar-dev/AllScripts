@@ -1,0 +1,43 @@
+{# One pre-2010 scanned document: page image (when the image share copy is configured) + pager. #}
+{% from "components/empty_state.html" import empty_state %}
+{% set v = viewer %}
+{% set base = "/legacy/" ~ key %}
+{% set st = state if state is defined else {"tab": "docs"} %}
+<article class="note-view">
+  <div class="note-view__head">
+    <div class="note-view__heading">
+      <span class="badge badge--legacy">Pre-2010</span>
+      <h2 class="note-view__title" tabindex="-1"{% if partial %} data-focus-on-load{% endif %}>{{ v.title }}</h2>
+      <p class="note-view__meta">{{ v.meta }} · {{ v.pages }} page{{ "s" if v.pages != 1 }}</p>
+    </div>
+  </div>
+  {% if v.image_url %}
+  <figure class="scan-page">
+    <img class="scan-page__img" src="{{ v.image_url }}" alt="{{ v.title }}, page {{ v.page }} of {{ v.pages }}">
+  </figure>
+  {% if v.pages > 1 %}
+  <nav class="pager pager--viewer" aria-label="Document pages">
+    <span>Page {{ v.page }} of {{ v.pages }}</span>
+    <span class="pager__buttons">
+      {% for label, n, enabled in [("Previous", v.page - 1, v.page > 1), ("Next", v.page + 1, v.page < v.pages)] %}
+        {% if enabled %}
+        <a class="btn btn--secondary btn--sm" href="{{ url_with(base, st, doc=v.id, docpage=n) }}"
+           hx-get="{{ url_with(base ~ '/documents/' ~ v.id, {'type': st.get('type'), 'page': st.get('page'), 'docpage': n}) }}"
+           hx-target="#legacy-doc-viewer" hx-swap="innerHTML">{{ label }}</a>
+        {% else %}
+        <span class="btn btn--secondary btn--sm" aria-disabled="true">{{ label }}</span>
+        {% endif %}
+      {% endfor %}
+    </span>
+  </nav>
+  {% endif %}
+  {% else %}
+    {{ empty_state("The scanned pages are on the old image server and cannot be shown yet.", compact=True) }}
+  {% endif %}
+  {% if v.note_id %}
+  <div class="note-view__actions">
+    <a class="btn btn--secondary" href="{{ base }}?note={{ v.note_id }}"
+       hx-get="{{ base }}/tab/notes?note={{ v.note_id }}" hx-target="#chart-tabs" hx-swap="outerHTML">Open chart note</a>
+  </div>
+  {% endif %}
+</article>

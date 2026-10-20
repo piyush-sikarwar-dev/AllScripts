@@ -324,3 +324,76 @@ def test_lab_flag_and_range():
     assert _lab_flag("<0.01", "0.4", "4") is None and _lab_flag("5", None, None) is None
     assert _range("1", "2") == "1 – 2" and _range(None, "200") == "≤ 200"
     assert _range("", "") == "—"
+
+
+def _multipage_tiff(pages: int) -> bytes:
+    import io
+
+    from PIL import Image
+
+    frames = [Image.new("L", (40, 60), color=40 * n) for n in range(pages)]
+    buf = io.BytesIO()
+    frames[0].save(buf, format="TIFF", save_all=True, append_images=frames[1:])
+    return buf.getvalue()
+
+
+def _legacy_store(monkeypatch, tmp_path):
+    from app import config
+    from tests.fakes.legacy import documents
+
+    (tmp_path / "archive").mkdir()
+    for p in PEOPLE:
+        for d in documents(p["person_key"]):
+            name = f"{d['document_id']}.{d['file_ext']}"
+            (tmp_path / "archive" / name).write_bytes(_multipage_tiff(d["pages"]))
+    settings = config.get_settings().model_copy(update={"legacy_scan_root": str(tmp_path)})
+    monkeypatch.setattr("app.documents.store.get_settings", lambda: settings)
+
+
+def test_docs_tab_lists_metadata_with_banner(client):
+    p = _with_history()
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "docs"})
+    assert r.status_code == 200 and 'id="tab-docs"' in r.text
+    assert "4 documents" in r.text and "Outside labs" in r.text and "Insurance card" in r.text
+    assert "old image server" in r.text and "TIFF image" in r.text and "JPEG image" in r.text
+    assert "scan-page__img" not in r.text
+    r = client.get(f"/legacy/{_key(p)}/tab/docs", params={"type": "Hipaa"}, headers=HTMX)
+    assert "1 document" in r.text and r.headers["HX-Push-Url"].endswith("tab=docs&type=Hipaa")
+
+
+def test_docs_tab_empty(client):
+    p = next(p for p in PEOPLE if (p["person_key"] - 5_000) % 4 == 3)
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "docs"})
+    assert "No scanned documents in the pre-2010 chart." in r.text
+    assert "old image server" not in r.text
+
+
+def test_doc_pages_render_when_share_copy_configured(client, monkeypatch, tmp_path):
+    _legacy_store(monkeypatch, tmp_path)
+    p = _with_history()
+    doc = p["person_key"] * 10 + 2  # HIPAA, 3 pages
+    r = client.get(f"/legacy/{_key(p)}/documents/{doc}", params={"docpage": "2"}, headers=HTMX)
+    assert r.status_code == 200 and "Page 2 of 3" in r.text
+    assert f"/legacy/{_key(p)}/documents/{doc}/pages/2" in r.text
+    assert r.headers["HX-Push-Url"] == f"/legacy/{_key(p)}?tab=docs&doc={doc}&docpage=2"
+    img = client.get(f"/legacy/{_key(p)}/documents/{doc}/pages/2")
+    assert img.status_code == 200 and img.headers["content-type"] == "image/png"
+    assert img.content.startswith(b"\x89PNG")
+    assert client.get(f"/legacy/{_key(p)}/documents/{doc}/pages/4").status_code == 404
+    r = client.get(f"/legacy/{_key(p)}", params={"tab": "docs"})
+    assert "scan-page__img" in r.text and "old image server" not in r.text
+
+
+def test_doc_of_another_patient_is_404(client, monkeypatch, tmp_path):
+    _legacy_store(monkeypatch, tmp_path)
+    a, b = [p for p in PEOPLE if (p["person_key"] - 5_000) % 4 != 3][:2]
+    other = b["person_key"] * 10
+    assert client.get(f"/legacy/{_key(a)}/documents/{other}", headers=HTMX).status_code == 404
+    assert client.get(f"/legacy/{_key(a)}/documents/{other}/pages/1").status_code == 404
+    assert client.get(f"/legacy/{_key(a)}", params={"tab": "docs", "doc": other}).status_code == 404
+
+
+def test_doc_page_404_without_store(client):
+    p = _with_history()
+    doc = p["person_key"] * 10
+    assert client.get(f"/legacy/{_key(p)}/documents/{doc}/pages/1").status_code == 404

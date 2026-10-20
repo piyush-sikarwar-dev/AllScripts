@@ -18,6 +18,8 @@ LEGACY_ALLERGIES = "dmz/legacy_allergies.sql"
 LEGACY_ALLERGY_REACTIONS = "dmz/legacy_allergy_reactions.sql"
 LEGACY_MEDICATIONS = "dmz/legacy_medications.sql"
 LEGACY_CLINICAL_ITEMS = "dmz/legacy_clinical_items.sql"
+LEGACY_DOCUMENTS = "dmz/legacy_documents.sql"
+LEGACY_DOCUMENT_FILE = "dmz/legacy_document_file.sql"
 
 
 def like_prefix(value: str | None) -> str | None:
@@ -78,3 +80,13 @@ def legacy_medications(person_key: int) -> list[dict[str, Any]]:
 
 def legacy_clinical_items(person_key: int) -> list[dict[str, Any]]:
     return run_query(Source.DMZ, LEGACY_CLINICAL_ITEMS, {"person_key": person_key})
+
+
+def legacy_documents(person_key: int) -> list[dict[str, Any]]:
+    return run_query(Source.DMZ, LEGACY_DOCUMENTS, {"person_key": person_key})
+
+
+def legacy_document_file(person_key: int, document_id: int) -> dict[str, Any] | None:
+    params = {"person_key": person_key, "document_id": document_id}
+    rows = run_query(Source.DMZ, LEGACY_DOCUMENT_FILE, params)
+    return rows[0] if rows else None

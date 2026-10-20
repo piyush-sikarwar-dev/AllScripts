@@ -3,6 +3,7 @@
 import random
 from datetime import date, datetime, timedelta
 from decimal import Decimal
+from pathlib import PureWindowsPath
 from typing import Any
 
 from app.documents.render import rtf_to_text
@@ -297,3 +298,40 @@ def clinical_items(person_key: int) -> list[dict[str, Any]]:
             )
     rows.sort(key=lambda r: (r["service_datetime"], r["item_id"]), reverse=True)
     return rows
+
+
+LEGACY_SHARE = PureWindowsPath("//w10060-1/images")
+_DOC_TYPES = ["OUTSIDE LABS", "INSURANCE CARD", "HIPAA", "X-RAY REPORT"]
+
+
+def documents(person_key: int) -> list[dict[str, Any]]:
+    if person_key not in PEOPLE_BY_KEY or (person_key - 5_000) % 4 == 3:
+        return []
+    note_ids = [n["note_id"] for n in NOTES.get(person_key, [])]
+    rows = [
+        {
+            "document_id": person_key * 10 + n,
+            "doc_date": datetime(2006, 1 + n, 15),
+            "scanned_date": datetime(2006, 1 + n, 16, 9, 0),
+            "doc_type": doc_type,
+            "pages": 1 + n % 3,
+            "file_ext": "JPG" if n == 3 else "TIF",
+            "note_id": note_ids[0] if note_ids and n == 0 else None,
+            "provider_last": "Sample" if n % 2 == 0 else None,
+            "provider_first": "Doctor" if n % 2 == 0 else None,
+            "provider_title": "MD" if n % 2 == 0 else None,
+        }
+        for n, doc_type in enumerate(_DOC_TYPES)
+    ]
+    rows.sort(key=lambda r: r["doc_date"], reverse=True)
+    return rows
+
+
+def document_file(person_key: int, document_id: int) -> dict[str, Any] | None:
+    row = next((d for d in documents(person_key) if d["document_id"] == document_id), None)
+    if row is None:
+        return None
+    ext = row["file_ext"]
+    location = str(LEGACY_SHARE / "archive" / f"{document_id}.{ext}")
+    return {"document_id": document_id, "location": location, "pages": row["pages"],
+            "file_ext": ext}  # fmt: skip

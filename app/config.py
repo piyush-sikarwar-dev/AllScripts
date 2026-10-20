@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     scan_root: str | None = None
     scan_unc_prefix: str = r"\\amhs-db1\hmscan"
     scan_store: str = "file"  # "file" (SCAN_ROOT mount) | "s3" (stub)
+    # Pre-2010 (DMZ) scans live on a different share; unset = metadata only + warning banner.
+    legacy_scan_root: str | None = None
+    legacy_scan_unc_prefix: str = r"\\w10060-1\images"
 
     # Per-patient source-data cache (memory only; the archive never changes). 0 disables it.
     source_cache_ttl_seconds: int = 600

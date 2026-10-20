@@ -69,3 +69,11 @@ def get_store(settings: Settings | None = None) -> DocumentStore | None:
     if not settings.scan_root:
         return None
     return FileShareStore(settings.scan_root, settings.scan_unc_prefix)
+
+
+def get_legacy_store(settings: Settings | None = None) -> DocumentStore | None:
+    """Pre-2010 (DMZ) scans: LEGACY_SCAN_ROOT is a copy of the old image share."""
+    settings = settings or get_settings()
+    if not settings.legacy_scan_root:
+        return None
+    return FileShareStore(settings.legacy_scan_root, settings.legacy_scan_unc_prefix)

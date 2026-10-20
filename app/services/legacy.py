@@ -12,12 +12,18 @@ from decimal import Decimal
 from typing import Any
 
 from app.config import get_settings
+from app.documents.images import cached_png
+from app.documents.render import DocumentFormatError
+from app.documents.store import DocumentUnavailableError, get_legacy_store
 from app.formatting import EMPTY, age, date_us, initials, or_dash, person_name, sort_key
 from app.lookups import label
 from app.lookups.legacy_codes import LegacyCodes, legacy_codes
 from app.models.common import PAGE_SIZE, Pager, clamp_page, paginate
 from app.models.legacy import (
     LegacyAllergy,
+    LegacyDocPage,
+    LegacyDocRow,
+    LegacyDocViewer,
     LegacyHeader,
     LegacyHistory,
     LegacyLabPage,
@@ -217,6 +223,7 @@ TABS: list[tuple[str, str]] = [
     ("meds", "Medications"),
     ("labs", "Lab results"),
     ("vitals", "Vitals"),
+    ("docs", "Documents"),
 ]
 TAB_NAMES = {name for name, _ in TABS}
 TAB_LABELS = dict(TABS)
@@ -490,6 +497,99 @@ async def vitals(key: str, page: int | None = None) -> LegacyVitalsPage:
     )
 
 
+_FILE_TYPES = {"TIF": "TIFF image", "TIFF": "TIFF image", "JPG": "JPEG image", "JPEG": "JPEG image"}
+
+
+def _doc_row(r: dict, note_ids: set[int]) -> LegacyDocRow:
+    ext = (r.get("file_ext") or "").strip().upper()
+    return LegacyDocRow(
+        id=int(r["document_id"]),
+        date=date_us(_day(r.get("doc_date") or r.get("scanned_date"))),
+        type=_label_case(r.get("doc_type")) if r.get("doc_type") else "Scanned document",
+        pages=max(int(r.get("pages") or 1), 1),
+        file_type=_FILE_TYPES.get(ext, ext or EMPTY),
+        provider=_provider(r),
+        note_id=_note_link(r.get("note_id"), note_ids),
+    )
+
+
+def _viewer(key: str, row: LegacyDocRow, page: int, store_ready: bool) -> LegacyDocViewer:
+    page = min(max(page, 1), row.pages)
+    meta = " · ".join(x for x in (row.date, row.provider, row.file_type) if x and x != EMPTY)
+    return LegacyDocViewer(
+        id=row.id,
+        title=row.type,
+        meta=meta,
+        page=page,
+        pages=row.pages,
+        image_url=f"/legacy/{key}/documents/{row.id}/pages/{page}" if store_ready else None,
+        note_id=row.note_id,
+    )
+
+
+async def documents(
+    key: str,
+    doc_type: str = "",
+    page: int | None = None,
+    doc_id: int | None = None,
+    doc_page: int = 1,
+) -> LegacyDocPage:
+    """Scanned documents with a type filter and paging; the selected (or first) one opened."""
+    pkey = person_key(key)
+    repo = legacy_repository()
+    rows, notes = await asyncio.gather(call(repo.documents, pkey), call(repo.notes, pkey))
+    note_ids = {int(n["note_id"]) for n in notes}
+    all_rows = [_doc_row(r, note_ids) for r in rows]
+    types = sorted({r.type for r in all_rows})
+    doc_type = doc_type if doc_type in types else ""
+    chosen = [r for r in all_rows if not doc_type or r.type == doc_type]
+    shown, pager = paginate(chosen, clamp_page(page))
+    store_ready = get_legacy_store() is not None
+    if doc_id is not None:
+        selected = next((r for r in all_rows if r.id == doc_id), None)
+        if selected is None:
+            raise NotFoundError(f"{key}/document/{doc_id}")
+    else:
+        selected = shown[0] if shown else None
+    return LegacyDocPage(
+        rows=shown,
+        pager=pager,
+        types=types,
+        type=doc_type,
+        store_ready=store_ready,
+        viewer=_viewer(key, selected, doc_page, store_ready) if selected else None,
+    )
+
+
+async def document_viewer(key: str, doc_id: int, doc_page: int = 1) -> LegacyDocViewer:
+    pkey = person_key(key)
+    repo = legacy_repository()
+    rows, notes = await asyncio.gather(call(repo.documents, pkey), call(repo.notes, pkey))
+    row = next((r for r in rows if int(r["document_id"]) == doc_id), None)
+    if row is None:
+        raise NotFoundError(f"{key}/document/{doc_id}")
+    doc = _doc_row(row, {int(n["note_id"]) for n in notes})
+    return _viewer(key, doc, doc_page, get_legacy_store() is not None)
+
+
+async def document_page_png(key: str, doc_id: int, page: int) -> bytes:
+    """PNG of one page (TIFF frame) of a legacy scan; ownership checked by the file query."""
+    store = get_legacy_store()
+    if store is None:
+        raise NotFoundError("legacy scan store not configured")
+    found = await call(legacy_repository().document_file, person_key(key), doc_id)
+    if found is None or not 1 <= page <= max(int(found.get("pages") or 1), 1):
+        raise NotFoundError(f"{key}/document/{doc_id}/{page}")
+
+    def load() -> bytes:
+        return store.read(found["location"])
+
+    try:
+        return await call(cached_png, ("legacy", doc_id, page), load, page - 1)
+    except (DocumentUnavailableError, DocumentFormatError) as exc:
+        raise NotFoundError(f"{key}/document/{doc_id}/{page}") from exc
+
+
 async def tab_context(key: str, tab: str, params: Mapping[str, str]) -> dict[str, Any]:
     """Everything one tab of the pre-2010 chart needs (full page or HTMX fragment)."""
     if tab == "problems":
@@ -501,6 +601,17 @@ async def tab_context(key: str, tab: str, params: Mapping[str, str]) -> dict[str
         return {"labs": await labs(key, params.get("test", ""), params.get("year", ""), page_no)}
     if tab == "vitals":
         return {"vitals": await vitals(key, page_no)}
+    if tab == "docs":
+        raw_doc, raw_docpage = params.get("doc") or "", params.get("docpage") or ""
+        return {
+            "docs": await documents(
+                key,
+                params.get("type", ""),
+                page_no,
+                int(raw_doc) if raw_doc.isdigit() else None,
+                int(raw_docpage) if raw_docpage.isdigit() else 1,
+            )
+        }
     page = int(params["page"]) if (params.get("page") or "").isdigit() else 1
     notes = await note_page(key, params.get("year", ""), page)
     raw_note = params.get("note") or ""
