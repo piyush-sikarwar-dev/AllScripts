@@ -49,6 +49,13 @@ class Settings(BaseSettings):
     # Not needed in Docker / Linux.
     weasyprint_dll_directories: str = ""
 
+    # Security (docs/SECURITY.md). APP_ENV=production turns on fail-closed start-up checks.
+    app_env: str = "development"
+    allowed_hosts: str = ""  # comma-separated host names; empty = any (development only)
+    allow_writable_sql_login: bool = False  # temporary override; never leave on
+    login_ip_max_failures: int = 10
+    login_ip_window_minutes: int = 15
+
     # Features.
     feature_legacy_dmz: bool = False
     use_fake_data: bool = True

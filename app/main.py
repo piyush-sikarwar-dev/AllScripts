@@ -5,11 +5,13 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import anyio
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app import lookups
 from app.auth import LoginRequiredError
@@ -18,6 +20,7 @@ from app.crosswalk.check import check_crosswalk
 from app.middleware import SecurityMiddleware
 from app.repositories.live import NotConnectedError
 from app.routers import auth, export, health, legacy, pages, partials
+from app.security import check_production_start
 from app.templating import is_htmx, render
 
 log = logging.getLogger("app")
@@ -28,6 +31,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     lookups.load()  # malformed config/*.yaml fails here, not mid-request
+    await anyio.to_thread.run_sync(check_production_start)  # fail closed in production
     if not get_settings().use_fake_data:
         check_crosswalk()
     yield
@@ -51,6 +55,9 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     app.add_middleware(SecurityMiddleware)
+    hosts = [h.strip() for h in get_settings().allowed_hosts.split(",") if h.strip()]
+    if hosts:  # Host-header check (blocks host-header injection and DNS rebinding)
+        app.add_middleware(TrustedHostMiddleware, allowed_hosts=hosts)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
     app.include_router(health.router)

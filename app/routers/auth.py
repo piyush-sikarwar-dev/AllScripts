@@ -25,9 +25,12 @@ from app.auth.tokens import (
 from app.config import get_settings
 from app.db.app import get_db
 from app.repositories.appdb import sessions
+from app.security import login_throttle
 from app.templating import render
 
 router = APIRouter()
+
+THROTTLED_ERROR = "Too many sign-in attempts from this computer. Try again in 15 minutes."
 
 Db = Annotated[Session, Depends(get_db)]
 
@@ -73,11 +76,19 @@ def login(
     if not nonce or not tokens_match(csrf_for_login(nonce), csrf_token):
         raise HTTPException(status_code=403)
 
+    throttle = login_throttle()
+    ip = client_ip(request)
+    if throttle.blocked(ip):  # too many failures from this address: the password is not checked
+        audit(request, background, "login_failed", detail={"reason": "rate_limited"})
+        return _login_page(request, error=THROTTLED_ERROR, email=email.strip(), status=429)
+
     result = authenticate(db, email, password)
     if result.user is None:
+        throttle.record_failure(ip)
         audit(request, background, "login_failed", user_id=result.user_id,
               detail={"reason": result.reason})  # fmt: skip
         return _login_page(request, error=GENERIC_ERROR, email=email.strip(), status=400)
+    throttle.clear(ip)
 
     # Rotate: any session the browser already had is discarded before issuing a new one.
     old = session_token(request)

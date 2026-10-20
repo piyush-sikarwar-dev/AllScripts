@@ -168,7 +168,7 @@ def test_every_shipped_sql_file_is_read_only():
 def test_readyz_without_sources(client):
     r = client.get("/readyz")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok", "checks": {"appdb": "skipped"}}
+    assert r.json() == {"status": "ok", "checks": {"appdb": "ok"}}
 
 
 def test_dbcheck_without_config(capsys):

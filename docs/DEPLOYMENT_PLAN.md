@@ -127,6 +127,8 @@ Please share the **total size and file count** of both shares. That decides Data
 
 | Variable | Production value |
 |---|---|
+| `APP_ENV` | `production`: turns on the fail-closed start-up checks ([SECURITY.md](SECURITY.md) §2.6) |
+| `ALLOWED_HOSTS` | the site's host name, e.g. `records.<clinic>.org` |
 | `USE_FAKE_DATA` | `false` |
 | `SQL_HOST`, `SQL_PORT` | archive endpoint, 1433 |
 | `SQL_TRUST_SERVER_CERTIFICATE` | `false` (needs a valid cert on SQL Server; see §6) |
