@@ -191,19 +191,22 @@ lists (`DICT_TYPE`, `DICT_CODE`, `DICT_DESCRIPTION`). They are the likely key to
 
 ## 5. DMZ: pre-2010 legacy chart (behind `FEATURE_LEGACY_DMZ`, off)
 
+Full details of the separate **Pre-2010 records** section: what it shows, where each value comes from, the
+assumptions, and what is not shown yet: [PRE2010_RECORDS.md](PRE2010_RECORDS.md).
+
 | Information | Tables (rows) | Useful columns | Show? |
 |---|---|---|---|
-| Patients | `conv.person` (9,868) | `lname`, `fname`, `mi`, `birthdate`, `sex`, address, phones, `deceased`, `patid`. **`ssno` NEVER** | **Yes (P10)** |
+| Patients | `conv.person` (9,868) | `lname`, `fname`, `mi`, `birthdate`, `sex`, address, phones, `deceased`, `patid`. **`ssno` NEVER** | **Yes (live)** |
 | Legacy chart number / external IDs | `conv.patgroup` (23,874: `chart_no`, first/last visit), `conv.pat_ext_info` (25,335: `ext_id`, `alt_id`) | | Lookup: the best candidates for linking to EMR |
-| Chart notes (visits) | `conv.cac_chrt_header` (264,990) + `conv.cac_chrt_rtf` (242,438) | `service_datetime`, `drno`, `esig_status`; `note_text` (RTF → convert safely) | **Yes (P10)** |
+| Chart notes (visits) | `conv.cac_chrt_header` (264,990) + `conv.cac_chrt_rtf` (242,438) | `service_datetime`, `drno`, `esig_status`; `note_text` (RTF → convert safely) | **Yes (live)** |
 | Structured note content | `Encounters.TemplateData` (1,953,232), `Encounters.ChartGlossaries` (1,296,089) | | Maybe |
-| Problems | `conv.cac_pat_prob` (32,018) | `dxcode`, `onset_date`, `stop_date`, `active_flag`, `comment`; respect `confidential` | **Yes (P10)** |
-| Allergies | `conv.cac_pat_alrg` (10,408) + `cac_alrg_code` (894), `Allergy.*Mapping` | allergen, symptoms, severity, status; skip `entered_error_by` rows | **Yes (P10)** |
-| Medications | `Medications.PatientMedications` (201,155) + `MedispanDrugs` (72,460), `UserDrugs` (918), `MedicationStatus` | `date_of_service`, `stop_date`, sig, refills, status | **Yes (P10)** |
-| Lab results | `conv.cac_results` (364,065) | `labresname`, `resultvalue`, `uom`, `reflow`/`refhigh`, `abnormalflags`, `loinc_code` | **Yes (P10)** |
-| Lab orders | `Orders.LabOrders` (24,232), `Orders.LabTests` (95,366) | | Maybe |
-| Clinical measurements (vitals-like) | `conv.cac_patclin_item` (589,381) + `cac_clin_refitem` (229) | value, `service_datetime`; skip `error_flag` | Maybe (likely vitals; decode `clin_refitem_key` first) |
-| Scanned images | `dbo.ScannedImages` (171,253), `conv.cai_images` (172,051) + `cai_imageinxs` | date, description, page count, file path on a network share | Maybe (needs the legacy file share) |
+| Problems | `conv.cac_pat_prob` (32,018) | `dxcode`, `onset_date`, `stop_date`, `active_flag`, `comment`; respect `confidential` | **Yes (live)** |
+| Allergies | `conv.cac_pat_alrg` (10,408) + `cac_alrg_code` (894), `Allergy.*Mapping` | allergen, symptoms, severity, status; skip `entered_error_by` rows | **Yes (live)** |
+| Medications | `Medications.PatientMedications` (201,155) + `MedispanDrugs` (72,460), `UserDrugs` (918), `MedicationStatus` | `date_of_service`, `stop_date`, sig, refills, status | **Yes (live)** |
+| Lab results | `conv.cac_results` (364,065) → `Orders.LabTests` → `Orders.LabOrders.patkey` (all rows reach a patient) | `labresname`, `resultvalue`, `uom`, `reflow`/`refhigh`, `abnormalflags`, `status` | Not yet: next to build (PRE2010_RECORDS §7) |
+| Lab orders | `Orders.LabOrders` (24,232), `Orders.LabTests` (95,366) | | Not yet: with lab results |
+| Clinical measurements (flowsheet) | `conv.cac_patclin_item` (589,381) + `cac_clin_refitem` (229) | value, `service_datetime`; skip `error_flag` | **Yes (live)**: Vitals tab + Lab results tab |
+| Scanned images | `dbo.ScannedImages` (171,253), `conv.cai_images` (172,051) + `cai_imageinxs` | date, description, page count, file path on a network share | **Yes (live)**: listed; pages need `LEGACY_SCAN_ROOT` |
 | Patient account notes | `conv.patnotes` (8,548) | | Maybe (admin) |
 | Providers / facilities | `conv.drmast` (845: **`ssno`, `dea_num` NEVER**), `conv.facmast` | | Lookup |
 | Migration bookkeeping | `conv.MigrationLog`, `*WorkTable`, `dbo.sysssislog`, `processed` columns | | No |
