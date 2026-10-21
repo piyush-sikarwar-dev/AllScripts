@@ -37,6 +37,19 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
+class _HostCheck(TrustedHostMiddleware):
+    """TrustedHostMiddleware, except for the health probes: the load balancer and the container
+    health check call them by IP address, not by the site's host name. They return no data."""
+
+    PROBES = ("/healthz", "/readyz")
+
+    async def __call__(self, scope, receive, send) -> None:  # type: ignore[override]
+        if scope["type"] == "http" and scope.get("path") in self.PROBES:
+            await self.app(scope, receive, send)
+            return
+        await super().__call__(scope, receive, send)
+
+
 def _error_page(request: Request, status_code: int) -> HTMLResponse:
     if is_htmx(request):
         return render(
@@ -57,7 +70,7 @@ def create_app() -> FastAPI:
     app.add_middleware(SecurityMiddleware)
     hosts = [h.strip() for h in get_settings().allowed_hosts.split(",") if h.strip()]
     if hosts:  # Host-header check (blocks host-header injection and DNS rebinding)
-        app.add_middleware(TrustedHostMiddleware, allowed_hosts=hosts)
+        app.add_middleware(_HostCheck, allowed_hosts=hosts)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
     app.include_router(health.router)

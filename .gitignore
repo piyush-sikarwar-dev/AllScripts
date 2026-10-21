@@ -9,3 +9,7 @@ dist/
 build/
 *.pdf
 .DS_Store
+
+# Filled-in deployment settings (only deploy/app.env.template is committed)
+deploy/*.env
+*.env.local

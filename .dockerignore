@@ -1,0 +1,16 @@
+# Never send secrets, local data or tooling into the image build context.
+.env
+.env.*
+.git
+.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+*.db
+*.pdf
+docs
+tests/unit
+tests/integration
+tests/fixtures
+deploy/*.env

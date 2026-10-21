@@ -25,6 +25,8 @@ dependencies = [
     "pillow>=10.0",
     "defusedxml>=0.7",
     "tzdata>=2024.1",  # zoneinfo data on Windows
+    "gunicorn>=23",
+    "uvicorn-worker>=0.3",
 ]
 
 [dependency-groups]

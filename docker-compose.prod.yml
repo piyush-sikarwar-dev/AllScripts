@@ -1,0 +1,83 @@
+# Production on one EC2 host (docs/RUNBOOK.md).
+# Settings and secrets come from /etc/legacy-viewer/app.env on the server (root-only, chmod 600),
+# never from this repository. Template: deploy/app.env.template.
+#
+#   docker compose -f docker-compose.prod.yml build
+#   docker compose -f docker-compose.prod.yml run --rm migrate
+#   docker compose -f docker-compose.prod.yml up -d app
+#
+# Optional local PostgreSQL (when not using RDS):  --profile local-db
+
+x-hardening: &hardening
+  read_only: true            # root filesystem read-only; only /tmp is writable (in memory)
+  tmpfs:
+    - /tmp:size=1g,mode=1777
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+  user: "10001:10001"
+  env_file:
+    - /etc/legacy-viewer/app.env
+  logging:
+    driver: json-file
+    options:
+      max-size: "20m"
+      max-file: "10"
+
+services:
+  app:
+    <<: *hardening
+    image: ${APP_IMAGE:-legacy-viewer:latest}
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"          # reachable only through the security group (load balancer / your IP)
+    mem_limit: 6g
+    volumes:
+      # Copies of the scan shares, if mounted on the host (read-only). Leave unset for metadata only.
+      - ${SCAN_HOST_DIR:-/srv/legacy-viewer/empty}:/scans/hmscan:ro
+      - ${LEGACY_SCAN_HOST_DIR:-/srv/legacy-viewer/empty}:/scans/legacy:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+
+  # One-off tasks: migrations and admin commands (same image, same settings).
+  migrate:
+    <<: *hardening
+    image: ${APP_IMAGE:-legacy-viewer:latest}
+    profiles: ["tools"]
+    command: ["alembic", "upgrade", "head"]
+
+  cli:
+    <<: *hardening
+    image: ${APP_IMAGE:-legacy-viewer:latest}
+    profiles: ["tools"]
+    entrypoint: ["python", "cli.py"]
+    stdin_open: true
+    tty: true
+
+  postgres:
+    image: postgres:16
+    profiles: ["local-db"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: legacy
+      POSTGRES_DB: legacy_viewer
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    secrets: [pg_password]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U legacy -d legacy_viewer"]
+      interval: 10s
+      retries: 10
+
+secrets:
+  pg_password:
+    file: /etc/legacy-viewer/pg_password
+
+volumes:
+  pgdata:

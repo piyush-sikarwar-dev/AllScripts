@@ -41,9 +41,12 @@ def test_unknown_host_is_rejected(monkeypatch):
     hosts = get_settings().model_copy(update={"allowed_hosts": "records.example.org"})
     monkeypatch.setattr(main, "get_settings", lambda: hosts)
     with TestClient(main.create_app(), base_url="http://evil.example.com") as c:
-        assert c.get("/healthz").status_code == 400
+        assert c.get("/login").status_code == 400
     with TestClient(main.create_app(), base_url="http://records.example.org") as c:
         assert c.get("/healthz").status_code == 200
+    with TestClient(main.create_app(), base_url="http://10.0.1.23:8000") as c:  # ALB probe by IP
+        assert c.get("/healthz").status_code == 200
+        assert c.get("/patients", follow_redirects=False).status_code == 400
 
 
 def test_login_throttle_per_ip(anon_client, staff_user, monkeypatch):
