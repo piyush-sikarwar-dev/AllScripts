@@ -1,4 +1,4 @@
-# Deploying the Legacy Records Viewer on EC2: step-by-step guide
+# Deploying Legacy DEC & LR Records on EC2: step-by-step guide
 
 This guide goes from an empty AWS account to staff signing in over HTTPS, then covers day-to-day
 operation. Follow the parts in order: each one depends on the one before.

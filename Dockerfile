@@ -1,4 +1,4 @@
-# Legacy Records Viewer: production image.
+# Legacy DEC & LR Records: production image.
 # - Python 3.12 on Debian 12, Microsoft ODBC Driver 18 for SQL Server, WeasyPrint system libraries.
 # - Dependencies installed from uv.lock (exact versions), no dev tools.
 # - Runs as a non-root user; works with a read-only root filesystem (writes only under /tmp).

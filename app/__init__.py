@@ -1,1 +1,1 @@
-"""Legacy Records Viewer application package."""
+"""Legacy DEC & LR Records application package."""

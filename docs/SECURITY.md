@@ -1,6 +1,6 @@
 # Security: controls, status and responsibilities
 
-The Legacy Records Viewer shows PHI from a retired EHR, so a vulnerability anywhere (browser, app,
+The Legacy DEC & LR Records viewer shows PHI from a retired EHR, so a vulnerability anywhere (browser, app,
 databases, network, pipeline) must not lead to disclosure, alteration or loss of records. This
 document lists every control, where it is enforced, and its status:
 

@@ -1,6 +1,6 @@
 # Deployment, infrastructure and CI/CD plan
 
-How the Legacy Records Viewer goes from this repository to a production service on AWS, what the
+How Legacy DEC & LR Records goes from this repository to a production service on AWS, what the
 infrastructure has to provide, and how changes reach production. It covers what the infra team
 builds, what the app side builds (Phase 11), and the open decisions.
 

@@ -152,3 +152,12 @@ def test_tampered_session_cookie_is_ignored(client):
     client.cookies.set(SESSION_COOKIE, value[:-2] + ("AA" if not value.endswith("AA") else "BB"))
     r = client.get("/patients", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"].endswith("/login")
+
+
+def test_application_name(anon_client, client):
+    r = anon_client.get("/login")
+    assert "Legacy DEC &amp; LR Records" in r.text and "<title>" in r.text
+    assert "Legacy DEC &amp; LR Records</title>" in r.text
+    r = client.get("/patients")
+    assert '<p class="brand__name">Legacy DEC &amp; LR Records</p>' in r.text
+    assert "Legacy Records<" not in r.text

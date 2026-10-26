@@ -1,4 +1,4 @@
-# CLAUDE.md — Legacy Records Viewer
+# CLAUDE.md — Legacy DEC & LR Records
 
 Permanent project context for Claude Code. Read this file fully before every task.
 Build phase by phase from `BUILD_PROMPTS.md`; never start a later phase unasked.
@@ -261,7 +261,7 @@ IDs (chart ID, account #) and lab values in `--mono` 13px.
 - **App shell:** `display:flex; flex-wrap:wrap; min-height:100vh; background:var(--bg)`.
   Sidebar `flex:1 0 232px; max-width:100%`; main `flex:999 1 560px; min-width:0; padding:28px 32px 40px` (chart: 24px top);
   vertical gaps 24px (dashboard) / 18px (chart). On phones the sidebar stacks on top.
-- **Sidebar** (`--sidebar`): brand row (doc-cross icon in `--brand-icon`, "Legacy Records" 15px/600 white, clinic name 12px `--sidebar-muted`),
+- **Sidebar** (`--sidebar`): brand row (doc-cross icon in `--brand-icon`, "Legacy DEC & LR Records" 15px/600 white, clinic name 12px `--sidebar-muted`),
   nav links 14px with 18px stroke icons, 11px×12px padding, radius 8px; active = `--sidebar-active` bg + white + 500;
   items: Dashboard, Patients, Release log. Footer: divider, signed-in user name (13px white), "Sign out" (13px `--sidebar-link`, POST form button styled as link).
 - **Sign-in page:** two halves (`flex:1 1 420px` each). Left: `--sidebar` panel, 56/48px padding, brand, H1 34px/600 white

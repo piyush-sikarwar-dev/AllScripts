@@ -1,4 +1,4 @@
-# Legacy Records Viewer
+# Legacy DEC & LR Records
 
 Read-only web viewer for the retired Allscripts EHR (EMR, practice management and pre-2010 records).
 See `CLAUDE.md` for the full specification and `BUILD_PROMPTS.md` for the build phases.

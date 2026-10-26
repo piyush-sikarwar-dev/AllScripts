@@ -61,7 +61,7 @@ def _error_page(request: Request, status_code: int) -> HTMLResponse:
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Legacy Records Viewer",
+        title="Legacy DEC & LR Records",
         docs_url=None,
         redoc_url=None,
         openapi_url=None,

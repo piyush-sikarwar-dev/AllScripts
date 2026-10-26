@@ -1,4 +1,4 @@
-# BUILD_PROMPTS.md — Legacy Records Viewer, phase-by-phase prompts for Claude Code
+# BUILD_PROMPTS.md — Legacy DEC & LR Records, phase-by-phase prompts for Claude Code
 
 ## How to use
 1. Create an empty repo folder `legacy-viewer/`, put **CLAUDE.md** in its root (Claude Code loads it automatically).

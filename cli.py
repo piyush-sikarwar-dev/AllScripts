@@ -179,7 +179,7 @@ def patient_list_check() -> int:
 
 
 def main(argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(prog="cli.py", description="Legacy Records Viewer commands")
+    parser = argparse.ArgumentParser(prog="cli.py", description="Legacy DEC & LR Records commands")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("dbcheck", help="check source DB connections (metadata only)")
     create = sub.add_parser("create-user", help="create a staff account (prompts for password)")
