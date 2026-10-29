@@ -1,0 +1,117 @@
+database,schema,table,row_count,screens,purpose,large_columns,feature_flag
+DMZ,Encounters,MRC,277,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Vitals,lookup,,FEATURE_LEGACY_DMZ
+DMZ,Encounters,NoteResultLink,89968,Pre-2010 Chart notes,join,,FEATURE_LEGACY_DMZ
+DMZ,Medications,MedicationSigWorkTable,10519,Pre-2010 Medications; Pre-2010 Overview,lookup,,FEATURE_LEGACY_DMZ
+DMZ,Medications,MedicationStatus,11,Pre-2010 Medications; Pre-2010 Overview,lookup,,FEATURE_LEGACY_DMZ
+DMZ,Medications,MedispanDrugs,72460,Pre-2010 Medications; Pre-2010 Overview,lookup,,FEATURE_LEGACY_DMZ
+DMZ,Medications,PatientMedications,201155,Pre-2010 Medications; Pre-2010 Overview,data,,FEATURE_LEGACY_DMZ
+DMZ,Medications,UserDrugs,918,Pre-2010 Medications; Pre-2010 Overview,lookup,,FEATURE_LEGACY_DMZ
+DMZ,Orders,LabOrders,24232,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,data,,FEATURE_LEGACY_DMZ
+DMZ,Orders,LabTests,95366,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,join,,FEATURE_LEGACY_DMZ
+DMZ,Orders,TaskQueueComments,49814,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,data,comment nvarchar(max),FEATURE_LEGACY_DMZ
+DMZ,Orders,Tests,847,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,lookup,,FEATURE_LEGACY_DMZ
+DMZ,Patient,Consent,11,Pre-2010 Overview,data,,FEATURE_LEGACY_DMZ
+DMZ,Procedures,PatientProcedures,9,Pre-2010 Overview; Pre-2010 Past history,data,,FEATURE_LEGACY_DMZ
+DMZ,Procedures,ProcedureStatus,6,Pre-2010 Overview; Pre-2010 Past history,lookup,,FEATURE_LEGACY_DMZ
+DMZ,Procedures,ProceduresMaster,226,Pre-2010 Overview; Pre-2010 Past history,lookup,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_adv_reactions,21,Pre-2010 Overview; Pre-2010 Problems & allergies,lookup,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_alrg_cat,5,Pre-2010 Overview; Pre-2010 Problems & allergies,lookup,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_alrg_code,894,Pre-2010 Overview; Pre-2010 Problems & allergies,lookup,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_alrg_status,4,Pre-2010 Overview; Pre-2010 Problems & allergies,lookup,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_amt_uom,78,Pre-2010 Medications; Pre-2010 Overview,lookup,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_chrt_header,264990,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Print; Pre-2010 Vitals,data,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_chrt_rtf,242438,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Print; Pre-2010 Vitals,data,note_text nvarchar(max),FEATURE_LEGACY_DMZ
+DMZ,conv,cac_clin_refitem,229,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,lookup,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_control_values,163,Pre-2010 Overview; Pre-2010 Problems & allergies,lookup,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_diaglink,120846,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,data,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_pat_alrg,10408,Pre-2010 Overview; Pre-2010 Problems & allergies,data,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_pat_alrg_det,630,Pre-2010 Overview; Pre-2010 Problems & allergies,data,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_pat_pharm_pref,4201,Pre-2010 Overview,data,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_pat_photo,4658,Pre-2010 Overview; Pre-2010 header,data,photo image(2147483647),FEATURE_LEGACY_DMZ
+DMZ,conv,cac_pat_prob,32018,Pre-2010 Overview; Pre-2010 Problems & allergies,data,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_patclin_item,589381,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,data,,FEATURE_LEGACY_DMZ
+DMZ,conv,cac_rescom,61787,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,data,comments nvarchar(max),FEATURE_LEGACY_DMZ
+DMZ,conv,cac_results,364065,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,data,comments nvarchar(max),FEATURE_LEGACY_DMZ
+DMZ,conv,drmast,845,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Medications; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Problems & allergies; Pre-2010 Vitals; Pre-2010 header,lookup,,FEATURE_LEGACY_DMZ
+DMZ,conv,dxmast,15629,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Medications; Pre-2010 Overview; Pre-2010 Problems & allergies,lookup,,FEATURE_LEGACY_DMZ
+DMZ,conv,facmast,2797,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Vitals; Pre-2010 header,lookup,,FEATURE_LEGACY_DMZ
+DMZ,conv,pat_ext_info,25335,Pre-2010 Overview,data,,FEATURE_LEGACY_DMZ
+DMZ,conv,patgroup,23874,Pre-2010 Overview; Pre-2010 header,join,,FEATURE_LEGACY_DMZ
+DMZ,conv,patnotes,8548,Pre-2010 Account notes; Pre-2010 Overview,data,,FEATURE_LEGACY_DMZ
+DMZ,conv,person,9868,Pre-2010 Overview; Pre-2010 header; Pre-2010 patient list,data,,FEATURE_LEGACY_DMZ
+DMZ,conv,pharmmast,203,Pre-2010 Overview,lookup,,FEATURE_LEGACY_DMZ
+DMZ,dbo,Gloss_base,80602,Pre-2010 Overview; Pre-2010 Past history,data,ChartText varchar(max),FEATURE_LEGACY_DMZ
+DMZ,dbo,Resultsmigratetbl,24164,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,data,,FEATURE_LEGACY_DMZ
+DMZ,dbo,ScannedImages,171253,Pre-2010 Documents; Pre-2010 Overview,data,,FEATURE_LEGACY_DMZ
+DMZ,dbo,TestResultOrdertbl,95190,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,data,testComments varchar(max),FEATURE_LEGACY_DMZ
+EMR,HPSITE,ADDRESSES,302989,Overview; PDF export; Patient header; Print,data,,
+EMR,HPSITE,ARCH_HXDIAGNOSIS,361475,Problems & allergies,data,,
+EMR,HPSITE,ARCH_SCHEDULE,218843,Appointments; PDF export,data,,
+EMR,HPSITE,CHARTATTACHMENT,57093,Documents; PDF export,data,,
+EMR,HPSITE,CHART_ADDENDUM,9858,PDF export; Print; Visits,data,,
+EMR,HPSITE,CONTACT,3060597,CLI only; Dashboard / patient list; Overview; PDF export; Print; Problems & allergies; Visits,data,,
+EMR,HPSITE,DEMGUARANTOR,21921,Overview; PDF export,data,,
+EMR,HPSITE,DEMOGRAPHICPICTURE,10278,Overview; PDF export; Patient header; Print,data,DEM_PICTURE varbinary(max),
+EMR,HPSITE,DEMOGRAPHICS,21384,CLI build-crosswalk (patient links); CLI only; Dashboard / patient list; Notes (message names); Overview; PDF export; Patient header; Print; Release log,data,,
+EMR,HPSITE,DX,96993,Lab results; PDF export; Visits,data,,
+EMR,HPSITE,ENCOUNTER,2565968,CLI only; Dashboard / patient list; Notes; Overview; PDF export; Print; Visits,data,,
+EMR,HPSITE,ENCOUNTER_ASSESSMENT,312736,PDF export; Visits,data,,
+EMR,HPSITE,ENCOUNTER_PLAN,598053,PDF export; Print; Visits,data,,
+EMR,HPSITE,EXTSYS_PATIENTINDEX,26750,CLI build-crosswalk (patient links),join,,
+EMR,HPSITE,HTML_DOCUMENTMAP,2102125,Notes; PDF export; Print; Visits,join,,
+EMR,HPSITE,HTML_DOCUMENT_ORIG,479438,Documents; Notes; PDF export; Print; Visits,data,DOCUMENT varbinary(max),
+EMR,HPSITE,HXDIAGNOSIS_ATTRIBUTES,74971,Overview; PDF export; Problems & allergies,data,,
+EMR,HPSITE,HX_DIAGNOSIS,260603,Overview; PDF export; Problems & allergies,data,,
+EMR,HPSITE,HX_MEDICATION,181404,Medications; Overview; PDF export,data,,
+EMR,HPSITE,INSURANCECARRIERS,807,Overview; PDF export; Patient header; Print,lookup,,
+EMR,HPSITE,INSURANCES,69085,Overview; PDF export; Patient header; Print,data,,
+EMR,HPSITE,LABCATALOG,1873,Lab results; PDF export,lookup,,
+EMR,HPSITE,LABORDERS,476730,Lab results; PDF export; Print; Visits,data,,
+EMR,HPSITE,LAB_RESULT,1603126,Lab results; PDF export,data,,
+EMR,HPSITE,LOCATION,8,Appointments; Overview; PDF export; Print; Visits,lookup,,
+EMR,HPSITE,MEDICATIONS,161965,Medications; Overview; PDF export; Print; Visits,data,,
+EMR,HPSITE,MESSAGE_SAVED,128189,Documents; Notes; PDF export; Print,data,,
+EMR,HPSITE,NOTES_MASTER,1657531,PDF export; Print; Visits,join,,
+EMR,HPSITE,NOTES_RAWDATA,54760,Documents; PDF export,data,NOTE_DATA varbinary(max),
+EMR,HPSITE,NOTES_TEXTDATA,1370268,Documents; Notes; PDF export; Print; Visits,data,NOTE_TEXT varchar(max),
+EMR,HPSITE,PATIENT_CONSENT,21366,Overview; PDF export,data,,
+EMR,HPSITE,PATIENT_CONTACTS,4642,Overview; PDF export,data,,
+EMR,HPSITE,PATIENT_ETHNICITY,21384,Overview; PDF export,data,,
+EMR,HPSITE,PATIENT_IDENTIFIER,27143,CLI only; Dashboard / patient list; PDF export; Patient header; Print,data,,
+EMR,HPSITE,PATIENT_MERGE_HISTORY,289,CLI build-crosswalk (patient links); CLI only; Dashboard / patient list,join,,
+EMR,HPSITE,PATIENT_PHYSICIANS,46493,Overview; PDF export,data,,
+EMR,HPSITE,PATIENT_RACE,21008,Overview; PDF export,data,,
+EMR,HPSITE,PHIREQUEST,659,Release log,data,,
+EMR,HPSITE,PHIREQUEST_APPROVALSTATUS,4,Release log,lookup,,
+EMR,HPSITE,PHIREQUEST_REQUESTEDINFO,110,Release log,data,,
+EMR,HPSITE,PHIREQUEST_STATUS,3,Release log,lookup,,
+EMR,HPSITE,PROCEDURES,89396,PDF export; Print; Visits,data,,
+EMR,HPSITE,PROVIDERS,2407,Appointments; Documents; Lab results; Notes; Overview; PDF export; Print; Problems & allergies; Release log; Visits,lookup,,
+EMR,HPSITE,REMINDERS,17650,Overview; PDF export,data,,
+EMR,HPSITE,RXHUB_MED_HISTORY,203880,Medications; PDF export,data,,
+EMR,HPSITE,RXHUB_REQUEST,8309,Medications; PDF export,join,,
+EMR,HPSITE,SCAN_DOCUMENT,626325,Documents; PDF export,data,,
+EMR,HPSITE,SCAN_DOCUMENTPAGE,1943064,Documents; PDF export,data,,
+EMR,HPSITE,SCAN_DOCUMENTTYPE,306,Documents; PDF export,lookup,,
+EMR,HPSITE,TRANSCRIPTION,3455,Documents; Notes; PDF export; Print,data,,
+EMR,HPSITE,TRANSCRIPTIONDATA,3455,Documents; Notes; PDF export; Print,data,trans_data varchar(max),
+EMR,HPSITE,VITALS_DATA,138170,PDF export; Print; Visits; Vitals,data,,
+EMR,HPSITE,WEBMESSAGE,3234,Documents; Notes; PDF export; Print,data,ATTACHMENT varbinary(max); BODY_TEXT varchar(max),
+EMR,HPSITE,WEBMESSAGE_SAVED,2206,Documents; Notes; PDF export; Print,data,BODY_TEXT varchar(max),
+EMR,HPSITE_ARCH,HTML_DOCUMENT_ARCH,479336,Documents; Notes; PDF export; Print; Visits,data,DOCUMENT varbinary(max),
+Ntier_0010060,PM,Accounts,21329,PDF export; Patient header; Print,data,,
+Ntier_0010060,PM,Appointment_Types,46,Appointments; PDF export,lookup,,
+Ntier_0010060,PM,Appointments,153408,Appointments; PDF export,data,,
+Ntier_0010060,PM,Cancellation_Reasons,9,Appointments; PDF export,lookup,,
+Ntier_0010060,PM,Carriers,349,Overview; PDF export,lookup,,
+Ntier_0010060,PM,Contacts,31024,Overview; PDF export,data,,
+Ntier_0010060,PM,Diagnosis_Codes,89862,Overview; PDF export,lookup,,
+Ntier_0010060,PM,Incoming_Referral_Diags,1275,Overview; PDF export,data,,
+Ntier_0010060,PM,Incoming_Referrals,4805,Overview; PDF export,data,,
+Ntier_0010060,PM,Insurance_Plans,4306,Overview; PDF export,lookup,,
+Ntier_0010060,PM,Patient_Policies,24276,Overview; PDF export,data,,
+Ntier_0010060,PM,Patients,21330,CLI build-crosswalk (patient links); PDF export; Patient header; Print,join,,
+Ntier_0010060,PM,Policies,24462,Overview; PDF export,data,,
+Ntier_0010060,PM,Practitioners,1538,Overview; PDF export,lookup,,
+Ntier_0010060,PM,Resources,11,Appointments; PDF export,lookup,,
+Ntier_0010060,PM,Scheduling_Locations,2,Appointments; PDF export,lookup,,

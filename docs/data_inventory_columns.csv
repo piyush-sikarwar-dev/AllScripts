@@ -1,0 +1,691 @@
+database,schema,table,column,data_type,used_for,screens,sql_file,sensitive
+DMZ,Encounters,MRC,mrc_key,int,join,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Vitals,dmz/legacy_notes.sql,no
+DMZ,Encounters,MRC,name,nvarchar(30),select,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Vitals,dmz/legacy_notes.sql,no
+DMZ,Encounters,NoteResultLink,note_id,int,select|join,Pre-2010 Chart notes,dmz/legacy_note_result_links.sql,no
+DMZ,Encounters,NoteResultLink,systestorderno,int,select,Pre-2010 Chart notes,dmz/legacy_note_result_links.sql,no
+DMZ,Medications,MedicationSigWorkTable,DoseForm,nvarchar(255),select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,MedicationSigWorkTable,Frequency,nvarchar(255),select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,MedicationSigWorkTable,Quantity,nvarchar(255),select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,MedicationSigWorkTable,sig_key,int,join,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,MedicationStatus,MEMR_Med_Description,varchar(30),select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,MedicationStatus,MEMR_Med_Status,int,join,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,MedicationStatus,PROEHR_Med_Status,smallint,select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,MedispanDrugs,disp_name,nvarchar(150),select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,MedispanDrugs,drug_key,int,join,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,amt_dispensed,decimal,select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,amt_uom_key,int,join,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,comments,nvarchar(255),select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,date_of_service,datetime,select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,date_written,datetime,select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,days_supply,smallint,select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,disp_as_written,nchar(1),select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,drno,nchar(4),join,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,dxcode,nchar(10),select|join,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,last_dose_date,datetime,select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,mdrug_key,int,join,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,med_stat_key,int,select|join,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,num_refills,smallint,select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,parent_key,int,select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,pat_med_key,int,select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,patkey,int,filter,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,sig_key,int,join,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,stop_date,datetime,select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,PatientMedications,udrug_key,int,join,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,UserDrugs,disp_name,nvarchar(150),select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,UserDrugs,drug_key,int,join,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Medications,UserDrugs,strength,nchar(15),select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,Orders,LabOrders,comments,nvarchar(255),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_orders.sql,no
+DMZ,Orders,LabOrders,drordering,nchar(4),join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_orders.sql,no
+DMZ,Orders,LabOrders,faccode,nchar(4),join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_orders.sql,no
+DMZ,Orders,LabOrders,orderno,nvarchar(75),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_orders.sql,no
+DMZ,Orders,LabOrders,patkey,int,filter,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_diagnoses.sql; dmz/legacy_lab_orders.sql; dmz/legacy_lab_result_comments.sql; dmz/legacy_lab_results.sql; dmz/legacy_lab_task_comments.sql; dmz/legacy_lab_tests.sql,no
+DMZ,Orders,LabOrders,sysorderno,int,select|join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_diagnoses.sql; dmz/legacy_lab_orders.sql; dmz/legacy_lab_result_comments.sql; dmz/legacy_lab_results.sql; dmz/legacy_lab_task_comments.sql; dmz/legacy_lab_tests.sql,no
+DMZ,Orders,LabTests,sysorderno,int,select|join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_diagnoses.sql; dmz/legacy_lab_result_comments.sql; dmz/legacy_lab_results.sql; dmz/legacy_lab_task_comments.sql; dmz/legacy_lab_tests.sql,no
+DMZ,Orders,LabTests,systestno,int,join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_tests.sql,no
+DMZ,Orders,LabTests,systestorderno,int,select|join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_diagnoses.sql; dmz/legacy_lab_result_comments.sql; dmz/legacy_lab_results.sql; dmz/legacy_lab_task_comments.sql; dmz/legacy_lab_tests.sql,no
+DMZ,Orders,TaskQueueComments,comment,nvarchar(max),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_task_comments.sql,no
+DMZ,Orders,TaskQueueComments,comment_sequence,int,select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_task_comments.sql,no
+DMZ,Orders,TaskQueueComments,create_datetime,datetime,select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_task_comments.sql,no
+DMZ,Orders,TaskQueueComments,order_or_result_no,int,select|join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_task_comments.sql,no
+DMZ,Orders,Tests,systestno,int,join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_tests.sql,no
+DMZ,Orders,Tests,testname,nvarchar(120),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_tests.sql,no
+DMZ,Patient,Consent,demo_consent,nvarchar(1),select,Pre-2010 Overview,dmz/legacy_consent.sql,no
+DMZ,Patient,Consent,general_consent,nvarchar(1),select,Pre-2010 Overview,dmz/legacy_consent.sql,no
+DMZ,Patient,Consent,ins_consent,nvarchar(1),select,Pre-2010 Overview,dmz/legacy_consent.sql,no
+DMZ,Patient,Consent,medhx_consent,nvarchar(10),select,Pre-2010 Overview,dmz/legacy_consent.sql,no
+DMZ,Patient,Consent,patkey,int,filter,Pre-2010 Overview,dmz/legacy_consent.sql,no
+DMZ,Procedures,PatientProcedures,comment,nvarchar(50),select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,PatientProcedures,date_of_service,datetime,select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,PatientProcedures,drno,nvarchar(4),join,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,PatientProcedures,pat_treat_key,int,select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,PatientProcedures,patkey,int,filter,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,PatientProcedures,proc_status_key,int,join,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,PatientProcedures,proccode,nvarchar(10),select|join,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,PatientProcedures,stop_date,datetime,select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,ProcedureStatus,MEMR_Proc_Description,varchar(30),select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,ProcedureStatus,MEMR_Proc_Status,int,join,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,ProceduresMaster,insdesc1,nchar(50),select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,ProceduresMaster,insdesc2,nchar(50),select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,ProceduresMaster,proccode,nchar(10),join,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,Procedures,ProceduresMaster,stmtdesc,nchar(25),select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_procedures.sql,no
+DMZ,conv,cac_adv_reactions,adv_reaction_key,int,join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergy_reactions.sql,no
+DMZ,conv,cac_adv_reactions,name,nvarchar(30),select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergy_reactions.sql,no
+DMZ,conv,cac_alrg_cat,alrg_cat_key,int,join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_alrg_cat,name,nvarchar(30),select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_alrg_code,alrg_code_key,int,join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_alrg_code,description,nvarchar(50),select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_alrg_code,name,nvarchar(30),select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_alrg_status,alrg_stat_key,int,join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_alrg_status,name,nvarchar(30),select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_amt_uom,abbrev,nchar(10),select,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,conv,cac_amt_uom,amt_uom_key,int,join,Pre-2010 Medications; Pre-2010 Overview,dmz/legacy_medications.sql,no
+DMZ,conv,cac_chrt_header,drno,nchar(4),join,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Vitals,dmz/legacy_notes.sql,no
+DMZ,conv,cac_chrt_header,faccode,nchar(4),join,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Vitals,dmz/legacy_notes.sql,no
+DMZ,conv,cac_chrt_header,mrc_key,int,join,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Vitals,dmz/legacy_notes.sql,no
+DMZ,conv,cac_chrt_header,note_id,int,select|join|filter,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Print; Pre-2010 Vitals,dmz/legacy_note_result_links.sql; dmz/legacy_note_text.sql; dmz/legacy_notes.sql,no
+DMZ,conv,cac_chrt_header,patkey,int,filter,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Print; Pre-2010 Vitals,dmz/legacy_note_result_links.sql; dmz/legacy_note_text.sql; dmz/legacy_notes.sql,no
+DMZ,conv,cac_chrt_header,service_datetime,datetime,select,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Print; Pre-2010 Vitals,dmz/legacy_note_text.sql; dmz/legacy_notes.sql,no
+DMZ,conv,cac_chrt_rtf,note_id,int,join|filter,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Print; Pre-2010 Vitals,dmz/legacy_note_text.sql; dmz/legacy_notes.sql,no
+DMZ,conv,cac_chrt_rtf,note_text,nvarchar(max),select,Pre-2010 Chart notes; Pre-2010 Print,dmz/legacy_note_text.sql,no
+DMZ,conv,cac_chrt_rtf,rownum,int,select|sort,Pre-2010 Chart notes; Pre-2010 Print,dmz/legacy_note_text.sql,no
+DMZ,conv,cac_clin_refitem,clin_refitem_key,int,join,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,dmz/legacy_clinical_items.sql,no
+DMZ,conv,cac_clin_refitem,name,nvarchar(30),select,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,dmz/legacy_clinical_items.sql,no
+DMZ,conv,cac_control_values,display_text,nvarchar(50),select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_control_values,lookup_key,int,join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_diaglink,dxcode,nchar(10),select|join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_diagnoses.sql,no
+DMZ,conv,cac_diaglink,dxpriority,smallint,select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_diagnoses.sql,no
+DMZ,conv,cac_diaglink,systestorderno,int,select|join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_diagnoses.sql,no
+DMZ,conv,cac_pat_alrg,active_flag,nchar(1),select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_pat_alrg,alrg_cat_key,int,join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_pat_alrg,alrg_code_key,int,join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_pat_alrg,alrg_stat_key,int,select|join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_pat_alrg,comment,nvarchar(50),select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_pat_alrg,date_of_service,datetime,select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_pat_alrg,drno,nchar(4),join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_pat_alrg,pat_alrg_key,int,select|join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql; dmz/legacy_allergy_reactions.sql,no
+DMZ,conv,cac_pat_alrg,patkey,int,filter,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql; dmz/legacy_allergy_reactions.sql,no
+DMZ,conv,cac_pat_alrg,severity_key,int,join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergies.sql,no
+DMZ,conv,cac_pat_alrg_det,adv_reaction_key,int,join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergy_reactions.sql,no
+DMZ,conv,cac_pat_alrg_det,pat_alrg_key,int,select|join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_allergy_reactions.sql,no
+DMZ,conv,cac_pat_pharm_pref,patkey,int,filter,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,cac_pat_pharm_pref,pharmid_area,int,select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,cac_pat_pharm_pref,pharmid_mailord,int,select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,cac_pat_pharm_pref,pharmidkey,int,select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,cac_pat_photo,patkey,int,filter,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql; dmz/legacy_photo.sql,no
+DMZ,conv,cac_pat_photo,photo,image(2147483647),select,Pre-2010 header,dmz/legacy_photo.sql,no
+DMZ,conv,cac_pat_prob,comment,nvarchar(60),select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_problems.sql,no
+DMZ,conv,cac_pat_prob,drno,nchar(4),join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_problems.sql,no
+DMZ,conv,cac_pat_prob,dxcode,nchar(10),select|join,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_problems.sql,no
+DMZ,conv,cac_pat_prob,log_datetime,datetime,select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_problems.sql,no
+DMZ,conv,cac_pat_prob,onset_date,datetime,select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_problems.sql,no
+DMZ,conv,cac_pat_prob,pat_prob_key,int,select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_problems.sql,no
+DMZ,conv,cac_pat_prob,patkey,int,filter,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_problems.sql,no
+DMZ,conv,cac_pat_prob,prob_stat_key,int,select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_problems.sql,no
+DMZ,conv,cac_pat_prob,provis_dx,nvarchar(50),select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_problems.sql,no
+DMZ,conv,cac_pat_prob,stop_date,datetime,select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_problems.sql,no
+DMZ,conv,cac_patclin_item,clin_ref_value,nvarchar(60),select,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,dmz/legacy_clinical_items.sql,no
+DMZ,conv,cac_patclin_item,clin_refitem_key,int,join,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,dmz/legacy_clinical_items.sql,no
+DMZ,conv,cac_patclin_item,comments,nvarchar(150),select,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,dmz/legacy_clinical_items.sql,no
+DMZ,conv,cac_patclin_item,error_flag,nchar(1),filter,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,dmz/legacy_clinical_items.sql,no
+DMZ,conv,cac_patclin_item,note_id,int,select,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,dmz/legacy_clinical_items.sql,no
+DMZ,conv,cac_patclin_item,pat_clin_item_id,int,select,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,dmz/legacy_clinical_items.sql,no
+DMZ,conv,cac_patclin_item,patkey,int,filter,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,dmz/legacy_clinical_items.sql,no
+DMZ,conv,cac_patclin_item,refhigh,nvarchar(60),select,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,dmz/legacy_clinical_items.sql,no
+DMZ,conv,cac_patclin_item,reflow,nvarchar(60),select,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,dmz/legacy_clinical_items.sql,no
+DMZ,conv,cac_patclin_item,service_datetime,datetime,select,Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Vitals,dmz/legacy_clinical_items.sql,no
+DMZ,conv,cac_rescom,comments,nvarchar(max),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_result_comments.sql,no
+DMZ,conv,cac_rescom,resultno,int,select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_result_comments.sql,no
+DMZ,conv,cac_rescom,sysresultno,int,select|join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_result_comments.sql,no
+DMZ,conv,cac_results,abnormalflags,nchar(30),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_results.sql,no
+DMZ,conv,cac_results,comments,nvarchar(max),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_results.sql,no
+DMZ,conv,cac_results,labresname,nvarchar(120),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_results.sql,no
+DMZ,conv,cac_results,refhigh,nchar(10),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_results.sql,no
+DMZ,conv,cac_results,reflow,nchar(10),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_results.sql,no
+DMZ,conv,cac_results,resultvalue,nchar(15),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_results.sql,no
+DMZ,conv,cac_results,sequence_num,int,select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_results.sql,no
+DMZ,conv,cac_results,status,nchar(2),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_results.sql,no
+DMZ,conv,cac_results,sysresultno,int,select|join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_result_comments.sql; dmz/legacy_lab_results.sql; dmz/legacy_lab_task_comments.sql,no
+DMZ,conv,cac_results,systestordered,int,select|join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_result_comments.sql; dmz/legacy_lab_results.sql; dmz/legacy_lab_task_comments.sql,no
+DMZ,conv,cac_results,uom,nchar(10),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_results.sql,no
+DMZ,conv,drmast,drno,nchar(4),join,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Medications; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Problems & allergies; Pre-2010 Vitals; Pre-2010 header,dmz/legacy_allergies.sql; dmz/legacy_documents.sql; dmz/legacy_lab_orders.sql; dmz/legacy_medications.sql; dmz/legacy_notes.sql; dmz/legacy_past_history.sql; dmz/legacy_patient.sql; dmz/legacy_problems.sql; dmz/legacy_procedures.sql,no
+DMZ,conv,drmast,fname,nchar(25),select,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Medications; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Problems & allergies; Pre-2010 Vitals; Pre-2010 header,dmz/legacy_allergies.sql; dmz/legacy_documents.sql; dmz/legacy_lab_orders.sql; dmz/legacy_medications.sql; dmz/legacy_notes.sql; dmz/legacy_past_history.sql; dmz/legacy_patient.sql; dmz/legacy_problems.sql; dmz/legacy_procedures.sql,no
+DMZ,conv,drmast,lname,nchar(25),select,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Medications; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Problems & allergies; Pre-2010 Vitals; Pre-2010 header,dmz/legacy_allergies.sql; dmz/legacy_documents.sql; dmz/legacy_lab_orders.sql; dmz/legacy_medications.sql; dmz/legacy_notes.sql; dmz/legacy_past_history.sql; dmz/legacy_patient.sql; dmz/legacy_problems.sql; dmz/legacy_procedures.sql,no
+DMZ,conv,drmast,title,nchar(30),select,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Medications; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Problems & allergies; Pre-2010 Vitals; Pre-2010 header,dmz/legacy_allergies.sql; dmz/legacy_documents.sql; dmz/legacy_lab_orders.sql; dmz/legacy_medications.sql; dmz/legacy_notes.sql; dmz/legacy_past_history.sql; dmz/legacy_patient.sql; dmz/legacy_problems.sql; dmz/legacy_procedures.sql,no
+DMZ,conv,dxmast,dxcode,nchar(10),join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Medications; Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_lab_diagnoses.sql; dmz/legacy_medications.sql; dmz/legacy_problems.sql,no
+DMZ,conv,dxmast,dxdesc1,nchar(50),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Medications; Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_lab_diagnoses.sql; dmz/legacy_medications.sql; dmz/legacy_problems.sql,no
+DMZ,conv,dxmast,dxdesc2,nchar(50),select,Pre-2010 Overview; Pre-2010 Problems & allergies,dmz/legacy_problems.sql,no
+DMZ,conv,facmast,faccode,nchar(4),join,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Vitals; Pre-2010 header,dmz/legacy_lab_orders.sql; dmz/legacy_notes.sql; dmz/legacy_patient.sql,no
+DMZ,conv,facmast,facname,nchar(30),select,Pre-2010 Chart notes; Pre-2010 Documents; Pre-2010 Lab results; Pre-2010 Overview; Pre-2010 Past history; Pre-2010 Vitals; Pre-2010 header,dmz/legacy_lab_orders.sql; dmz/legacy_notes.sql; dmz/legacy_patient.sql,no
+DMZ,conv,pat_ext_info,alt_id,nchar(30),select,Pre-2010 Overview,dmz/legacy_external_ids.sql,no
+DMZ,conv,pat_ext_info,ext_id,nchar(30),select,Pre-2010 Overview,dmz/legacy_external_ids.sql,no
+DMZ,conv,pat_ext_info,log_datetime,datetime,select,Pre-2010 Overview,dmz/legacy_external_ids.sql,no
+DMZ,conv,pat_ext_info,patkey,int,filter,Pre-2010 Overview,dmz/legacy_external_ids.sql,no
+DMZ,conv,pat_ext_info,send_source,nchar(20),select,Pre-2010 Overview,dmz/legacy_external_ids.sql,no
+DMZ,conv,patgroup,drno,nchar(4),join,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,patgroup,faccode,nchar(4),join,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,patgroup,patkey,int,join,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,patnotes,blinkmsg,nchar(1),select,Pre-2010 Account notes; Pre-2010 Overview,dmz/legacy_account_notes.sql,no
+DMZ,conv,patnotes,editdate,datetime,select,Pre-2010 Account notes; Pre-2010 Overview,dmz/legacy_account_notes.sql,no
+DMZ,conv,patnotes,entrydt,datetime,select,Pre-2010 Account notes; Pre-2010 Overview,dmz/legacy_account_notes.sql,no
+DMZ,conv,patnotes,notetext,nchar(55),select,Pre-2010 Account notes; Pre-2010 Overview,dmz/legacy_account_notes.sql,no
+DMZ,conv,patnotes,notetype,nchar(4),select,Pre-2010 Account notes; Pre-2010 Overview,dmz/legacy_account_notes.sql,no
+DMZ,conv,patnotes,order_no,int,select,Pre-2010 Account notes; Pre-2010 Overview,dmz/legacy_account_notes.sql,no
+DMZ,conv,patnotes,patkey,int,filter,Pre-2010 Account notes; Pre-2010 Overview,dmz/legacy_account_notes.sql,no
+DMZ,conv,person,alias,nchar(25),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,birthdate,datetime,select|filter,Pre-2010 Overview; Pre-2010 header; Pre-2010 patient list,dmz/legacy_patient.sql; dmz/legacy_patient_search.sql,no
+DMZ,conv,person,city,nchar(20),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,deceased,datetime,select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,email,nvarchar(50),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,entrydate,datetime,select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,fname,nchar(25),select|filter|sort,Pre-2010 Overview; Pre-2010 header; Pre-2010 patient list,dmz/legacy_patient.sql; dmz/legacy_patient_search.sql,no
+DMZ,conv,person,harea,nchar(3),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,hphone,nchar(8),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,lname,nchar(25),select|filter|sort,Pre-2010 Overview; Pre-2010 header; Pre-2010 patient list,dmz/legacy_patient.sql; dmz/legacy_patient_search.sql,no
+DMZ,conv,person,marstat,nchar(1),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,mi,nchar(1),select,Pre-2010 Overview; Pre-2010 header; Pre-2010 patient list,dmz/legacy_patient.sql; dmz/legacy_patient_search.sql,no
+DMZ,conv,person,patid,nchar(10),select|filter,Pre-2010 Overview; Pre-2010 header; Pre-2010 patient list,dmz/legacy_patient.sql; dmz/legacy_patient_search.sql,no
+DMZ,conv,person,pattype,nchar(2),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,personkey,int,select|join|filter|sort,Pre-2010 Overview; Pre-2010 header; Pre-2010 patient list,dmz/legacy_patient.sql; dmz/legacy_patient_search.sql,no
+DMZ,conv,person,race,nchar(2),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,sex,nchar(1),select,Pre-2010 Overview; Pre-2010 header; Pre-2010 patient list,dmz/legacy_patient.sql; dmz/legacy_patient_search.sql,no
+DMZ,conv,person,state,nchar(2),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,street1,nchar(30),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,street2,nchar(30),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,street3,nchar(30),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,suffix,nchar(3),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,warea,nchar(3),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,wext,nchar(4),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,wphone,nchar(8),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,person,zip,nchar(6),select,Pre-2010 Overview; Pre-2010 header,dmz/legacy_patient.sql,no
+DMZ,conv,pharmmast,areacd1,nchar(3),select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,pharmmast,areacdfax,nchar(3),select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,pharmmast,city,nchar(20),select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,pharmmast,pharmid,int,join,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,pharmmast,pharmname,nchar(40),select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,pharmmast,phone1,nchar(8),select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,pharmmast,phonefax,nchar(8),select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,pharmmast,state,nchar(2),select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,pharmmast,street1,nchar(30),select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,pharmmast,street2,nchar(30),select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,conv,pharmmast,zipcode,nchar(6),select,Pre-2010 Overview,dmz/legacy_pharmacies.sql,no
+DMZ,dbo,Gloss_base,ChartText,varchar(max),select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_past_history.sql,no
+DMZ,dbo,Gloss_base,categorycode,int,select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_past_history.sql,no
+DMZ,dbo,Gloss_base,drno,nchar(8),join,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_past_history.sql,no
+DMZ,dbo,Gloss_base,glossary_text,nvarchar(4000),select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_past_history.sql,no
+DMZ,dbo,Gloss_base,glossarylayoutkey,int,select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_past_history.sql,no
+DMZ,dbo,Gloss_base,hx_element,varchar(80),select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_past_history.sql,no
+DMZ,dbo,Gloss_base,hxkndgcodeChar,varchar(15),select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_past_history.sql,no
+DMZ,dbo,Gloss_base,note_id,int,select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_past_history.sql,no
+DMZ,dbo,Gloss_base,patkey,int,filter,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_past_history.sql,no
+DMZ,dbo,Gloss_base,rownum,int,select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_past_history.sql,no
+DMZ,dbo,Gloss_base,service_datetime,datetime,select,Pre-2010 Overview; Pre-2010 Past history,dmz/legacy_past_history.sql,no
+DMZ,dbo,Resultsmigratetbl,orderdate,datetime,select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_orders.sql,no
+DMZ,dbo,Resultsmigratetbl,resdate,datetime,select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_orders.sql,no
+DMZ,dbo,Resultsmigratetbl,servicedate,datetime,select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_orders.sql,no
+DMZ,dbo,Resultsmigratetbl,sysorderno,int,join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_orders.sql,no
+DMZ,dbo,ScannedImages,DocDate,datetime,select,Pre-2010 Documents; Pre-2010 Overview,dmz/legacy_documents.sql,no
+DMZ,dbo,ScannedImages,Errorflag,int,filter,Pre-2010 Documents; Pre-2010 Overview,dmz/legacy_document_file.sql; dmz/legacy_documents.sql,no
+DMZ,dbo,ScannedImages,FileExt,varchar(3),select,Pre-2010 Documents; Pre-2010 Overview,dmz/legacy_document_file.sql; dmz/legacy_documents.sql,no
+DMZ,dbo,ScannedImages,Imageid,int,select|filter,Pre-2010 Documents; Pre-2010 Overview,dmz/legacy_document_file.sql; dmz/legacy_documents.sql,no
+DMZ,dbo,ScannedImages,MRCName,varchar(100),select,Pre-2010 Documents; Pre-2010 Overview,dmz/legacy_documents.sql,no
+DMZ,dbo,ScannedImages,drno,char(4),join,Pre-2010 Documents; Pre-2010 Overview,dmz/legacy_documents.sql,no
+DMZ,dbo,ScannedImages,fpath,varchar(500),select,Pre-2010 Documents,dmz/legacy_document_file.sql,no
+DMZ,dbo,ScannedImages,ipages,int,select,Pre-2010 Documents; Pre-2010 Overview,dmz/legacy_document_file.sql; dmz/legacy_documents.sql,no
+DMZ,dbo,ScannedImages,noteid,int,select,Pre-2010 Documents; Pre-2010 Overview,dmz/legacy_documents.sql,no
+DMZ,dbo,ScannedImages,patkey,int,filter,Pre-2010 Documents; Pre-2010 Overview,dmz/legacy_document_file.sql; dmz/legacy_documents.sql,no
+DMZ,dbo,ScannedImages,scanneddate,datetime,select,Pre-2010 Documents; Pre-2010 Overview,dmz/legacy_documents.sql,no
+DMZ,dbo,TestResultOrdertbl,CollectedDate,datetime,select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_tests.sql,no
+DMZ,dbo,TestResultOrdertbl,systestorderno,int,join,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_tests.sql,no
+DMZ,dbo,TestResultOrdertbl,testComments,varchar(max),select,Pre-2010 Chart notes; Pre-2010 Lab results; Pre-2010 Overview,dmz/legacy_lab_tests.sql,no
+EMR,HPSITE,ADDRESSES,ADDR_ADDRESS,varchar(154),select,Overview; PDF export; Patient header; Print,emr/patient_contacts.sql; emr/patient_header_full.sql; emr/patient_profile.sql,no
+EMR,HPSITE,ADDRESSES,ADDR_CARPHONE,varchar(21),select,Overview; PDF export,emr/patient_contacts.sql,no
+EMR,HPSITE,ADDRESSES,ADDR_CITY,varchar(25),select,Overview; PDF export; Patient header; Print,emr/patient_contacts.sql; emr/patient_header_full.sql; emr/patient_profile.sql,no
+EMR,HPSITE,ADDRESSES,ADDR_EMAILADDRESS,varchar(256),select,Overview; PDF export,emr/patient_contacts.sql,no
+EMR,HPSITE,ADDRESSES,ADDR_PHONE,varchar(21),select,Overview; PDF export; Patient header; Print,emr/patient_contacts.sql; emr/patient_header_full.sql; emr/patient_insurances.sql; emr/patient_profile.sql,no
+EMR,HPSITE,ADDRESSES,ADDR_STATE,varchar(5),select,Overview; PDF export; Patient header; Print,emr/patient_contacts.sql; emr/patient_header_full.sql; emr/patient_profile.sql,no
+EMR,HPSITE,ADDRESSES,ADDR_ZIP,varchar(10),select,Overview; PDF export; Patient header; Print,emr/patient_contacts.sql; emr/patient_header_full.sql; emr/patient_profile.sql,no
+EMR,HPSITE,ADDRESSES,IMREADDR_CODE,int,join,Overview; PDF export; Patient header; Print,emr/patient_contacts.sql; emr/patient_header_full.sql; emr/patient_insurances.sql; emr/patient_profile.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,ACTIVITY_CODE,smallint,select,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,COMMENTS,varchar(2000),select,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,CONTACT_ID,int,select,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,HXDIAGNOSIS_ID,int,filter,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,ONSETDATEMASK_CODE,smallint,select,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,ONSET_DATE,datetimeoffset,select,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,PATIENT_ID,int,filter,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,REASONOFCHANGE,varchar(240),select,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,RESOLVED_DATE,date,select,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,SIGNIFICANCE_CODE,smallint,select,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,TAG_REVISION,int,select,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,TAG_SYSTEMDATE,datetimeoffset,select,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_HXDIAGNOSIS,TITLE,varchar(240),select,Problems & allergies,emr/history_changes.sql,no
+EMR,HPSITE,ARCH_SCHEDULE,IMREDEM_CODE,int,filter,Appointments; PDF export,emr/appointments.sql,no
+EMR,HPSITE,ARCH_SCHEDULE,IMREPROV_CODE,int,join,Appointments; PDF export,emr/appointments.sql,no
+EMR,HPSITE,ARCH_SCHEDULE,IMRESCHED_CODE,int,select,Appointments; PDF export,emr/appointments.sql,no
+EMR,HPSITE,ARCH_SCHEDULE,LOCATION_ID,int,join,Appointments; PDF export,emr/appointments.sql,no
+EMR,HPSITE,ARCH_SCHEDULE,SCHED_COMMENT,varchar(240),select,Appointments; PDF export,emr/appointments.sql,no
+EMR,HPSITE,ARCH_SCHEDULE,SCHED_DATE,datetimeoffset,select,Appointments; PDF export,emr/appointments.sql,no
+EMR,HPSITE,ARCH_SCHEDULE,SCHED_PMSID,varchar(30),select,Appointments; PDF export,emr/appointments.sql,no
+EMR,HPSITE,ARCH_SCHEDULE,SCHED_STATUS,smallint,select,Appointments; PDF export,emr/appointments.sql,no
+EMR,HPSITE,ARCH_SCHEDULE,SCHED_TIMEIN,datetimeoffset,select,Appointments; PDF export,emr/appointments.sql,no
+EMR,HPSITE,ARCH_SCHEDULE,SCHED_TIMEOUT,datetimeoffset,select,Appointments; PDF export,emr/appointments.sql,no
+EMR,HPSITE,CHARTATTACHMENT,CHAT_CONTENT,int,select,Documents; PDF export,emr/chart_attachments.sql,no
+EMR,HPSITE,CHARTATTACHMENT,CHAT_DATE,datetimeoffset,select,Documents; PDF export,emr/chart_attachments.sql,no
+EMR,HPSITE,CHARTATTACHMENT,CHAT_DATEMASK,smallint,select,Documents; PDF export,emr/chart_attachments.sql,no
+EMR,HPSITE,CHARTATTACHMENT,CHAT_SUBJECT,varchar(80),select,Documents; PDF export,emr/chart_attachments.sql,no
+EMR,HPSITE,CHARTATTACHMENT,IMREDEMEC_CODE,int,filter,Documents; PDF export,emr/chart_attachment_file.sql; emr/chart_attachment_text.sql; emr/chart_attachments.sql,no
+EMR,HPSITE,CHARTATTACHMENT,IMRENOTE_CODE,int,select|join|filter,Documents; PDF export,emr/chart_attachment_file.sql; emr/chart_attachment_text.sql; emr/chart_attachments.sql,no
+EMR,HPSITE,CHARTATTACHMENT,IMREPROV_CODE,int,join,Documents; PDF export,emr/chart_attachments.sql,no
+EMR,HPSITE,CHARTATTACHMENT,TAG_ARCHIVED,tinyint,filter,Documents; PDF export,emr/chart_attachment_file.sql; emr/chart_attachment_text.sql; emr/chart_attachments.sql,no
+EMR,HPSITE,CHART_ADDENDUM,ADDENDUM_DT,datetimeoffset,select,PDF export; Print; Visits,emr/visit_addenda.sql,no
+EMR,HPSITE,CHART_ADDENDUM,IMREENC_CODE,int,filter,PDF export; Print; Visits,emr/visit_addenda.sql,no
+EMR,HPSITE,CHART_ADDENDUM,IMRENOTE_CODE,int,filter,PDF export; Print; Visits,emr/visit_addenda.sql,no
+EMR,HPSITE,CHART_ADDENDUM,IMREPROV_CODE,int,join,PDF export; Print; Visits,emr/visit_addenda.sql,no
+EMR,HPSITE,CONTACT,CON_CANCELED,tinyint,join|filter,CLI only; Dashboard / patient list; Overview; PDF export; Print; Visits,emr/encounter_header.sql; emr/encounter_text_notes.sql; emr/last_visit_detail.sql; emr/last_visit_for_patients.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql; emr/visits_year_counts.sql,no
+EMR,HPSITE,CONTACT,CON_START,datetimeoffset,select|sort,CLI only; Dashboard / patient list; Overview; PDF export; Print; Visits,emr/encounter_header.sql; emr/encounter_text_notes.sql; emr/last_visit_detail.sql; emr/last_visit_for_patients.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql; emr/visits_year_counts.sql,no
+EMR,HPSITE,CONTACT,IMRECONTACT_CODE,int,select|join|filter,Overview; PDF export; Print; Problems & allergies; Visits,emr/encounter_text_notes.sql; emr/history_changes.sql; emr/history_entries.sql; emr/last_visit_detail.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_of_types.sql,no
+EMR,HPSITE,CONTACT,IMREENC_CODE,int,join|filter,CLI only; Dashboard / patient list; Overview; PDF export; Print; Visits,emr/encounter_header.sql; emr/encounter_text_notes.sql; emr/last_visit_detail.sql; emr/last_visit_for_patients.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql; emr/visits_year_counts.sql,no
+EMR,HPSITE,CONTACT,IMREPROV_CODE,int,select|join|filter,Overview; PDF export; Print; Problems & allergies; Visits,emr/encounter_header.sql; emr/history_changes.sql; emr/history_entries.sql; emr/last_visit_detail.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql; emr/visits_year_counts.sql,no
+EMR,HPSITE,DEMGUARANTOR,GUARANTOR_ADDRESS,int,join,Overview; PDF export,emr/patient_profile.sql,no
+EMR,HPSITE,DEMGUARANTOR,GUARANTOR_CODE,int,join,Overview; PDF export,emr/patient_profile.sql,no
+EMR,HPSITE,DEMGUARANTOR,GUARANTOR_DATEOFBIRTH,date,select,Overview; PDF export,emr/patient_profile.sql,no
+EMR,HPSITE,DEMGUARANTOR,GUARANTOR_FIRSTNAME,varchar(30),select,Overview; PDF export,emr/patient_profile.sql,no
+EMR,HPSITE,DEMGUARANTOR,GUARANTOR_LASTNAME,varchar(30),select,Overview; PDF export,emr/patient_profile.sql,no
+EMR,HPSITE,DEMGUARANTOR,GUARANTOR_MIDDLEINITIAL,varchar(5),select,Overview; PDF export,emr/patient_profile.sql,no
+EMR,HPSITE,DEMGUARANTOR,GUARANTOR_SUFFIX,varchar(8),select,Overview; PDF export,emr/patient_profile.sql,no
+EMR,HPSITE,DEMOGRAPHICPICTURE,DEM_PICTURE,varbinary(max),select,Patient header,emr/patient_photo.sql,no
+EMR,HPSITE,DEMOGRAPHICPICTURE,IMREDEM_CODE,int,filter,Overview; PDF export; Patient header; Print,emr/patient_header_full.sql; emr/patient_photo.sql; emr/patient_profile.sql,no
+EMR,HPSITE,DEMOGRAPHICS,DEM_DATEOFBIRTH,date,select|filter,CLI only; Dashboard / patient list; PDF export; Patient header; Print,emr/patient_header_full.sql; emr/patient_search.sql,no
+EMR,HPSITE,DEMOGRAPHICS,DEM_DATEOFBIRTHMASK,int,select,CLI only; Dashboard / patient list; PDF export; Patient header; Print,emr/patient_header_full.sql; emr/patient_search.sql,no
+EMR,HPSITE,DEMOGRAPHICS,DEM_DATEOFDEATH,date,select,PDF export; Patient header; Print,emr/patient_header_full.sql,no
+EMR,HPSITE,DEMOGRAPHICS,DEM_DATEOFDEATHMASK,int,select,PDF export; Patient header; Print,emr/patient_header_full.sql,no
+EMR,HPSITE,DEMOGRAPHICS,DEM_DECEASED,tinyint,select,CLI only; Dashboard / patient list; PDF export; Patient header; Print,emr/patient_header_full.sql; emr/patient_search.sql,no
+EMR,HPSITE,DEMOGRAPHICS,DEM_FIRSTNAME,varchar(30),select|filter|sort,CLI only; Dashboard / patient list; Notes (message names); PDF export; Patient header; Print; Release log,emr/patient_header_full.sql; emr/patient_names.sql; emr/patient_search.sql,no
+EMR,HPSITE,DEMOGRAPHICS,DEM_HOMEADDR,int,join,PDF export; Patient header; Print,emr/patient_header_full.sql,no
+EMR,HPSITE,DEMOGRAPHICS,DEM_LASTNAME,varchar(30),select|filter|sort,CLI only; Dashboard / patient list; Notes (message names); PDF export; Patient header; Print; Release log,emr/patient_header_full.sql; emr/patient_names.sql; emr/patient_search.sql,no
+EMR,HPSITE,DEMOGRAPHICS,DEM_MARITALSTATUS,int,select,Overview; PDF export,emr/patient_profile.sql,no
+EMR,HPSITE,DEMOGRAPHICS,DEM_MIDDLEINITIAL,varchar(30),select,CLI only; Dashboard / patient list; Notes (message names); PDF export; Patient header; Print; Release log,emr/patient_header_full.sql; emr/patient_names.sql; emr/patient_search.sql,no
+EMR,HPSITE,DEMOGRAPHICS,DEM_PATREL_TOGUARANTOR,int,select,Overview; PDF export,emr/patient_profile.sql,no
+EMR,HPSITE,DEMOGRAPHICS,DEM_SEX,int,select,CLI only; Dashboard / patient list; PDF export; Patient header; Print,emr/patient_header_full.sql; emr/patient_search.sql,no
+EMR,HPSITE,DEMOGRAPHICS,GUARANTOR_CODE,int,join,Overview; PDF export,emr/patient_profile.sql,no
+EMR,HPSITE,DEMOGRAPHICS,IMREDEM_CODE,int,select|join|filter|sort,CLI build-crosswalk (patient links); CLI only; Dashboard / patient list; Notes (message names); Overview; PDF export; Patient header; Print; Release log,emr/crosswalk_emr_ntier.sql; emr/patient_header_full.sql; emr/patient_names.sql; emr/patient_profile.sql; emr/patient_search.sql,no
+EMR,HPSITE,DX,DX_CODE,varchar(10),select,Lab results; PDF export; Visits,emr/lab_orders.sql; emr/visit_assessment.sql; emr/visits_diagnoses.sql; emr/visits_list.sql; emr/visits_summary.sql,no
+EMR,HPSITE,DX,DX_DESCRIPTION,varchar(240),select,Visits,emr/visits_diagnoses.sql; emr/visits_list.sql; emr/visits_summary.sql,no
+EMR,HPSITE,DX,DX_SOURCE,varchar(15),select,PDF export,emr/visit_assessment.sql,no
+EMR,HPSITE,DX,DX_TITLE,varchar(240),select,Lab results; PDF export; Visits,emr/lab_orders.sql; emr/visit_assessment.sql; emr/visits_diagnoses.sql; emr/visits_list.sql; emr/visits_summary.sql,no
+EMR,HPSITE,DX,IMREDX_CODE,int,join|filter,Lab results; PDF export; Visits,emr/lab_orders.sql; emr/visit_assessment.sql; emr/visits_diagnoses.sql; emr/visits_list.sql; emr/visits_summary.sql,no
+EMR,HPSITE,DX,TAG_REVISION,int,join|sort,Lab results; PDF export; Visits,emr/lab_orders.sql; emr/visit_assessment.sql; emr/visits_diagnoses.sql; emr/visits_list.sql; emr/visits_summary.sql,no
+EMR,HPSITE,ENCOUNTER,ENC_DIAGNOSES,varchar(255),select,PDF export,emr/visit_one.sql; emr/visits.sql; emr/visits_of_types.sql,no
+EMR,HPSITE,ENCOUNTER,ENC_SIGNED,tinyint,select,PDF export; Print; Visits,emr/encounter_header.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql; emr/visits_year_counts.sql,no
+EMR,HPSITE,ENCOUNTER,ENC_VISITTYPE,int,select|filter,Overview; PDF export; Print; Visits,emr/encounter_header.sql; emr/last_visit_detail.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql; emr/visits_year_counts.sql,no
+EMR,HPSITE,ENCOUNTER,IMREDEMEC_CODE,int,select|join|filter,CLI only; Dashboard / patient list; Notes; Overview; PDF export; Print; Visits,emr/encounter_header.sql; emr/last_visit_detail.sql; emr/last_visit_for_patients.sql; emr/notes_list_docs.sql; emr/notes_list_messages.sql; emr/notes_list_portal.sql; emr/notes_list_trans.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql; emr/visits_year_counts.sql,no
+EMR,HPSITE,ENCOUNTER,IMREENC_CODE,int,select|join|filter,CLI only; Dashboard / patient list; Notes; Overview; PDF export; Print; Visits,emr/encounter_header.sql; emr/last_visit_detail.sql; emr/last_visit_for_patients.sql; emr/notes_list_docs.sql; emr/notes_list_messages.sql; emr/notes_list_portal.sql; emr/notes_list_trans.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql; emr/visits_year_counts.sql,no
+EMR,HPSITE,ENCOUNTER,IMREPROV_CODE,int,select|join,Overview; PDF export; Print; Visits,emr/encounter_header.sql; emr/last_visit_detail.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql; emr/visits_year_counts.sql,no
+EMR,HPSITE,ENCOUNTER,LOCATION_ID,int,select|join,Overview; PDF export; Print; Visits,emr/encounter_header.sql; emr/last_visit_detail.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql; emr/visits_year_counts.sql,no
+EMR,HPSITE,ENCOUNTER_ASSESSMENT,DX_ID,int,join|filter,PDF export; Visits,emr/visit_assessment.sql; emr/visits_diagnoses.sql; emr/visits_list.sql; emr/visits_summary.sql,no
+EMR,HPSITE,ENCOUNTER_ASSESSMENT,DX_REVISION,int,join,PDF export,emr/visit_assessment.sql,no
+EMR,HPSITE,ENCOUNTER_ASSESSMENT,ENCOUNTER_ID,int,select|join|filter,PDF export; Visits,emr/visit_assessment.sql; emr/visits_diagnoses.sql; emr/visits_list.sql; emr/visits_summary.sql,no
+EMR,HPSITE,ENCOUNTER_ASSESSMENT,SORTORDER,tinyint,select,PDF export; Visits,emr/visit_assessment.sql; emr/visits_diagnoses.sql,no
+EMR,HPSITE,ENCOUNTER_PLAN,ENCOUNTER_ID,int,filter,PDF export; Print; Visits,emr/visit_plan.sql,no
+EMR,HPSITE,ENCOUNTER_PLAN,SORTORDER,tinyint,select,PDF export; Print; Visits,emr/visit_plan.sql,no
+EMR,HPSITE,ENCOUNTER_PLAN,SOURCE,varchar(15),select|join|filter,PDF export; Print; Visits,emr/visit_plan.sql,no
+EMR,HPSITE,ENCOUNTER_PLAN,SOURCE_ID,int,join|filter,PDF export; Print; Visits,emr/visit_plan.sql,no
+EMR,HPSITE,ENCOUNTER_PLAN,SOURCE_REVISION,int,sort,PDF export; Print; Visits,emr/visit_plan.sql,no
+EMR,HPSITE,EXTSYS_PATIENTINDEX,IMREDEM_CODE,int,join,CLI build-crosswalk (patient links),emr/crosswalk_emr_ntier.sql,no
+EMR,HPSITE,EXTSYS_PATIENTINDEX,PATIENTID,varchar(30),join,CLI build-crosswalk (patient links),emr/crosswalk_emr_ntier.sql,no
+EMR,HPSITE,HTML_DOCUMENTMAP,DOCUMENT_ID,int,select|join|filter,Notes; PDF export; Print; Visits,emr/notes_doc_sources.sql; emr/notes_list_docs.sql; emr/visit_documents.sql,no
+EMR,HPSITE,HTML_DOCUMENTMAP,MAP_ID,int,sort,Notes,emr/notes_list_docs.sql,no
+EMR,HPSITE,HTML_DOCUMENTMAP,SOURCE,varchar(30),select|filter,Notes; PDF export; Print; Visits,emr/notes_doc_sources.sql; emr/notes_list_docs.sql; emr/visit_documents.sql,no
+EMR,HPSITE,HTML_DOCUMENTMAP,SOURCE_CODE,varchar(10),select|join|filter,Notes; PDF export; Print; Visits,emr/notes_list_docs.sql; emr/visit_documents.sql,no
+EMR,HPSITE,HTML_DOCUMENT_ORIG,AUTHOR,varchar(200),select,Documents; Notes; PDF export; Print; Visits,emr/document_content.sql; emr/notes_list_docs.sql; emr/patient_documents.sql; emr/visit_documents.sql,no
+EMR,HPSITE,HTML_DOCUMENT_ORIG,CREATED_DATE,datetimeoffset,select,Documents; Notes; PDF export; Print; Visits,emr/document_content.sql; emr/notes_list_docs.sql; emr/patient_documents.sql; emr/visit_documents.sql,no
+EMR,HPSITE,HTML_DOCUMENT_ORIG,DOCUMENT,varbinary(max),select,Documents; Notes; PDF export; Print; Visits,emr/document_content.sql,no
+EMR,HPSITE,HTML_DOCUMENT_ORIG,DOCUMENT_ID,int,select|join|filter,Documents; Notes; PDF export; Print; Visits,emr/document_content.sql; emr/notes_doc_sources.sql; emr/notes_list_docs.sql; emr/patient_documents.sql; emr/visit_documents.sql,no
+EMR,HPSITE,HTML_DOCUMENT_ORIG,PATIENT_ID,int,join|filter,Documents; Notes; PDF export; Print; Visits,emr/document_content.sql; emr/notes_doc_sources.sql; emr/notes_list_docs.sql; emr/patient_documents.sql; emr/visit_documents.sql,no
+EMR,HPSITE,HTML_DOCUMENT_ORIG,STATUS,tinyint,select,Documents; Notes; PDF export,emr/notes_list_docs.sql; emr/patient_documents.sql,no
+EMR,HPSITE,HTML_DOCUMENT_ORIG,TITLE,varchar(255),select,Documents; Notes; PDF export; Print; Visits,emr/document_content.sql; emr/notes_list_docs.sql; emr/patient_documents.sql; emr/visit_documents.sql,no
+EMR,HPSITE,HXDIAGNOSIS_ATTRIBUTES,ATTRIBUTEVALUE,varchar(200),select,PDF export; Problems & allergies,emr/history_entry_attributes.sql,no
+EMR,HPSITE,HXDIAGNOSIS_ATTRIBUTES,HXATTRIBUTE_ID,int,select,PDF export; Problems & allergies,emr/history_entry_attributes.sql,no
+EMR,HPSITE,HXDIAGNOSIS_ATTRIBUTES,HXDIAGNOSIS_ID,int,select|join|filter|sort,Overview; PDF export; Problems & allergies,emr/history_attributes.sql; emr/history_entry_attributes.sql,no
+EMR,HPSITE,HXDIAGNOSIS_ATTRIBUTES,SEVERITY_CODE,int,select,PDF export; Problems & allergies,emr/history_entry_attributes.sql,no
+EMR,HPSITE,HXDIAGNOSIS_ATTRIBUTES,SORTORDER,smallint,select,Overview; PDF export; Problems & allergies,emr/history_attributes.sql; emr/history_entry_attributes.sql,no
+EMR,HPSITE,HXDIAGNOSIS_ATTRIBUTES,TAG_REVISION,smallint,sort,Overview; PDF export; Problems & allergies,emr/history_attributes.sql; emr/history_entry_attributes.sql,no
+EMR,HPSITE,HXDIAGNOSIS_ATTRIBUTES,TITLE,varchar(240),select,Overview; PDF export; Problems & allergies,emr/history_attributes.sql; emr/history_entry_attributes.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,ACTIVITY_CODE,smallint,select,Overview; PDF export; Problems & allergies,emr/history_changes.sql; emr/history_entries.sql; emr/history_items.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,ACUITY_CODE,smallint,select,PDF export; Problems & allergies,emr/history_entries.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,BASIS,varchar(2000),select,PDF export; Problems & allergies,emr/history_entries.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,CATEGORY_CODE,tinyint,select|filter,Overview; PDF export; Problems & allergies,emr/history_attributes.sql; emr/history_entries.sql; emr/history_items.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,COMMENTS,varchar(2000),select,PDF export; Problems & allergies,emr/history_changes.sql; emr/history_entries.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,CONTACT_ID,int,select,PDF export; Problems & allergies,emr/history_changes.sql; emr/history_entries.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,DESCRIPTION,varchar(240),select,PDF export; Problems & allergies,emr/history_entries.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,HXDIAGNOSIS_ID,int,select|join|filter|sort,Overview; PDF export; Problems & allergies,emr/history_attributes.sql; emr/history_changes.sql; emr/history_entries.sql; emr/history_entry_attributes.sql; emr/history_items.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,IMO_CODE,int,select,PDF export; Problems & allergies,emr/history_entries.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,ONSETDATEMASK_CODE,smallint,select,Overview; PDF export; Problems & allergies,emr/history_changes.sql; emr/history_entries.sql; emr/history_items.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,ONSET_DATE,datetimeoffset,select,Overview; PDF export; Problems & allergies,emr/history_changes.sql; emr/history_entries.sql; emr/history_items.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,PATIENT_ID,int,filter,Overview; PDF export; Problems & allergies,emr/history_attributes.sql; emr/history_changes.sql; emr/history_entries.sql; emr/history_entry_attributes.sql; emr/history_items.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,REASONOFCHANGE,varchar(240),select,PDF export; Problems & allergies,emr/history_changes.sql; emr/history_entries.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,RESOLVED_DATE,date,select,Overview; PDF export; Problems & allergies,emr/history_changes.sql; emr/history_entries.sql; emr/history_items.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,SIGNIFICANCE_CODE,smallint,select,PDF export; Problems & allergies,emr/history_changes.sql; emr/history_entries.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,SOURCE,varchar(15),select,Overview; PDF export; Problems & allergies,emr/history_entries.sql; emr/history_items.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,SOURCE_CODE,varchar(10),select,Overview; PDF export; Problems & allergies,emr/history_entries.sql; emr/history_items.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,TAG_REVISION,smallint,select|sort,Overview; PDF export; Problems & allergies,emr/history_changes.sql; emr/history_entries.sql; emr/history_items.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,TAG_SYSTEMDATE,datetimeoffset,select,PDF export; Problems & allergies,emr/history_changes.sql; emr/history_entries.sql,no
+EMR,HPSITE,HX_DIAGNOSIS,TITLE,varchar(240),select,Overview; PDF export; Problems & allergies,emr/history_changes.sql; emr/history_entries.sql; emr/history_items.sql,no
+EMR,HPSITE,HX_MEDICATION,ACTIVITY_CODE,smallint,select,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,DOSE,varchar(30),select,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,DOSEUNIT,varchar(10),select,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,ENDDATEMASK_CODE,smallint,select,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,END_DATE,date,select,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,FREQUENCY,varchar(255),select,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,HXMEDICATION_ID,int,select|sort,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,INTAKE,varchar(30),select,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,PATIENT_ID,int,filter,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,ROUTE,varchar(20),select,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,STARTDATEMASK_CODE,smallint,select,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,START_DATE,date,select,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,TAG_REVISION,smallint,sort,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,HX_MEDICATION,TITLE,varchar(255),select,Medications; Overview; PDF export,emr/hx_medications.sql,no
+EMR,HPSITE,INSURANCECARRIERS,CARRIER_ADDRCODE,int,join,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCECARRIERS,CARRIER_NAME,varchar(50),select,Overview; PDF export; Patient header; Print,emr/patient_header_full.sql; emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCECARRIERS,IMRECARRIER_CODE,int,join,Overview; PDF export; Patient header; Print,emr/patient_header_full.sql; emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,IMRECARRIER_CODE,int,join,Overview; PDF export; Patient header; Print,emr/patient_header_full.sql; emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,IMREDEM_CODE,int,filter,Overview; PDF export; Patient header; Print,emr/patient_header_full.sql; emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,IMREINS_CODE,int,select|sort,Overview; PDF export; Patient header; Print,emr/patient_header_full.sql; emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_ENROLLMENTDATE,date,select,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_ENROLLMENTID,varchar(20),select,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_GROUPNUMBER,varchar(50),select,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_PATREL_TOSUB,smallint,select,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_PLANNUMBER,varchar(50),select,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_PLANTYPE,smallint,select,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_RANK,smallint,select|sort,Overview; PDF export; Patient header; Print,emr/patient_header_full.sql; emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_SUBDATEOFBIRTH,date,select,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_SUBFIRSTNAME,varchar(30),select,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_SUBLASTNAME,varchar(30),select,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_SUBMIDDLEINITIAL,varchar(30),select,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_TERMINATIONDATE,date,select,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,INS_WC_FLAG,tinyint,select,Overview; PDF export,emr/patient_insurances.sql,no
+EMR,HPSITE,INSURANCES,TAG_ARCHIVED,tinyint,select|filter,Overview; PDF export; Patient header; Print,emr/patient_header_full.sql; emr/patient_insurances.sql,no
+EMR,HPSITE,LABCATALOG,IMRELABCAT_CODE,int,join,Lab results; PDF export,emr/lab_orders.sql,no
+EMR,HPSITE,LABCATALOG,LABCAT_LONGNAME,varchar(100),select,Lab results; PDF export,emr/lab_orders.sql,no
+EMR,HPSITE,LABORDERS,IMREDEMEC_CODE,int,filter,Lab results; PDF export,emr/lab_orders.sql,no
+EMR,HPSITE,LABORDERS,IMREDX_CODE,int,filter,Lab results; PDF export,emr/lab_orders.sql,no
+EMR,HPSITE,LABORDERS,IMRELABCAT_CODE,int,join,Lab results; PDF export,emr/lab_orders.sql,no
+EMR,HPSITE,LABORDERS,IMRELABORDER_CODE,int,select|join,Lab results; PDF export; Print; Visits,emr/lab_orders.sql; emr/visit_plan.sql,no
+EMR,HPSITE,LABORDERS,IMREPROV_CODE,int,join,Lab results; PDF export,emr/lab_orders.sql,no
+EMR,HPSITE,LABORDERS,INHOUSE_FLAG,tinyint,select,Lab results; PDF export,emr/lab_orders.sql,no
+EMR,HPSITE,LABORDERS,LABORDER_COMMENT,varchar(240),select,Lab results; PDF export,emr/lab_orders.sql,no
+EMR,HPSITE,LABORDERS,LABORDER_COMPLETIONSTATUS,smallint,select,Lab results; PDF export,emr/lab_orders.sql,no
+EMR,HPSITE,LABORDERS,LABORDER_NAME,varchar(240),select,Lab results; PDF export; Print; Visits,emr/lab_orders.sql; emr/visit_plan.sql,no
+EMR,HPSITE,LABORDERS,LABORDER_ORDERDATE,datetimeoffset,select,Lab results; PDF export,emr/lab_orders.sql,no
+EMR,HPSITE,LABORDERS,REPORT_DATE,datetimeoffset,select,Lab results; PDF export,emr/lab_orders.sql,no
+EMR,HPSITE,LAB_RESULT,CORRECTED,tinyint,select,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LAB_RESULT,IMREDEM_CODE,int,filter,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LAB_RESULT,RESULT_ABNORMAL,int,select,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LAB_RESULT,RESULT_COMPLETIONDATE,datetimeoffset,select,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LAB_RESULT,RESULT_COMPLETIONSTATUS,int,select,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LAB_RESULT,RESULT_FLAGS,varchar(10),select,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LAB_RESULT,RESULT_ID,int,select,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LAB_RESULT,RESULT_NAME,varchar(255),select,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LAB_RESULT,RESULT_NORMAL_RANGE,varchar(50),select,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LAB_RESULT,RESULT_OBSERVATIONDATE,datetimeoffset,select,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LAB_RESULT,RESULT_UNITS,varchar(20),select,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LAB_RESULT,RESULT_VALUE,varchar(4000),select,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LAB_RESULT,TAG_SYSTEMDATE,datetimeoffset,select,Lab results; PDF export,emr/lab_results.sql,no
+EMR,HPSITE,LOCATION,LOCATION_ID,int,join,Appointments; Overview; PDF export; Print; Visits,emr/appointments.sql; emr/encounter_header.sql; emr/last_visit_detail.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql,no
+EMR,HPSITE,LOCATION,LOCATION_NAME,varchar(100),select,Appointments; Overview; PDF export; Print; Visits,emr/appointments.sql; emr/encounter_header.sql; emr/last_visit_detail.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql,no
+EMR,HPSITE,MEDICATIONS,IMREDEMEC_CODE,int,filter,Medications; Overview; PDF export,emr/medications.sql,no
+EMR,HPSITE,MEDICATIONS,IMREMED_CODE,int,select|filter|sort,Medications; Overview; PDF export; Print; Visits,emr/medications.sql; emr/visit_plan.sql,no
+EMR,HPSITE,MEDICATIONS,MED_DOSE,varchar(30),select,Medications; Overview; PDF export,emr/medications.sql,no
+EMR,HPSITE,MEDICATIONS,MED_DOSEUNIT,varchar(30),select,Medications; Overview; PDF export,emr/medications.sql,no
+EMR,HPSITE,MEDICATIONS,MED_ENDDATE,date,select,Medications; Overview; PDF export,emr/medications.sql,no
+EMR,HPSITE,MEDICATIONS,MED_ENDDATEMASK,smallint,select,Medications; Overview; PDF export,emr/medications.sql,no
+EMR,HPSITE,MEDICATIONS,MED_FREQUENCY,varchar(255),select,Medications; Overview; PDF export,emr/medications.sql,no
+EMR,HPSITE,MEDICATIONS,MED_INTAKE,varchar(30),select,Medications; Overview; PDF export,emr/medications.sql,no
+EMR,HPSITE,MEDICATIONS,MED_ROUTE,varchar(20),select,Medications; Overview; PDF export,emr/medications.sql,no
+EMR,HPSITE,MEDICATIONS,MED_STARTDATE,date,select,Medications; Overview; PDF export,emr/medications.sql,no
+EMR,HPSITE,MEDICATIONS,MED_STARTDATEMASK,smallint,select,Medications; Overview; PDF export,emr/medications.sql,no
+EMR,HPSITE,MEDICATIONS,MED_STATUS,smallint,select,Medications; Overview; PDF export,emr/medications.sql,no
+EMR,HPSITE,MEDICATIONS,MED_TITLE,varchar(255),select,Medications; Overview; PDF export; Print; Visits,emr/medications.sql; emr/visit_plan.sql,no
+EMR,HPSITE,MEDICATIONS,TAG_REVISION,int,sort,Medications; Overview; PDF export; Print; Visits,emr/medications.sql; emr/visit_plan.sql,no
+EMR,HPSITE,MESSAGE_SAVED,IMREDEM_CODE,int,join|filter,Documents; Notes; PDF export; Print,emr/note_message.sql; emr/notes_list_messages.sql,no
+EMR,HPSITE,MESSAGE_SAVED,IMREENC_CODE,int,join,Notes,emr/notes_list_messages.sql,no
+EMR,HPSITE,MESSAGE_SAVED,IMREMESSAGE_CODE,int,select|filter,Documents; Notes; PDF export; Print,emr/note_message.sql; emr/notes_list_messages.sql,no
+EMR,HPSITE,MESSAGE_SAVED,IMRENOTE_CODE,int,filter,Documents; Notes; PDF export; Print,emr/note_message.sql,no
+EMR,HPSITE,MESSAGE_SAVED,MSG_FROMPROVCODE,int,join,Documents; Notes; PDF export; Print,emr/note_message.sql; emr/notes_list_messages.sql,no
+EMR,HPSITE,MESSAGE_SAVED,MSG_PHONENUMBER,varchar(21),select,Documents; Notes; PDF export; Print,emr/note_message.sql,no
+EMR,HPSITE,MESSAGE_SAVED,MSG_SUBJECT,varchar(255),select,Documents; Notes; PDF export; Print,emr/note_message.sql; emr/notes_list_messages.sql,no
+EMR,HPSITE,MESSAGE_SAVED,MSG_TOADDRESSEES,varchar(2000),select,Documents; Notes; PDF export; Print,emr/note_message.sql,no
+EMR,HPSITE,MESSAGE_SAVED,MSG_TOPROVCODE,int,join,Documents; Notes; PDF export; Print,emr/note_message.sql,no
+EMR,HPSITE,MESSAGE_SAVED,MSG_TRANSACTIONDATE,datetimeoffset,select,Documents; Notes; PDF export; Print,emr/note_message.sql; emr/notes_list_messages.sql,no
+EMR,HPSITE,MESSAGE_SAVED,MSG_TYPE,smallint,select,Documents; Notes; PDF export; Print,emr/note_message.sql; emr/notes_list_messages.sql,no
+EMR,HPSITE,NOTES_MASTER,IMRECONTACT_CODE,int,join|filter,PDF export; Print; Visits,emr/encounter_text_notes.sql; emr/visit_text_notes.sql,no
+EMR,HPSITE,NOTES_MASTER,IMRENOTE_CODE,int,select|filter,PDF export; Print; Visits,emr/encounter_text_notes.sql; emr/visit_text_notes.sql,no
+EMR,HPSITE,NOTES_RAWDATA,IMRENOTE_CODE,int,join|filter,Documents; PDF export,emr/chart_attachment_file.sql; emr/chart_attachments.sql,no
+EMR,HPSITE,NOTES_RAWDATA,NOTE_DATA,varbinary(max),select,Documents,emr/chart_attachment_file.sql,no
+EMR,HPSITE,NOTES_RAWDATA,NOTE_SUBFORMAT,varchar(3),select,Documents; PDF export,emr/chart_attachment_file.sql; emr/chart_attachments.sql,no
+EMR,HPSITE,NOTES_RAWDATA,TAG_SYSTEMDATE,datetimeoffset,sort,Documents; PDF export,emr/chart_attachment_file.sql; emr/chart_attachments.sql,no
+EMR,HPSITE,NOTES_TEXTDATA,IMRENOTE_CODE,int,join|filter,Documents; Notes; PDF export; Print; Visits,emr/chart_attachment_text.sql; emr/chart_attachments.sql; emr/encounter_text_notes.sql; emr/note_message.sql; emr/visit_addenda.sql; emr/visit_text_notes.sql,no
+EMR,HPSITE,NOTES_TEXTDATA,NOTE_TEXT,varchar(max),select,Documents; Notes; PDF export; Print; Visits,emr/chart_attachment_text.sql; emr/encounter_text_notes.sql; emr/note_message.sql; emr/visit_addenda.sql; emr/visit_text_notes.sql,no
+EMR,HPSITE,NOTES_TEXTDATA,NOTE_TYPE,smallint,select,PDF export; Print; Visits,emr/encounter_text_notes.sql; emr/visit_text_notes.sql,no
+EMR,HPSITE,NOTES_TEXTDATA,TAG_REVISION,tinyint,sort,Documents; Notes; PDF export; Print; Visits,emr/chart_attachment_text.sql; emr/encounter_text_notes.sql; emr/note_message.sql; emr/visit_addenda.sql; emr/visit_text_notes.sql,no
+EMR,HPSITE,PATIENT_CONSENT,ANSWER_CODE,tinyint,select,Overview; PDF export,emr/patient_consents.sql,no
+EMR,HPSITE,PATIENT_CONSENT,CONSENT_CODE,int,select,Overview; PDF export,emr/patient_consents.sql,no
+EMR,HPSITE,PATIENT_CONSENT,CONSENT_ID,int,select,Overview; PDF export,emr/patient_consents.sql,no
+EMR,HPSITE,PATIENT_CONSENT,EXPIRATION_DATE,date,select,Overview; PDF export,emr/patient_consents.sql,no
+EMR,HPSITE,PATIENT_CONSENT,PATIENT_ID,int,filter,Overview; PDF export,emr/patient_consents.sql,no
+EMR,HPSITE,PATIENT_CONSENT,TAG_SYSTEMDATE,datetimeoffset,select,Overview; PDF export,emr/patient_consents.sql,no
+EMR,HPSITE,PATIENT_CONTACTS,IMREDEM_CODE,int,filter,Overview; PDF export,emr/patient_contacts.sql,no
+EMR,HPSITE,PATIENT_CONTACTS,PATCON_ADDRESS,int,join,Overview; PDF export,emr/patient_contacts.sql,no
+EMR,HPSITE,PATIENT_CONTACTS,PATCON_CODE,int,select,Overview; PDF export,emr/patient_contacts.sql,no
+EMR,HPSITE,PATIENT_CONTACTS,PATCON_EMERGENCY,tinyint,select,Overview; PDF export,emr/patient_contacts.sql,no
+EMR,HPSITE,PATIENT_CONTACTS,PATCON_FIRSTNAME,varchar(30),select,Overview; PDF export,emr/patient_contacts.sql,no
+EMR,HPSITE,PATIENT_CONTACTS,PATCON_HEALTHCAREPROXY,tinyint,select,Overview; PDF export,emr/patient_contacts.sql,no
+EMR,HPSITE,PATIENT_CONTACTS,PATCON_LASTNAME,varchar(30),select,Overview; PDF export,emr/patient_contacts.sql,no
+EMR,HPSITE,PATIENT_CONTACTS,PATCON_MIDDLENAME,varchar(30),select,Overview; PDF export,emr/patient_contacts.sql,no
+EMR,HPSITE,PATIENT_CONTACTS,PATCON_RANK,tinyint,select,Overview; PDF export,emr/patient_contacts.sql,no
+EMR,HPSITE,PATIENT_CONTACTS,PATCON_RELATIONSHIP,varchar(25),select,Overview; PDF export,emr/patient_contacts.sql,no
+EMR,HPSITE,PATIENT_ETHNICITY,ETHNICITY_CODE,int,select,Overview; PDF export,emr/patient_ethnicity.sql,no
+EMR,HPSITE,PATIENT_ETHNICITY,PATIENT_ID,int,filter,Overview; PDF export,emr/patient_ethnicity.sql,no
+EMR,HPSITE,PATIENT_IDENTIFIER,IDENTIFIER_VALUE,varchar(100),select|filter,CLI only; Dashboard / patient list; PDF export; Patient header; Print,emr/mrn_for_patients.sql; emr/patient_header_full.sql; emr/patient_search.sql,no
+EMR,HPSITE,PATIENT_IDENTIFIER,PATIENT_ID,int,select|filter|sort,CLI only; Dashboard / patient list; PDF export; Patient header; Print,emr/mrn_for_patients.sql; emr/patient_header_full.sql; emr/patient_search.sql,no
+EMR,HPSITE,PATIENT_IDENTIFIER,PATIENT_IDENTIFIER_ID,int,sort,CLI only; Dashboard / patient list; PDF export; Patient header; Print,emr/mrn_for_patients.sql; emr/patient_header_full.sql,no
+EMR,HPSITE,PATIENT_IDENTIFIER,PIDSOURCE_ID,int,sort,CLI only; Dashboard / patient list; PDF export; Patient header; Print,emr/mrn_for_patients.sql; emr/patient_header_full.sql,no
+EMR,HPSITE,PATIENT_IDENTIFIER,PREFERRED,tinyint,sort,CLI only; Dashboard / patient list; PDF export; Patient header; Print,emr/mrn_for_patients.sql; emr/patient_header_full.sql,no
+EMR,HPSITE,PATIENT_MERGE_HISTORY,CURRENT_DEM_CODE,int,select|filter,CLI build-crosswalk (patient links); CLI only; Dashboard / patient list,emr/patient_merges.sql; emr/patient_search.sql,no
+EMR,HPSITE,PATIENT_MERGE_HISTORY,ORIGINAL_DEM_CODE,int,select|filter,CLI build-crosswalk (patient links); CLI only; Dashboard / patient list,emr/patient_merges.sql; emr/patient_search.sql,no
+EMR,HPSITE,PATIENT_PHYSICIANS,ADDED_DATE,datetimeoffset,select,Overview; PDF export,emr/patient_care_team.sql,no
+EMR,HPSITE,PATIENT_PHYSICIANS,PATIENT_ID,int,filter,Overview; PDF export,emr/patient_care_team.sql,no
+EMR,HPSITE,PATIENT_PHYSICIANS,PHYSICIAN_ROLE_CODE,int,select,Overview; PDF export,emr/patient_care_team.sql,no
+EMR,HPSITE,PATIENT_PHYSICIANS,PROVIDER_ID,int,join,Overview; PDF export,emr/patient_care_team.sql,no
+EMR,HPSITE,PATIENT_RACE,PATIENT_ID,int,filter,Overview; PDF export,emr/patient_race.sql,no
+EMR,HPSITE,PATIENT_RACE,RACE_CODE,int,select,Overview; PDF export,emr/patient_race.sql,no
+EMR,HPSITE,PHIREQUEST,APPROVALSTATUS,int,select|join,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST,COMPLETEDATE,datetimeoffset,select,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST,DELIVERBYDATE,datetimeoffset,select,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST,ENTIRECHARTFLAG,tinyint,select,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST,ENTRYDATE,datetimeoffset,select,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST,ENTRYPROVID,int,join,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST,FORPATIENTFLAG,tinyint,select,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST,HIGHPRIORITYFLAG,tinyint,select,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST,PATIENTID,int,select,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST,REQUESTERNAME,varchar(100),select,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST,REQUESTID,int,select,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST,STATUS,int,select|join,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST_APPROVALSTATUS,STATUSID,int,join,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST_APPROVALSTATUS,STATUSTEXT,varchar(50),select,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST_REQUESTEDINFO,DICTCODE,int,select,Release log,emr/phi_request_info.sql,no
+EMR,HPSITE,PHIREQUEST_REQUESTEDINFO,REQUESTID,int,select,Release log,emr/phi_request_info.sql,no
+EMR,HPSITE,PHIREQUEST_STATUS,STATUSID,int,join,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PHIREQUEST_STATUS,STATUSTEXT,varchar(50),select,Release log,emr/phi_requests.sql,no
+EMR,HPSITE,PROCEDURES,IMREPROC_CODE,int,join,PDF export; Print; Visits,emr/visit_plan.sql,no
+EMR,HPSITE,PROCEDURES,PROC_TITLE,varchar(240),select,PDF export; Print; Visits,emr/visit_plan.sql,no
+EMR,HPSITE,PROVIDERS,IMREPROV_CODE,int,select|join,Appointments; Documents; Lab results; Notes; Overview; PDF export; Print; Problems & allergies; Release log; Visits,emr/appointments.sql; emr/chart_attachments.sql; emr/encounter_header.sql; emr/history_changes.sql; emr/history_entries.sql; emr/lab_orders.sql; emr/last_visit_detail.sql; emr/note_message.sql; emr/note_portal.sql; emr/notes_list_docs.sql; emr/notes_list_messages.sql; emr/notes_list_portal.sql; emr/notes_list_trans.sql; emr/patient_care_team.sql; emr/phi_requests.sql; emr/reminders.sql; emr/transcription_text.sql; emr/transcriptions.sql; emr/visit_addenda.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql,no
+EMR,HPSITE,PROVIDERS,PROV_FIRSTNAME,varchar(30),select|filter,Appointments; Documents; Lab results; Notes; Overview; PDF export; Print; Problems & allergies; Release log; Visits,emr/appointments.sql; emr/chart_attachments.sql; emr/encounter_header.sql; emr/history_changes.sql; emr/history_entries.sql; emr/lab_orders.sql; emr/last_visit_detail.sql; emr/note_message.sql; emr/note_portal.sql; emr/notes_list_docs.sql; emr/notes_list_messages.sql; emr/notes_list_portal.sql; emr/notes_list_trans.sql; emr/patient_care_team.sql; emr/phi_requests.sql; emr/reminders.sql; emr/transcription_text.sql; emr/transcriptions.sql; emr/visit_addenda.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql,no
+EMR,HPSITE,PROVIDERS,PROV_LASTNAME,varchar(30),select|filter,Appointments; Documents; Lab results; Notes; Overview; PDF export; Print; Problems & allergies; Release log; Visits,emr/appointments.sql; emr/chart_attachments.sql; emr/encounter_header.sql; emr/history_changes.sql; emr/history_entries.sql; emr/lab_orders.sql; emr/last_visit_detail.sql; emr/note_message.sql; emr/note_portal.sql; emr/notes_list_docs.sql; emr/notes_list_messages.sql; emr/notes_list_portal.sql; emr/notes_list_trans.sql; emr/patient_care_team.sql; emr/phi_requests.sql; emr/reminders.sql; emr/transcription_text.sql; emr/transcriptions.sql; emr/visit_addenda.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql,no
+EMR,HPSITE,PROVIDERS,PROV_TITLE,varchar(10),select,Appointments; Documents; Lab results; Notes; Overview; PDF export; Print; Problems & allergies; Visits,emr/appointments.sql; emr/chart_attachments.sql; emr/encounter_header.sql; emr/history_changes.sql; emr/history_entries.sql; emr/lab_orders.sql; emr/last_visit_detail.sql; emr/note_message.sql; emr/note_portal.sql; emr/notes_list_docs.sql; emr/notes_list_messages.sql; emr/notes_list_portal.sql; emr/notes_list_trans.sql; emr/patient_care_team.sql; emr/transcriptions.sql; emr/visit_one.sql; emr/visits.sql; emr/visits_list.sql; emr/visits_of_types.sql; emr/visits_summary.sql,no
+EMR,HPSITE,REMINDERS,IMREDEMEC_CODE,int,filter,Overview; PDF export,emr/reminders.sql,no
+EMR,HPSITE,REMINDERS,IMREREMINDER_CODE,int,select,Overview; PDF export,emr/reminders.sql,no
+EMR,HPSITE,REMINDERS,REM_COMPLETEDBYPROV,int,join,Overview; PDF export,emr/reminders.sql,no
+EMR,HPSITE,REMINDERS,REM_COMPLETEDFLAG,tinyint,select,Overview; PDF export,emr/reminders.sql,no
+EMR,HPSITE,REMINDERS,REM_DATE,datetimeoffset,select,Overview; PDF export,emr/reminders.sql,no
+EMR,HPSITE,REMINDERS,REM_DATECOMPLETED,datetimeoffset,select,Overview; PDF export,emr/reminders.sql,no
+EMR,HPSITE,REMINDERS,REM_ENTEREDBYPROV,int,join,Overview; PDF export,emr/reminders.sql,no
+EMR,HPSITE,REMINDERS,REM_ENTEREDDATE,datetimeoffset,select,Overview; PDF export,emr/reminders.sql,no
+EMR,HPSITE,REMINDERS,REM_ERRONEOUS,tinyint,select,Overview; PDF export,emr/reminders.sql,no
+EMR,HPSITE,REMINDERS,REM_PRIORITY,tinyint,select,Overview; PDF export,emr/reminders.sql,no
+EMR,HPSITE,REMINDERS,REM_SUBJECT,varchar(255),select,Overview; PDF export,emr/reminders.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,DRUG_DAYSUPPLY,int,select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,DRUG_NAME,varchar(2000),select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,DRUG_QTY,int,select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,DRUG_QTY_UNIT,char(3),select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,DRUG_REFILLS,varchar(20),select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,DRUG_SIG,varchar(500),select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,DRUG_STR,varchar(50),select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,LASTFILL_DATE,date,select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,PHARMACY_NAME,varchar(255),select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,PROVIDERNAME,varchar(255),select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,RXHUB_ID,int,join,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,RXHUB_MED_HISTORY_ID,int,select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,SUBSTITUTIONS,tinyint,select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_MED_HISTORY,WRITTEN_DATE,date,select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_REQUEST,PATIENT_ID,int,filter,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_REQUEST,REQUEST_DATE,datetimeoffset,select,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,RXHUB_REQUEST,RXHUB_ID,int,join,Medications; PDF export,emr/pharmacy_fills.sql,no
+EMR,HPSITE,SCAN_DOCUMENT,DOCUMENT_DT,date,select,Documents; PDF export,emr/scan_document_pages.sql; emr/scan_documents.sql,no
+EMR,HPSITE,SCAN_DOCUMENT,DOCUMENT_ID,int,select|join|filter,Documents; PDF export,emr/scan_document_pages.sql; emr/scan_documents.sql,no
+EMR,HPSITE,SCAN_DOCUMENT,IMREDEM_CODE,int,filter,Documents; PDF export,emr/scan_document_pages.sql; emr/scan_documents.sql,no
+EMR,HPSITE,SCAN_DOCUMENT,SCANSTATUS_CODE,int,select,Documents; PDF export,emr/scan_document_pages.sql; emr/scan_documents.sql,no
+EMR,HPSITE,SCAN_DOCUMENT,SCAN_ID,int,join,Documents; PDF export,emr/scan_document_pages.sql; emr/scan_documents.sql,no
+EMR,HPSITE,SCAN_DOCUMENT,TITLE,varchar(60),select,Documents; PDF export,emr/scan_document_pages.sql; emr/scan_documents.sql,no
+EMR,HPSITE,SCAN_DOCUMENTPAGE,DOCUMENT_ID,int,join|filter,Documents; PDF export,emr/scan_document_pages.sql; emr/scan_documents.sql,no
+EMR,HPSITE,SCAN_DOCUMENTPAGE,FILELOCATION,varchar(300),select,Documents; PDF export,emr/scan_document_pages.sql,no
+EMR,HPSITE,SCAN_DOCUMENTPAGE,PAGENUMBER,smallint,select|sort,Documents; PDF export,emr/scan_document_pages.sql,no
+EMR,HPSITE,SCAN_DOCUMENTPAGE,PAGE_ID,int,select|sort,Documents; PDF export,emr/scan_document_pages.sql,no
+EMR,HPSITE,SCAN_DOCUMENTTYPE,DESCRIPTION,varchar(50),select,Documents; PDF export,emr/scan_document_pages.sql; emr/scan_documents.sql,no
+EMR,HPSITE,SCAN_DOCUMENTTYPE,SCAN_ID,int,join,Documents; PDF export,emr/scan_document_pages.sql; emr/scan_documents.sql,no
+EMR,HPSITE,TRANSCRIPTION,DICTATED_DT,date,select,Documents; Notes; PDF export; Print,emr/notes_list_trans.sql; emr/transcription_text.sql; emr/transcriptions.sql,no
+EMR,HPSITE,TRANSCRIPTION,ENCOUNTER_DATE,date,select,Documents; Notes; PDF export; Print,emr/notes_list_trans.sql; emr/transcription_text.sql; emr/transcriptions.sql,no
+EMR,HPSITE,TRANSCRIPTION,IMREDEM_CODE,int,join|filter,Documents; Notes; PDF export; Print,emr/notes_list_trans.sql; emr/transcription_text.sql; emr/transcriptions.sql,no
+EMR,HPSITE,TRANSCRIPTION,IMREENC_CODE,int,join,Notes,emr/notes_list_trans.sql,no
+EMR,HPSITE,TRANSCRIPTION,IMREPROV_CODE,int,join,Documents; Notes; PDF export; Print,emr/notes_list_trans.sql; emr/transcription_text.sql; emr/transcriptions.sql,no
+EMR,HPSITE,TRANSCRIPTION,MARK_ERRONEOUS_DT,datetimeoffset,filter,Documents; Notes; PDF export; Print,emr/notes_list_trans.sql; emr/transcription_text.sql; emr/transcriptions.sql,no
+EMR,HPSITE,TRANSCRIPTION,TRANSCRIBED_DT,datetimeoffset,select,Notes,emr/notes_list_trans.sql; emr/transcriptions.sql,no
+EMR,HPSITE,TRANSCRIPTION,TRANSCRIPTION_ID,int,select|join|filter,Documents; Notes; PDF export; Print,emr/notes_list_trans.sql; emr/transcription_text.sql; emr/transcriptions.sql,no
+EMR,HPSITE,TRANSCRIPTION,transtype_code,tinyint,select,Notes,emr/notes_list_trans.sql,no
+EMR,HPSITE,TRANSCRIPTIONDATA,TRANSCRIPTION_ID,int,join,Documents; Notes; PDF export; Print,emr/transcription_text.sql,no
+EMR,HPSITE,TRANSCRIPTIONDATA,trans_data,varchar(max),select,Documents; Notes; PDF export; Print,emr/transcription_text.sql,no
+EMR,HPSITE,VITALS_DATA,IMRECONTACT_CODE,int,select|filter,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,IMREDEM_CODE,int,filter,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,IMREENC_CODE,int,filter,Print; Visits,emr/encounter_vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITALS_CODE,int,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_BP_DIASTOLIC,smallint,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_BP_SYSTOLIC,smallint,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_DATETIME,datetimeoffset,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_ERRONEOUS_IND,tinyint,filter,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_HEIGHT,numeric,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_HEIGHT_UNIT_CODE,smallint,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_PAIN_LEVEL,tinyint,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_PULSE,smallint,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_PULSE_OX,smallint,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_TEMPERATURE,numeric,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_TEMPERATURE_UNIT_CODE,smallint,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_WEIGHT,numeric,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,VITALS_DATA,VITAL_WEIGHT_UNIT_CODE,smallint,select,PDF export; Print; Visits; Vitals,emr/encounter_vitals.sql; emr/visit_vitals.sql; emr/vitals.sql,no
+EMR,HPSITE,WEBMESSAGE,ATTACHMENT,varbinary(max),select|filter,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/note_portal_attachment.sql,no
+EMR,HPSITE,WEBMESSAGE,ATTACHMENT_NAME,varchar(255),select,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/note_portal_attachment.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE,ATTACHMENT_TYPE,varchar(5),select,Notes,emr/note_portal_attachment.sql,no
+EMR,HPSITE,WEBMESSAGE,BODY_TEXT,varchar(max),select,Documents; Notes; PDF export; Print,emr/note_portal.sql,no
+EMR,HPSITE,WEBMESSAGE,IMREDEM_CODE,int,filter,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/note_portal_attachment.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE,IMREPROV_CODE,int,join,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE,MSG_TYPE,tinyint,select,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE,ORIG_PROVCODE,int,join,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE,SUBJECT,varchar(255),select,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE,TAG_SYSTEMDATE,datetimeoffset,select,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE,WEBMSG_ID,int,select|join|filter,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/note_portal_attachment.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE_SAVED,ATTACHMENT_NAME,varchar(255),select,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE_SAVED,BODY_TEXT,varchar(max),select,Documents; Notes; PDF export; Print,emr/note_portal.sql,no
+EMR,HPSITE,WEBMESSAGE_SAVED,IMREDEM_CODE,int,join|filter,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE_SAVED,IMREENC_CODE,int,join,Notes,emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE_SAVED,IMREPROV_CODE,int,join,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE_SAVED,MSG_TYPE,tinyint,select,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE_SAVED,ORIG_PROVCODE,int,join,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE_SAVED,SUBJECT,varchar(255),select,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE_SAVED,TAG_SYSTEMDATE,datetimeoffset,select,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE,WEBMESSAGE_SAVED,WEBMSG_ID,int,select|join|filter,Documents; Notes; PDF export; Print,emr/note_portal.sql; emr/notes_list_portal.sql,no
+EMR,HPSITE_ARCH,HTML_DOCUMENT_ARCH,DOCUMENT,varbinary(max),select,Documents; Notes; PDF export; Print; Visits,emr/document_content.sql,no
+EMR,HPSITE_ARCH,HTML_DOCUMENT_ARCH,DOCUMENT_ID,int,join,Documents; Notes; PDF export; Print; Visits,emr/document_content.sql,no
+Ntier_0010060,PM,Accounts,Account_ID,int,join,PDF export; Patient header; Print,ntier/pm_account.sql,no
+Ntier_0010060,PM,Accounts,Account_Number,varchar(20),select,PDF export; Patient header; Print,ntier/pm_account.sql,no
+Ntier_0010060,PM,Appointment_Types,Appointment_Type_ID,int,join,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointment_Types,Description,varchar(40),select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Appointment_DateTime,datetime,select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Appointment_ID,int,select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Appointment_Type_ID,int,join,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Cancellation_Reason_ID,int,join,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Check_Out_Time,int,select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Comments,varchar(80),select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,DateTime_Cancelled,datetime,select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,DateTime_NoShow,datetime,select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Duration,int,select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Is_Memo_Appointment,bit,filter,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Patient_ID,int,filter,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Resource_ID,int,join,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Scheduling_Location_ID,int,join,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Status,char(1),select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Appointments,Time_In,int,select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Cancellation_Reasons,Cancellation_Reason_ID,int,join,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Cancellation_Reasons,Description,varchar(40),select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Carriers,Carrier_ID,int,join,Overview; PDF export,ntier/incoming_referrals.sql; ntier/patient_policies.sql,no
+Ntier_0010060,PM,Carriers,Name,varchar(40),select,Overview; PDF export,ntier/incoming_referrals.sql; ntier/patient_policies.sql,no
+Ntier_0010060,PM,Carriers,Phone,varchar(20),select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Contacts,Contact_ID,int,join,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Contacts,Date_Of_Birth,date,select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Contacts,First_Name,varchar(20),select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Contacts,Last_Name,varchar(30),select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Contacts,Middle_Initial,char(1),select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Diagnosis_Codes,Description,varchar(60),select,Overview; PDF export,ntier/incoming_referral_diagnoses.sql,no
+Ntier_0010060,PM,Diagnosis_Codes,Diagnosis_Code,varchar(10),select,Overview; PDF export,ntier/incoming_referral_diagnoses.sql,no
+Ntier_0010060,PM,Diagnosis_Codes,Diagnosis_Code_ID,int,join,Overview; PDF export,ntier/incoming_referral_diagnoses.sql,no
+Ntier_0010060,PM,Incoming_Referral_Diags,Diagnosis_Code_ID,int,join,Overview; PDF export,ntier/incoming_referral_diagnoses.sql,no
+Ntier_0010060,PM,Incoming_Referral_Diags,Incoming_Referral_ID,int,select|join,Overview; PDF export,ntier/incoming_referral_diagnoses.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Authorization_Number,varchar(50),select,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Date_Of_Referral,date,select,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Incoming_Referral_ID,int,select|join,Overview; PDF export,ntier/incoming_referral_diagnoses.sql; ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Is_External_Referral,bit,select,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Notes,varchar(255),select,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Number_Authorized_Visits,int,select,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Patient_ID,int,filter,Overview; PDF export,ntier/incoming_referral_diagnoses.sql; ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Patient_Policy_ID,int,join,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Pre_Certification_Number,varchar(20),select,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Referral_Expiration_Date,date,select,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Referred_From_Practitioner_ID,int,join,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Referred_To_Practitioner_ID,int,join,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Incoming_Referrals,Status,char(1),select,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Insurance_Plans,CoPayment_Amount,money,select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Insurance_Plans,Description,varchar(40),select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Insurance_Plans,Insurance_Plan_ID,int,join,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Patient_Policies,Coverage,char(1),select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Patient_Policies,Patient_ID,int,filter,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Patient_Policies,Patient_Policy_ID,int,select|join,Overview; PDF export,ntier/incoming_referrals.sql; ntier/patient_policies.sql,no
+Ntier_0010060,PM,Patient_Policies,Policy_ID,int,join,Overview; PDF export,ntier/incoming_referrals.sql; ntier/patient_policies.sql,no
+Ntier_0010060,PM,Patient_Policies,Relationship,char(1),select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Patients,Account_ID,int,join,PDF export; Patient header; Print,ntier/pm_account.sql,no
+Ntier_0010060,PM,Patients,Active_Patient_ID,int,select,CLI build-crosswalk (patient links),emr/crosswalk_emr_ntier.sql,no
+Ntier_0010060,PM,Patients,Patient_ID,int,select|filter,CLI build-crosswalk (patient links); PDF export; Patient header; Print,emr/crosswalk_emr_ntier.sql; ntier/pm_account.sql,no
+Ntier_0010060,PM,Patients,Patient_Number,varchar(20),select|join,CLI build-crosswalk (patient links); PDF export; Patient header; Print,emr/crosswalk_emr_ntier.sql; ntier/pm_account.sql,no
+Ntier_0010060,PM,Policies,Carrier_ID,int,join,Overview; PDF export,ntier/incoming_referrals.sql; ntier/patient_policies.sql,no
+Ntier_0010060,PM,Policies,Certificate_No,varchar(20),select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Policies,Contact_ID,int,join,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Policies,Effective_Date,date,select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Policies,Expiration_Date,date,select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Policies,Group_Name,varchar(40),select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Policies,Group_No,varchar(20),select,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Policies,Insurance_Plan_ID,int,join,Overview; PDF export,ntier/patient_policies.sql,no
+Ntier_0010060,PM,Policies,Policy_ID,int,join,Overview; PDF export,ntier/incoming_referrals.sql; ntier/patient_policies.sql,no
+Ntier_0010060,PM,Practitioners,First_Name,varchar(20),select,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Practitioners,Last_Name,varchar(30),select,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Practitioners,Practitioner_ID,int,join,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Practitioners,Suffix,char(8),select,Overview; PDF export,ntier/incoming_referrals.sql,no
+Ntier_0010060,PM,Resources,Description,varchar(40),select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Resources,Resource_ID,int,join,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Scheduling_Locations,Description,varchar(40),select,Appointments; PDF export,ntier/appointments.sql,no
+Ntier_0010060,PM,Scheduling_Locations,Scheduling_Location_ID,int,join,Appointments; PDF export,ntier/appointments.sql,no
