@@ -53,8 +53,7 @@ CLINIC_NAME=Example Clinic
 CLINIC_TZ=America/New_York
 FEATURE_LEGACY_DMZ=true      # shows the "Pre-2010 records" section
 ```
-`.env` is git-ignored. Never put real passwords in `.env.example` or any committed file. The CI
-secret scan blocks it.
+`.env` is git-ignored. Never put real passwords in `.env.example` or any committed file.
 
 ### 4. Start PostgreSQL and create the tables
 ```sh
@@ -74,8 +73,8 @@ You're prompted for the password twice (minimum 12 characters). There is no sign
 ```sh
 uv run uvicorn app.main:app --reload
 ```
-Open **http://127.0.0.1:8000**, sign in, and browse the fake patients ("Sample, Patient A",
-"Demo, Patient C", …). Every tab, the pre-2010 section, printing and the PDF export work on fake data.
+Open **http://127.0.0.1:8000**, sign in, and browse the fake patients (clearly invented names such as
+"Sample, Patient A"). Every tab, the pre-2010 section, printing and the PDF export work on fake data.
 
 ---
 
