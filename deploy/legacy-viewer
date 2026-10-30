@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Day-to-day commands on the server. Installed to /usr/local/bin/legacy-viewer by deploy/ec2-setup.sh.
+set -euo pipefail
+
+APP_DIR="/srv/legacy-viewer/app"   # rewritten by ec2-setup.sh to the actual checkout
+
+lv() {
+  sudo docker compose --project-directory "$APP_DIR" -f "$APP_DIR/docker-compose.prod.yml" \
+    --env-file /etc/legacy-viewer/compose.env "$@"
+}
+
+g() {  # git as the checkout's owner; via sudo only when it is root-owned
+  if [[ -w "$APP_DIR/.git" ]]; then git -C "$APP_DIR" "$@"
+  else sudo git -c safe.directory="$APP_DIR" -C "$APP_DIR" "$@"; fi
+}
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  status)   lv ps; echo; curl -s -m 30 http://127.0.0.1:8000/readyz; echo ;;
+  logs)     lv logs --tail "${1:-200}" app ;;
+  restart)  lv up -d app ;;   # also picks up changes to /etc/legacy-viewer/app.env
+  stop)     lv stop app ;;
+  update)   # pull the latest code (or a given tag/commit), rebuild, migrate, restart
+            g fetch --tags --quiet
+            if [[ -n "${1:-}" ]]; then g checkout --quiet "$1"
+            else g pull --ff-only --quiet; fi
+            echo "Code at: $(g log --oneline -1)"
+            lv build
+            lv --profile tools run --rm -T migrate
+            lv up -d app
+            sleep 5; curl -s -m 30 http://127.0.0.1:8000/readyz; echo ;;
+  migrate)  lv --profile tools run --rm -T migrate ;;
+  create-user|reset-password|deactivate-user|dbcheck|build-crosswalk|patient-list-check)
+            lv --profile tools run --rm cli "$cmd" "$@" ;;
+  compose)  lv "$@" ;;
+  *) cat <<'EOF'
+legacy-viewer <command>
+  status                         containers + readiness checks
+  logs [lines]                   app log (no PHI is logged)
+  restart                        restart the app (also reloads /etc/legacy-viewer/app.env)
+  stop                           stop the app
+  update [tag-or-commit]         git pull (or check out a release), rebuild, migrate, restart
+  migrate                        apply database migrations
+  create-user --email E --name "Full Name"
+  reset-password --email E
+  deactivate-user --email E
+  dbcheck                        archive connection + login permissions (read-only)
+  build-crosswalk                relink EMR <-> PM patients
+  compose <args>                 any docker compose command for this deployment
+EOF
+  ;;
+esac

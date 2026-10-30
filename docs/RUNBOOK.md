@@ -126,6 +126,21 @@ Passwords live only here. Don't put them in email, chat, tickets or the reposito
 
 ## Part C: Prepare the server
 
+> **Fast path: one script does C2 to E.** Connect (C1), then run:
+> ```bash
+> sudo mkdir -p /srv/legacy-viewer && sudo chown "$USER" /srv/legacy-viewer
+> git clone https://github.com/Centricity-Research/Legacy-DEC-LR-Records.git /srv/legacy-viewer/app
+> cd /srv/legacy-viewer/app
+> sudo bash deploy/ec2-setup.sh                                   # asks each setting
+> #   or: sudo bash deploy/ec2-setup.sh --secret-id legacy-viewer/prod-env
+> ```
+> It installs Docker, writes `/etc/legacy-viewer/app.env` (root-only), checks the network paths,
+> builds the image, creates the tables, runs `dbcheck` and `build-crosswalk`, starts the app,
+> checks `/healthz` and `/readyz`, and creates the first staff accounts. It is safe to run again.
+> Afterwards use the `legacy-viewer` command (`legacy-viewer help`): `status`, `logs`,
+> `restart`, `update [tag]`, `create-user`, and so on. The manual steps below show what the script
+> does.
+
 ### C1. Connect
 EC2 console → the instance → **Connect → Session Manager → Connect**. No SSH needed.
 
@@ -171,7 +186,7 @@ sudo grep -c "=" /etc/legacy-viewer/app.env   # just a line count; never print t
 
 ```bash
 cd /srv/legacy-viewer/app
-C="docker compose -f docker-compose.prod.yml"
+C="sudo docker compose -f docker-compose.prod.yml"   # sudo: app.env is root-only
 
 $C build                                         # 1. build the image (ODBC driver + PDF libraries)
 $C --profile tools run --rm migrate              # 2. create the app's tables in RDS

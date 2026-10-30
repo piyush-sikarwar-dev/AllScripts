@@ -1,4 +1,4 @@
-# Production on one EC2 host (docs/RUNBOOK.md).
+# Production on one EC2 host (docs/RUNBOOK.md). Easiest: sudo bash deploy/ec2-setup.sh
 # Settings and secrets come from /etc/legacy-viewer/app.env on the server (root-only, chmod 600),
 # never from this repository. Template: deploy/app.env.template.
 #
@@ -7,6 +7,8 @@
 #   docker compose -f docker-compose.prod.yml up -d app
 #
 # Optional local PostgreSQL (when not using RDS):  --profile local-db
+
+name: legacy-viewer
 
 x-hardening: &hardening
   read_only: true            # root filesystem read-only; only /tmp is writable (in memory)
@@ -63,6 +65,8 @@ services:
     image: postgres:16
     profiles: ["local-db"]
     restart: unless-stopped
+    # TLS on, because the app requires sslmode=require in production. Certificate made by ec2-setup.sh.
+    command: ["-c", "ssl=on", "-c", "ssl_cert_file=/tls/server.crt", "-c", "ssl_key_file=/tls/server.key"]
     environment:
       POSTGRES_USER: legacy
       POSTGRES_DB: legacy_viewer
@@ -70,6 +74,7 @@ services:
     secrets: [pg_password]
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - /etc/legacy-viewer/pg-tls:/tls:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U legacy -d legacy_viewer"]
       interval: 10s
